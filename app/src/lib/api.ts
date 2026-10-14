@@ -31,6 +31,19 @@ export function importFromText(code: string, text: string): Promise<ImportedCour
   return post('/import-text', { code, text });
 }
 
+/** Send a course profile page the user opened in the app to the backend to read. */
+export function importFromPage(code: string, url: string, html: string): Promise<ImportedCourse> {
+  return post('/import-html', { code, url, html });
+}
+
+/** UQ term codes, as used in course profile links: 2026 Semester 1 = 7620, Semester 2 = 7660. */
+export function termCode(year: number, semester: number): string {
+  return `${year - 1950}${semester === 1 ? '20' : '60'}`;
+}
+
+/** Matches a course profile address and captures the course code and term code. */
+export const PROFILE_LINK = /^https?:\/\/course-profiles\.uq\.edu\.au\/course-profiles\/([A-Z]{4}\d{4})-\d+-(\d{4})/;
+
 /** The page listing a course's offerings, with links to each course profile. */
 export function courseInfoUrl(code: string): string {
   return `https://programs-courses.uq.edu.au/course.html?course_code=${encodeURIComponent(code)}`;

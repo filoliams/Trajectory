@@ -1,6 +1,7 @@
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button, ErrorText, Field } from '@/components/form';
 import { T, mono } from '@/constants/trajectory';
@@ -112,7 +113,22 @@ export function CourseAdder({ onAdded }: { onAdded?: (code: string) => void }) {
 
       {showFallback ? (
         <View style={styles.fallback}>
-          <Text style={styles.fallbackTitle}>Paste {cleanCode}'s assessment table</Text>
+          {Platform.OS !== 'web' ? (
+            <>
+              <Text style={styles.fallbackTitle}>Import from {cleanCode}'s course profile</Text>
+              <Text style={styles.step}>
+                Open the profile here in Trajectory, check it's the right semester, then tap Import assessments.
+              </Text>
+              <Button
+                title={`Open ${cleanCode}'s course profile`}
+                onPress={() => router.push({ pathname: '/course/profile', params: { code: cleanCode } })}
+                disabled={busy}
+              />
+              <Text style={[styles.fallbackTitle, styles.orTitle]}>Or paste the assessment table</Text>
+            </>
+          ) : (
+            <Text style={styles.fallbackTitle}>Paste {cleanCode}'s assessment table</Text>
+          )}
           <Text style={styles.step}>1. Open the course page and tap Course Profile for this semester.</Text>
           <Pressable accessibilityRole="link" onPress={() => WebBrowser.openBrowserAsync(courseInfoUrl(cleanCode))}>
             <Text style={styles.link}>Open {cleanCode} on UQ's site ↗</Text>
@@ -157,6 +173,7 @@ const styles = StyleSheet.create({
   addBtn: { width: 84 },
   fallback: { gap: 10, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 16, padding: 14 },
   fallbackTitle: { fontSize: 16, fontWeight: '600', color: T.ink },
+  orTitle: { marginTop: 8, fontSize: 15, color: T.inkSoft },
   step: { fontSize: 14, lineHeight: 20, color: T.inkSoft },
   link: { fontSize: 15, fontWeight: '600', color: T.accent, paddingVertical: 6 },
   textarea: {

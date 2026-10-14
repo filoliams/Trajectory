@@ -45,6 +45,7 @@ function Routes() {
         <Stack.Screen name="course/[code]" />
         <Stack.Screen name="course/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="course/manage" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="course/profile" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="assessment/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="assessment/new" options={{ presentation: 'modal' }} />
       </Stack.Protected>

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client
 
-from uq_import import ImportFailed, import_course, parse_pasted_table
+from uq_import import PROFILE_LINK, ImportFailed, import_course, parse_pasted_table, parse_profile
 
 # Load .env from the Trajectory folder (one level above this file),
 # so the server works no matter which folder you start it from.
@@ -90,4 +90,35 @@ def import_text_endpoint(req: PasteRequest):
         course = parse_pasted_table(req.text, code)
     except ImportFailed as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    return course.to_dict()
+
+
+class HtmlRequest(BaseModel):
+    code: str = Field(examples=["STAT2201"])
+    url: str = Field(description="The course-profiles.uq.edu.au address the page was opened at.")
+    html: str = Field(max_length=5_000_000, description="The course profile page's HTML, read in the app.")
+
+
+@app.post("/import-html")
+def import_html_endpoint(req: HtmlRequest):
+    """Read a course profile page the user opened inside the app.
+
+    The app shows the profile in a built-in browser, so UQ serves it like any
+    other visit; the app then sends the page here for the same parsing as
+    /import-course.
+    """
+    code = req.code.strip().upper()
+    match = PROFILE_LINK.match(req.url)
+    if not match:
+        raise HTTPException(status_code=422, detail="That page isn't a UQ course profile.")
+    if match.group(1) != code:
+        raise HTTPException(
+            status_code=422,
+            detail=f"That profile is for {match.group(1)}, not {code}. Open {code}'s course profile instead.",
+        )
+    try:
+        course = parse_profile(req.html, req.url)
+    except ImportFailed as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    course.code = code
     return course.to_dict()
