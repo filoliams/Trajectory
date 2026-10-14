@@ -30,8 +30,8 @@ build/
 *.db
 
 # ===== User data (imported notes, uploads) =====
-uploads/
-data/raw/
+**/uploads/
+**/data/raw/
 
 # ===== Editor =====
 .vscode/*
