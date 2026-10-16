@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from supabase import create_client
 
+from notes.router import make_router as make_notes_router
+
 # Load .env from the Trajectory folder (one level above this file),
 # so the server works no matter which folder you start it from.
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
@@ -21,6 +23,7 @@ if not SUPABASE_URL or not SUPABASE_SECRET_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
 app = FastAPI(title="Trajectory backend")
+app.include_router(make_notes_router(supabase))
 
 
 @app.get("/")

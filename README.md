@@ -41,6 +41,32 @@ study-tracker/
 └── README.md
 ```
 
+## Notes reading (GoodNotes)
+
+Trajectory reads your GoodNotes notebooks and rates every topic **Strong**, **Okay** or **Weak**. Weak topics push their assessments up the study plan.
+
+**1. Turn on GoodNotes auto-backup.** In GoodNotes: Settings > Auto-Backup > on, format **PDF**, and pick OneDrive (or Google Drive / Dropbox with its desktop app installed). Name notebooks with the course code, e.g. `STAT2201 Lectures`, or keep one folder per course.
+
+**2. Add your AI key** to `.env`: `AI_API_KEY=...`
+
+**3. Try it from the backend folder:**
+
+```powershell
+pip install -r requirements.txt
+python -m notes.scan "C:\Users\liams\OneDrive\Apps\GoodNotes 5\GoodNotes" --dry-run
+python -m notes.scan "C:\Users\liams\OneDrive\Apps\GoodNotes 5\GoodNotes" --course STAT2201 --max-reads 20
+```
+
+The dry run is free and shows how many pages would be read. Later runs only read pages that changed.
+
+**How a topic is rated** (`backend/notes/footprint.py`): coverage, depth, practice (problems attempted and how many were right) and recency combine into a 0-1 score. Strong needs practice that's mostly right; brief notes with no practice stay Weak; practice that's mostly wrong is Weak.
+
+**Database:** run `supabase db push` to create the `note_pages`, `course_topics`, `course_footprints` and `topic_footprints` tables.
+
+**API:** `POST /notes/goodnotes/scan`, `GET /notes/footprint`, `GET /notes/footprint/{course}`, `PUT /notes/syllabus/{course}`.
+
+**Tests:** `python -m pytest` from the backend folder.
+
 ## Roadmap
 
 - [ ] Backend setup
