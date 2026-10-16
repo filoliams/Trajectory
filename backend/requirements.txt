@@ -38,3 +38,6 @@ typing_extensions==4.16.0
 uvicorn==0.54.0
 websockets==15.0.1
 yarl==1.25.1
+anthropic==1.15.0
+pillow==12.3.0
+pypdfium2==5.14.0

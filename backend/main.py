@@ -1,9 +1,19 @@
+import asyncio
+import logging
 import os
+import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from supabase import create_client
+
+# Let `notes` import whether uvicorn is started from backend/ or the repo root.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from notes.router import build_router  # noqa: E402
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 # Load .env from the Trajectory folder (one level above this file),
 # so the server works no matter which folder you start it from.
@@ -20,7 +30,22 @@ if not SUPABASE_URL or not SUPABASE_SECRET_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
-app = FastAPI(title="Trajectory backend")
+notes_router, notes_auto_sync = build_router(supabase)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Watch the GoodNotes folder in the background unless NOTES_AUTO_SYNC=0
+    task = None
+    if os.getenv("NOTES_AUTO_SYNC", "1") != "0":
+        task = asyncio.create_task(notes_auto_sync())
+    yield
+    if task:
+        task.cancel()
+
+
+app = FastAPI(title="Trajectory backend", lifespan=lifespan)
+app.include_router(notes_router)
 
 
 @app.get("/")
