@@ -111,6 +111,60 @@ export function Segmented<V extends string>({
   );
 }
 
+/** A dropdown: tap to show the options in a list below, tap one to pick it. */
+export function Select<V extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder = 'Choose…',
+}: {
+  label?: string;
+  options: { value: V; label: string }[];
+  value: V | null;
+  onChange: (v: V) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  return (
+    <View style={styles.field}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+      <Pressable
+        accessibilityRole="combobox"
+        accessibilityLabel={label}
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen((o) => !o)}
+        style={[styles.input, styles.select, open && styles.selectOpen]}>
+        <Text style={[styles.selectText, !selected && styles.selectPlaceholder]} numberOfLines={1}>
+          {selected ? selected.label : placeholder}
+        </Text>
+        <Text style={styles.selectChevron}>{open ? '▴' : '▾'}</Text>
+      </Pressable>
+      {open ? (
+        <View style={styles.selectList} accessibilityRole="list">
+          {options.map((o) => {
+            const on = o.value === value;
+            return (
+              <Pressable
+                key={o.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                onPress={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                style={({ pressed }) => [styles.selectOption, on && styles.selectOptionOn, pressed && styles.pressed]}>
+                <Text style={[styles.selectOptionText, on && styles.selectOptionTextOn]}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function ErrorText({ children }: { children: ReactNode }) {
   if (!children) return null;
   return <Text style={styles.error}>{children}</Text>;
@@ -141,6 +195,16 @@ const styles = StyleSheet.create({
   segmentText: { fontSize: 14, fontWeight: '600', color: '#4A4F59' },
   segmentTextOn: { color: T.ink },
   error: { fontSize: 14, lineHeight: 20, color: T.urgent },
+  select: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  selectOpen: { borderColor: T.accent },
+  selectText: { flex: 1, fontSize: 16, color: T.ink },
+  selectPlaceholder: { color: '#9AA0AA' },
+  selectChevron: { fontSize: 14, color: T.muted },
+  selectList: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 12, padding: 4 },
+  selectOption: { minHeight: 44, borderRadius: 9, paddingHorizontal: 12, justifyContent: 'center' },
+  selectOptionOn: { backgroundColor: T.accentSoft },
+  selectOptionText: { fontSize: 15, color: T.ink },
+  selectOptionTextOn: { fontWeight: '600', color: T.accentDark },
 });
 
 const buttonStyles = StyleSheet.create({

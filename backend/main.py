@@ -2,12 +2,22 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client
 
-from uq_import import PROFILE_LINK, ImportFailed, import_course, parse_pasted_table, parse_profile
+from uq_import import (
+    PROFILE_ID,
+    PROFILE_LINK,
+    ImportFailed,
+    describe_term,
+    import_course,
+    parse_pasted_table,
+    parse_profile,
+    parse_uploaded_profile,
+    term_code,
+)
 
 # Load .env from the Trajectory folder (one level above this file),
 # so the server works no matter which folder you start it from.
@@ -121,4 +131,42 @@ def import_html_endpoint(req: HtmlRequest):
     except ImportFailed as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     course.code = code
+    return course.to_dict()
+
+
+MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+
+
+@app.post("/import-file")
+async def import_file_endpoint(
+    file: UploadFile = File(description="A course profile saved as a PDF, or the page saved as HTML."),
+    year: int | None = Form(default=None, ge=2015, le=2100),
+    semester: int | None = Form(default=None, ge=1, le=2),
+):
+    """Read a course profile the user downloaded and uploaded during onboarding.
+
+    The course code comes from the file itself. When year and semester are
+    given, a profile for a different semester is turned away so its dates
+    don't end up in the wrong plan.
+    """
+    data = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="That file is too big. Course profiles are usually under 2 MB.")
+    if not data:
+        raise HTTPException(status_code=422, detail="That file is empty.")
+    try:
+        course = parse_uploaded_profile(data, file.filename or "")
+    except ImportFailed as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    if not course.code:
+        raise HTTPException(status_code=422, detail="Couldn't tell which course this profile is for.")
+
+    ident = PROFILE_ID.search(course.profile_url)
+    if ident and year and semester and ident.group(3) != term_code(year, semester):
+        raise HTTPException(
+            status_code=422,
+            detail=f"This {course.code} profile is for {describe_term(ident.group(3))}, "
+            f"but you're planning {describe_term(term_code(year, semester))}. "
+            "Download this semester's profile instead.",
+        )
     return course.to_dict()

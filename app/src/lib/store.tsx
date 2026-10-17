@@ -161,7 +161,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       async saveImportedCourse(imported) {
         const id = requireUser();
         const semester = profile?.semester ?? '2026 S2';
-        const name = (imported.title ?? '').replace(new RegExp(`^${imported.code}\\s*`), '').trim();
+        // Profiles title themselves "STAT2201 Name" or "Name (STAT2201)"; keep just the name.
+        const name = (imported.title ?? '')
+          .replace(new RegExp(`^${imported.code}\\s*|\\s*\\(${imported.code}\\)$`, 'g'), '')
+          .trim();
         const course = check(
           await supabase
             .from('courses')

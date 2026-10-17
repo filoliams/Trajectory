@@ -24,7 +24,9 @@ pycparser==3.11
 pydantic==2.14.1
 pydantic_core==2.50.1
 PyJWT==2.15.1
+pypdf==6.21.1
 python-dotenv==1.2.4
+python-multipart==0.0.32
 realtime==2.32.0
 soupsieve==3.0.3
 starlette==1.8.0

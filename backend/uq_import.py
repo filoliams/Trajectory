@@ -11,6 +11,7 @@ Flow:
 
 from __future__ import annotations
 
+import io
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timedelta, timezone
@@ -184,7 +185,8 @@ def _expand_row(name: str, category: str, weight: float, due_text: str, is_hurdl
             **base,
         )]
 
-    stamps = _all_datetimes(due_text)
+    # A window like "14/09/2026 - 18/09/2026" is one task due at the end of the window, not two.
+    stamps = _all_datetimes(DATE_RANGE.sub(lambda m: m.group(2), due_text))
     if len(stamps) == 1:
         return [ImportedAssessment(name=name, weight=weight, due=stamps[0].isoformat(), **base)]
     if len(stamps) > 1:
@@ -358,3 +360,156 @@ def parse_pasted_table(text: str, code: str, sem_start: date | None = None) -> I
 
     return ImportedCourse(code=code, title=None, profile_url="", semester_start=None,
                           semester_end=None, assessments=assessments)
+
+
+# ---------- uploaded files ----------
+
+# A profile names itself like "STAT2201-62023-7660" (course, offering, term).
+PROFILE_ID = re.compile(r"\b([A-Z]{4}\d{4})-(\d+)-(\d{4})\b")
+PROFILE_BASE = "https://course-profiles.uq.edu.au/course-profiles/"
+STUDY_PERIOD = re.compile(
+    r"Semester\s+(\d),\s*(\d{4})\s*\(\s*(\d{1,2}/\d{1,2}/\d{4})\s*[-–]\s*(\d{1,2}/\d{1,2}/\d{4})\s*\)"
+)
+DETAIL_WEIGHT = re.compile(r"^Weight\s+(.*)$")
+
+
+def describe_term(term: str) -> str:
+    """'7660' → 'Semester 2, 2026'. Summer and other terms fall back to the code."""
+    year, kind = int(term[:2]) + 1950, term[2:]
+    return {"20": f"Semester 1, {year}", "60": f"Semester 2, {year}"}.get(kind, f"term {term}")
+
+
+def _pdf_lines(data: bytes) -> list[str]:
+    from pypdf import PdfReader
+    from pypdf.errors import PdfReadError
+
+    try:
+        reader = PdfReader(io.BytesIO(data))
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    except (PdfReadError, ValueError) as exc:
+        raise ImportFailed("Couldn't open that PDF. Try saving the course profile again.") from exc
+    return [line.replace("\xa0", " ").strip() for line in text.split("\n") if line.strip()]
+
+
+def _pdf_title(lines: list[str], code: str) -> str | None:
+    """The heading is 'COURSE PROFILE', then the name, ending '(STAT2201)'; it may wrap."""
+    for i, line in enumerate(lines):
+        if line.endswith(f"({code})"):
+            start = i
+            while start > 0 and lines[start - 1] != "COURSE PROFILE" and i - start < 3:
+                start -= 1
+            return " ".join(lines[start:i + 1])
+    return None
+
+
+def _pdf_name_start(lines: list[str], mode: int) -> int:
+    """Where a task's name starts: the line above "Mode", plus the line before
+    that when the name wrapped (it then starts lowercase or with "(", or the
+    line above leaves a bracket open)."""
+    start = mode - 1
+    while start > 0 and mode - start < 3:
+        name, above = lines[start], lines[start - 1]
+        wrapped = name[:1].islower() or name.startswith("(") or above.count("(") > above.count(")")
+        if not wrapped or above == "Assessment details":
+            break
+        start -= 1
+    return start
+
+
+DUE_STOPS = ("Other conditions", "Learning", "Task description", "Assessment security", "Hurdle requirements")
+
+
+def _pdf_due_text(lines: list[str]) -> str:
+    """The "Due date" field, which ends at the next field label. If it holds no
+    date (a two-column layout can push it further down), the first dated lines
+    before "Other conditions" are added."""
+    due, rest = [], []
+    for i, line in enumerate(lines):
+        if line.startswith(DUE_STOPS):
+            rest = lines[i:]
+            break
+        due.append(line)
+    text = " ".join(due).removeprefix("Due date").strip()
+    if not DATE_TIME.search(text):
+        for line in rest:
+            if line.startswith("Other conditions"):
+                break
+            if DATE_TIME.search(line):
+                text += " " + line
+    return text
+
+
+def parse_profile_pdf(data: bytes) -> ImportedCourse:
+    """Read a course profile saved as a PDF from the browser.
+
+    The summary table's columns get jumbled when a PDF is turned back into
+    text, so this reads the "Assessment details" section instead, where each
+    task is laid out as:
+        <task name> / Mode … / Category … / Weight 25% / Due date … / Task description
+    """
+    lines = _pdf_lines(data)
+    if not lines:
+        raise ImportFailed("That PDF has no readable text. Save the course profile from your browser as a PDF instead of scanning it.")
+    text = "\n".join(lines)
+
+    ident = PROFILE_ID.search(text)
+    code_match = ident or re.search(r"\(([A-Z]{4}\d{4})\)", text)
+    code = code_match.group(1) if code_match else ""
+    url = PROFILE_BASE + ident.group(0) if ident else ""
+
+    period = STUDY_PERIOD.search(text)
+    sem_start = _parse_date(period.group(3)) if period else None
+    sem_end = _parse_date(period.group(4)) if period else None
+
+    # Each task's block runs from its "Mode" line to the next task's name.
+    modes = [
+        i for i in range(1, len(lines) - 2)
+        if lines[i].startswith("Mode") and lines[i + 1].startswith("Category") and DETAIL_WEIGHT.match(lines[i + 2])
+    ]
+    starts = [_pdf_name_start(lines, i) for i in modes]
+    assessments: list[ImportedAssessment] = []
+    for k, mode in enumerate(modes):
+        end = starts[k + 1] if k + 1 < len(starts) else len(lines)
+        block = lines[mode:end]
+        if "Course grading" in block:  # the last task's block stops where the grading section starts
+            block = block[:block.index("Course grading")]
+        name = " ".join(lines[starts[k]:mode])
+        category = block[1].removeprefix("Category").strip()
+        wm = WEIGHT.search(block[2])
+        weight = float(wm.group(1)) if wm else 0.0
+        due_text = _pdf_due_text(block[3:])
+        is_hurdle = any(line == "Hurdle" or line.startswith("Hurdle requirements") for line in block)
+        assessments.extend(_expand_row(name, category, weight, due_text, is_hurdle, sem_start))
+
+    if not assessments:
+        if "COURSE PROFILE" in text or code:
+            raise ImportFailed(
+                "This PDF doesn't include the assessments. Open the Assessment tab on the course profile, "
+                "then save it as a PDF again."
+            )
+        raise ImportFailed("This doesn't look like a UQ course profile.")
+
+    return ImportedCourse(
+        code=code,
+        title=_pdf_title(lines, code) if code else None,
+        profile_url=url,
+        semester_start=sem_start.isoformat() if sem_start else None,
+        semester_end=sem_end.isoformat() if sem_end else None,
+        assessments=assessments,
+    )
+
+
+def parse_uploaded_profile(data: bytes, filename: str = "") -> ImportedCourse:
+    """Read a course profile the user downloaded: a PDF, or the page saved as HTML."""
+    if data[:5] == b"%PDF-":
+        return parse_profile_pdf(data)
+    if filename.lower().endswith((".htm", ".html")) or b"<html" in data[:4096].lower():
+        html = data.decode("utf-8", errors="replace")
+        ident = PROFILE_ID.search(html)
+        url = PROFILE_BASE + ident.group(0) if ident else ""
+        course = parse_profile(html, url)
+        if not course.code:
+            title_code = re.search(r"\(([A-Z]{4}\d{4})\)", course.title or "")
+            course.code = title_code.group(1) if title_code else ""
+        return course
+    raise ImportFailed("Upload the course profile as a PDF or a saved web page (.html).")
