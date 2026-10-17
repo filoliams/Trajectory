@@ -20,7 +20,14 @@ export type Assessment = {
   note: string | null;
 };
 
-export type Topic = { name: string; level: Level; evidence: string };
+export type Topic = {
+  id: string;
+  courseId: string;
+  name: string;
+  week: string | null; // e.g. "Week 3", from the course profile
+  hasNotes: boolean;
+  imported: boolean;
+};
 
 export type Course = {
   id: string;
@@ -29,7 +36,7 @@ export type Course = {
   semester: string;
   level: Level; // from notes analysis, Phase 4; 'none' until then
   assessments: Assessment[];
-  topics: Topic[];
+  topics: Topic[]; // in course order
 };
 
 // ---------- database rows ----------
@@ -47,6 +54,16 @@ export type AssessmentRow = {
   source: string | null;
   needs_review: boolean | null;
   note: string | null;
+};
+
+export type TopicRow = {
+  id: number;
+  course_id: number;
+  name: string;
+  week: string | null;
+  position: number;
+  has_notes: boolean;
+  source: string;
 };
 
 export type CourseRow = {
@@ -86,7 +103,18 @@ export function assessmentFromRow(r: AssessmentRow): Assessment {
   };
 }
 
-export function courseFromRow(r: CourseRow): Course {
+export function topicFromRow(r: TopicRow): Topic {
+  return {
+    id: String(r.id),
+    courseId: String(r.course_id),
+    name: r.name,
+    week: r.week,
+    hasNotes: !!r.has_notes,
+    imported: r.source === 'imported',
+  };
+}
+
+export function courseFromRow(r: CourseRow, topics: TopicRow[] = []): Course {
   return {
     id: String(r.id),
     code: r.code,
@@ -94,6 +122,6 @@ export function courseFromRow(r: CourseRow): Course {
     semester: r.semester ?? '',
     level: 'none',
     assessments: (r.assessments ?? []).map(assessmentFromRow),
-    topics: [],
+    topics: topics.filter((t) => t.course_id === r.id).map(topicFromRow),
   };
 }

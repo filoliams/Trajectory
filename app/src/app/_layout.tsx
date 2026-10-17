@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { SyncStatus } from '@/components/sync-status';
 import { T } from '@/constants/trajectory';
 import { StoreProvider, useStore } from '@/lib/store';
 
@@ -10,6 +11,7 @@ export default function RootLayout() {
     <StoreProvider>
       <StatusBar style="dark" />
       <Routes />
+      <SyncStatus />
     </StoreProvider>
   );
 }
@@ -45,7 +47,6 @@ function Routes() {
         <Stack.Screen name="course/[code]" />
         <Stack.Screen name="course/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="course/manage" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="course/profile" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="assessment/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="assessment/new" options={{ presentation: 'modal' }} />
       </Stack.Protected>

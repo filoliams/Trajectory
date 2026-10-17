@@ -89,6 +89,11 @@ export function whyLabel(a: Assessment, now: number): string {
 
 export type PlanItem = { course: Course; assessment: Assessment };
 
+/** Hours of an assessment scheduled for today (at most 1.5h per item). */
+export function todayHours(a: Assessment): number {
+  return Math.min(a.hoursLeft, 1.5);
+}
+
 /** Today's plan: highest-priority items across all courses that fit in the hours available. */
 export function todaysPlan(all: Course[], now: number, hoursAvailable = 4): PlanItem[] {
   const ranked = all
@@ -97,7 +102,7 @@ export function todaysPlan(all: Course[], now: number, hoursAvailable = 4): Plan
   const plan: PlanItem[] = [];
   let used = 0;
   for (const item of ranked) {
-    const slot = Math.min(item.assessment.hoursLeft, 1.5);
+    const slot = todayHours(item.assessment);
     if (used + slot > hoursAvailable) continue;
     plan.push(item);
     used += slot;

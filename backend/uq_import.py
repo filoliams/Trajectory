@@ -54,6 +54,12 @@ class ImportedAssessment:
 
 
 @dataclass
+class ImportedTopic:
+    name: str
+    week: str | None = None  # e.g. "Week 3", from the profile's learning period
+
+
+@dataclass
 class ImportedCourse:
     code: str
     title: str | None
@@ -61,6 +67,7 @@ class ImportedCourse:
     semester_start: str | None
     semester_end: str | None
     assessments: list[ImportedAssessment] = field(default_factory=list)
+    topics: list[ImportedTopic] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -214,6 +221,47 @@ def _expand_row(name: str, category: str, weight: float, due_text: str, is_hurdl
     )]
 
 
+def _learning_topics(soup: BeautifulSoup) -> list[ImportedTopic]:
+    """Weekly topics from the "Learning activities" table (Learning period / Activity type / Topic).
+
+    Rows spanning "Multiple weeks" describe a kind of class ("Lectures",
+    "Applied Classes") rather than a topic, so only single-week rows count.
+    The learning period cell spans several rows when one week has several
+    activities, so the last one seen carries down.
+    """
+    section = soup.find(id="learning-activities")
+    table = section.find("table") if section else None
+    if table is None:
+        return []
+    topics: list[ImportedTopic] = []
+    seen: set[str] = set()
+    period = ""
+    for row in table.find_all("tr"):
+        cells = row.find_all("td")
+        if not cells:
+            continue
+        period_cell = row.find("td", attrs={"data-title": "Learning period"})
+        topic_cell = row.find("td", attrs={"data-title": "Topic"})
+        if period_cell is None and len(cells) == 3:
+            period_cell = cells[0]
+        if topic_cell is None:
+            topic_cell = cells[-1]
+        if period_cell is not None:
+            period = period_cell.get_text(" ", strip=True)
+        if not period or "multiple weeks" in period.lower():
+            continue
+        # The topic's title is its first bold line, or its first line when there's no bold.
+        strong = topic_cell.find("strong")
+        lines = _cell_lines(strong) if strong else _cell_lines(topic_cell)
+        name = re.sub(r"\s+", " ", lines[0] if lines else "").strip(" :-–")
+        if not name or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        wm = WEEK.search(period)
+        topics.append(ImportedTopic(name=name, week=f"Week {wm.group(1)}" if wm else None))
+    return topics
+
+
 def parse_profile(html: str, url: str) -> ImportedCourse:
     soup = BeautifulSoup(html, "html.parser")
     code_match = PROFILE_LINK.search(url)
@@ -261,6 +309,7 @@ def parse_profile(html: str, url: str) -> ImportedCourse:
         semester_start=sem_start.isoformat() if sem_start else None,
         semester_end=sem_end.isoformat() if sem_end else None,
         assessments=assessments,
+        topics=_learning_topics(soup),
     )
 
 

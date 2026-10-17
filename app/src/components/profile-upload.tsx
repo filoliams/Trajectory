@@ -18,6 +18,7 @@ type Upload = {
 
 const ACCEPT = ['application/pdf', 'text/html'];
 const ACCEPT_EXT = /\.(pdf|html?)$/i;
+const OFFLINE_UPLOAD = "You're offline. Connect to the internet to upload course profiles.";
 
 /**
  * A drop box for course profiles. Tap to choose files (or drag them in on a
@@ -25,7 +26,12 @@ const ACCEPT_EXT = /\.(pdf|html?)$/i;
  * saved. Several files can go in at once.
  */
 export function ProfileUpload({ profileName }: { profileName: string }) {
-  const { profile, saveImportedCourse } = useStore();
+  const { profile, saveImportedCourse, online } = useStore();
+  // Reading a profile happens on our server, so uploads need the internet.
+  const onlineRef = useRef(online);
+  useEffect(() => {
+    onlineRef.current = online;
+  }, [online]);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [dragging, setDragging] = useState(false);
   const nextId = useRef(1);
@@ -45,6 +51,7 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
       queue.current = queue.current.then(async () => {
         try {
           if (!ACCEPT_EXT.test(file.name) && !ACCEPT.includes(file.mimeType ?? '')) throw new Error('Upload a PDF or a saved web page (.html).');
+          if (!onlineRef.current) throw new Error(OFFLINE_UPLOAD);
           const imported = await importFromFile(file, year, semester);
           await saveImportedCourse(imported);
           update(id, {
@@ -54,13 +61,16 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
             review: imported.assessments.filter((a) => a.needs_review).length,
           });
         } catch (e) {
-          update(id, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
+          const message = e instanceof Error ? e.message : String(e);
+          const lostConnection = /failed to fetch|network request failed|load failed/i.test(message);
+          update(id, { status: 'failed', error: lostConnection ? OFFLINE_UPLOAD : message });
         }
       });
     }
   }
 
   async function pick() {
+    if (!online) return;
     const result = await DocumentPicker.getDocumentAsync({ type: ACCEPT, multiple: true, copyToCacheDirectory: true });
     if (result.canceled) return;
     add(result.assets.map((a) => ({ name: a.name, uri: a.uri, mimeType: a.mimeType, file: a.file })));
@@ -92,7 +102,7 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
       el.removeEventListener('dragleave', leave);
       el.removeEventListener('drop', drop);
     };
-    // add() only reads refs and the semester, which can't change during onboarding.
+    // add() only reads refs and the semester, which can't change while the box is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -104,13 +114,17 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
         ref={zone}
         accessibilityRole="button"
         accessibilityLabel={`Upload ${profileName}s`}
+        accessibilityState={{ disabled: !online }}
+        disabled={!online}
         onPress={pick}
-        style={({ pressed }) => [styles.zone, dragging && styles.zoneOn, pressed && styles.zonePressed]}>
+        style={({ pressed }) => [styles.zone, dragging && styles.zoneOn, pressed && styles.zonePressed, !online && styles.zoneOffline]}>
         <View style={styles.icon}>
           <Text style={styles.iconText}>↑</Text>
         </View>
         <Text style={styles.zoneTitle}>{dragging ? 'Drop to upload' : web ? `Drop your ${profileName}s here` : `Upload your ${profileName}s`}</Text>
-        <Text style={styles.zoneBody}>{web ? 'or click to choose files' : 'Tap to choose files'} · PDF or .html</Text>
+        <Text style={styles.zoneBody}>
+          {online ? `${web ? 'or click to choose files' : 'Tap to choose files'} · PDF or .html` : OFFLINE_UPLOAD}
+        </Text>
       </Pressable>
 
       {uploads.map((u) => (
@@ -150,6 +164,7 @@ const styles = StyleSheet.create({
   },
   zoneOn: { borderColor: T.accent, backgroundColor: T.accentSoft },
   zonePressed: { opacity: 0.8 },
+  zoneOffline: { opacity: 0.6 },
   icon: { width: 44, height: 44, borderRadius: 22, backgroundColor: T.accentSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   iconText: { fontSize: 22, fontWeight: '700', color: T.accent },
   zoneTitle: { fontSize: 16, fontWeight: '600', color: T.ink, textAlign: 'center' },

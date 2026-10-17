@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, use
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, ErrorText, Field, Segmented, Select } from '@/components/form';
+import { NotesGuide } from '@/components/notes-guide';
 import { ProfileGuide } from '@/components/profile-guide';
 import { ProfileUpload } from '@/components/profile-upload';
 import { CURRENT_YEAR } from '@/config';
@@ -16,7 +17,7 @@ const SIDE_BY_SIDE = 820;
 export default function OnboardingScreen() {
   const { profile, courses, setSemester, finishOnboarding, addCourseManually, signOut } = useStore();
   const { width } = useWindowDimensions();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [semester, setSemesterChoice] = useState(profile?.semester ?? `${CURRENT_YEAR} S2`);
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
@@ -74,9 +75,10 @@ export default function OnboardingScreen() {
         <ScrollView contentContainerStyle={[styles.content, wide && styles.contentWide]} keyboardShouldPersistTaps="handled">
           <View style={styles.progress}>
             <View style={[styles.bar, styles.barOn]} />
-            <View style={[styles.bar, step === 2 && styles.barOn]} />
+            <View style={[styles.bar, step >= 2 && styles.barOn]} />
+            <View style={[styles.bar, step === 3 && styles.barOn]} />
           </View>
-          <Text style={styles.step}>Step {step} of 2</Text>
+          <Text style={styles.step}>Step {step} of 3</Text>
 
           {step === 1 ? (
             <>
@@ -97,7 +99,7 @@ export default function OnboardingScreen() {
                 <Button title="Sign out" variant="ghost" onPress={signOut} />
               </View>
             </>
-          ) : (
+          ) : step === 2 ? (
             <>
               <Text style={styles.title}>Add your courses</Text>
               <Text style={styles.body}>
@@ -149,11 +151,24 @@ export default function OnboardingScreen() {
               <View style={styles.footer}>
                 <Button
                   title={courses.length ? `Continue with ${courses.length} course${courses.length === 1 ? '' : 's'}` : 'Continue'}
-                  onPress={finish}
-                  loading={busy}
+                  onPress={() => setStep(3)}
                   disabled={!courses.length}
                 />
                 <Button title="Back" variant="ghost" onPress={() => setStep(1)} />
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>Your notes</Text>
+              <Text style={styles.body}>
+                Trajectory checks your notes against each course's topics, so you can see what you've covered and what still
+                needs notes.
+              </Text>
+              <NotesGuide />
+              <ErrorText>{error}</ErrorText>
+              <View style={styles.footer}>
+                <Button title="Finish setup" onPress={finish} loading={busy} />
+                <Button title="Back" variant="ghost" onPress={() => setStep(2)} />
               </View>
             </>
           )}

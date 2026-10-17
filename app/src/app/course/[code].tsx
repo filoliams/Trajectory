@@ -3,6 +3,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LevelChip, StatusChip } from '@/components/chips';
+import { TopicList } from '@/components/topic-list';
 import { T, mono } from '@/constants/trajectory';
 import type { Assessment } from '@/data/courses';
 import {
@@ -43,8 +44,6 @@ export default function CourseDetailScreen() {
   const finished = finishedOrPast(course.assessments, now);
   const workLeft = [...ranked, ...noDate].reduce((sum, a) => sum + a.hoursLeft, 0);
   const dueThisWeek = ranked.filter((a) => daysUntil(a.due, now) < 7).length;
-  const levelOrder = { weak: 0, okay: 1, strong: 2, none: 3 };
-  const topics = [...course.topics].sort((a, b) => levelOrder[a.level] - levelOrder[b.level]);
   const openEdit = (a: Assessment) => router.push({ pathname: '/assessment/[id]', params: { id: a.id } });
 
   return (
@@ -155,32 +154,7 @@ export default function CourseDetailScreen() {
           </View>
         ) : null}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>Topics</Text>
-            {topics.length > 0 && <Text style={styles.metaText}>From your notes</Text>}
-          </View>
-          {topics.length > 0 ? (
-            <View style={styles.topicList}>
-              {topics.map((t, i) => (
-                <View key={t.name} style={[styles.topic, i < topics.length - 1 && styles.topicDivider]}>
-                  <View style={styles.topicText}>
-                    <Text style={styles.topicName}>{t.name}</Text>
-                    <Text style={styles.metaText}>{t.evidence}</Text>
-                  </View>
-                  <LevelChip level={t.level} />
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.noNotes}>
-              <Text style={styles.topicName}>No notes for this course yet</Text>
-              <Text style={styles.metaText}>
-                Linking GoodNotes, OneNote or Obsidian comes in a later update. Topic readings will show here.
-              </Text>
-            </View>
-          )}
-        </View>
+        <TopicList course={course} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -261,11 +235,4 @@ const styles = StyleSheet.create({
   quickText: { fontSize: 13, fontWeight: '600', color: T.ink },
   pressed: { opacity: 0.7 },
   simpleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14 },
-
-  topicList: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 16 },
-  topic: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, paddingVertical: 11, paddingHorizontal: 14 },
-  topicDivider: { borderBottomWidth: 1, borderBottomColor: T.lineSoft },
-  topicText: { flex: 1, gap: 1 },
-  topicName: { fontSize: 15, fontWeight: '600', color: T.ink },
-  noNotes: { backgroundColor: T.surface, borderWidth: 1, borderStyle: 'dashed', borderColor: '#C9CDD4', borderRadius: 16, padding: 16, gap: 4 },
 });

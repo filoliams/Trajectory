@@ -183,3 +183,43 @@ def test_pasted_garbage():
     from uq_import import parse_pasted_table
     with pytest.raises(ImportFailed):
         parse_pasted_table("hello world", "STAT2201")
+
+
+# The "Learning activities" table, as UQ lays it out: a learning period cell can
+# span several rows, and "Multiple weeks" rows describe classes, not topics.
+LEARNING_ACTIVITIES = """
+<div id="learning-activities"><table><tbody>
+  <tr>
+    <td data-title="Learning period"><div><strong>Multiple weeks</strong><p>From Week 1 To Week 13</p></div></td>
+    <td data-title="Activity type">Lecture</td>
+    <td data-title="Topic"><p><strong>Lectures</strong><br></p><p>Two lectures a week.</p></td>
+  </tr>
+  <tr>
+    <td data-title="Learning period" rowspan="2"><div><strong>Week 1</strong><p>(27 Jul - 02 Aug)</p></div></td>
+    <td data-title="Activity type">Lecture</td>
+    <td data-title="Topic"><p><strong>Visualising and summarising data</strong></p><p>Histograms, box plots.</p></td>
+  </tr>
+  <tr>
+    <td data-title="Activity type">Tutorial</td>
+    <td data-title="Topic"><p>Visualising and summarising data</p></td>
+  </tr>
+  <tr>
+    <td data-title="Learning period"><div><strong>Week 2</strong><p>(03 Aug - 09 Aug)</p></div></td>
+    <td data-title="Activity type">Lecture</td>
+    <td data-title="Topic"><p>Random variables</p></td>
+  </tr>
+</tbody></table></div>
+"""
+
+
+def test_reads_weekly_topics():
+    html = SAMPLE_PROFILE.replace("</body>", LEARNING_ACTIVITIES + "</body>")
+    course = parse_profile(html, PROFILE_URL)
+    assert [(t.name, t.week) for t in course.topics] == [
+        ("Visualising and summarising data", "Week 1"),
+        ("Random variables", "Week 2"),
+    ]
+
+
+def test_no_learning_activities_means_no_topics():
+    assert parse_profile(SAMPLE_PROFILE, PROFILE_URL).topics == []

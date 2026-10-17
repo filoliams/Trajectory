@@ -4,17 +4,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from supabase import create_client
 
 from uq_import import (
     PROFILE_ID,
-    PROFILE_LINK,
     ImportFailed,
     describe_term,
-    import_course,
-    parse_pasted_table,
-    parse_profile,
     parse_uploaded_profile,
     term_code,
 )
@@ -58,80 +53,6 @@ def db_check():
         # Show the real reason (e.g. table missing, bad key) instead of a bare 500
         raise HTTPException(status_code=500, detail=f"Database check failed: {exc}")
     return {"database": "connected", "rows": result.data}
-
-
-class ImportRequest(BaseModel):
-    code: str = Field(examples=["STAT2201"])
-    year: int = Field(default=2026, ge=2015, le=2100)
-    semester: int = Field(default=2, ge=1, le=2)
-    profile_url: str | None = Field(
-        default=None,
-        description="Optional. A course-profiles.uq.edu.au link, if the automatic lookup fails.",
-    )
-
-
-@app.post("/import-course")
-def import_course_endpoint(req: ImportRequest):
-    """Read a UQ course profile and return its assessments.
-
-    Nothing is saved here: the app shows the results for review, then saves
-    them to Supabase under the signed-in user's account.
-    """
-    try:
-        course = import_course(req.code, req.year, req.semester, req.profile_url)
-    except ImportFailed as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-    return course.to_dict()
-
-
-class PasteRequest(BaseModel):
-    code: str = Field(examples=["STAT2201"])
-    text: str = Field(description="The Assessment summary table, copied from the course profile page.")
-
-
-@app.post("/import-text")
-def import_text_endpoint(req: PasteRequest):
-    """Read an assessment table the user copied from a course profile and pasted in.
-
-    UQ's course-profile site blocks automated downloads, so this is the reliable path.
-    """
-    code = req.code.strip().upper()
-    try:
-        course = parse_pasted_table(req.text, code)
-    except ImportFailed as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-    return course.to_dict()
-
-
-class HtmlRequest(BaseModel):
-    code: str = Field(examples=["STAT2201"])
-    url: str = Field(description="The course-profiles.uq.edu.au address the page was opened at.")
-    html: str = Field(max_length=5_000_000, description="The course profile page's HTML, read in the app.")
-
-
-@app.post("/import-html")
-def import_html_endpoint(req: HtmlRequest):
-    """Read a course profile page the user opened inside the app.
-
-    The app shows the profile in a built-in browser, so UQ serves it like any
-    other visit; the app then sends the page here for the same parsing as
-    /import-course.
-    """
-    code = req.code.strip().upper()
-    match = PROFILE_LINK.match(req.url)
-    if not match:
-        raise HTTPException(status_code=422, detail="That page isn't a UQ course profile.")
-    if match.group(1) != code:
-        raise HTTPException(
-            status_code=422,
-            detail=f"That profile is for {match.group(1)}, not {code}. Open {code}'s course profile instead.",
-        )
-    try:
-        course = parse_profile(req.html, req.url)
-    except ImportFailed as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-    course.code = code
-    return course.to_dict()
 
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024

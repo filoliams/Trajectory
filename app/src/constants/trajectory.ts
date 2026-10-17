@@ -17,6 +17,7 @@ export const T = {
   warnBar: '#C2560F',
   warnSoft: '#FCEBDD',
   neutralSoft: '#ECEDF0',
+  done: '#2F9A44',
   onDarkMuted: '#B8BCC6',
 } as const;
 
