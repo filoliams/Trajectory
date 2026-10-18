@@ -20,21 +20,21 @@ export function PressScale({
     <AnimatedPressable
       {...props}
       onHoverIn={(e) => {
-        hovered.value = true;
-        scale.value = withSpring(1.015, SPRING);
+        hovered.set(true);
+        scale.set(withSpring(1.015, SPRING));
         onHoverIn?.(e);
       }}
       onHoverOut={(e) => {
-        hovered.value = false;
-        scale.value = withSpring(1, SPRING);
+        hovered.set(false);
+        scale.set(withSpring(1, SPRING));
         onHoverOut?.(e);
       }}
       onPressIn={(e) => {
-        scale.value = withSpring(0.97, SPRING);
+        scale.set(withSpring(0.97, SPRING));
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        scale.value = withSpring(hovered.value ? 1.015 : 1, SPRING);
+        scale.set(withSpring(hovered.get() ? 1.015 : 1, SPRING));
         onPressOut?.(e);
       }}
       style={[style, anim]}

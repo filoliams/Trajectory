@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { COMPANIONS, Playground } from '@/components/pixel-companion';
-import { T, font, mono, monoBold, radius } from '@/constants/trajectory';
+import { T, font, monoBold, radius } from '@/constants/trajectory';
 import { clock, minutesLabel, type CompanionKind, type StudyMode } from '@/lib/study-session';
 
 /** A progress bar whose fill glides to its new width. */
