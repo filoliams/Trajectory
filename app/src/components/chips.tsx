@@ -1,9 +1,9 @@
 import { StyleSheet, Text } from 'react-native';
 
 import type { Level, Status } from '@/data/courses';
-import { T } from '@/constants/trajectory';
+import { T, radius } from '@/constants/trajectory';
 
-const LEVEL_LABEL: Record<Level, string> = { weak: 'Weak', okay: 'Okay', strong: 'Strong', none: 'No notes' };
+const LEVEL_LABEL: Record<Level, string> = { weak: 'Weak', okay: 'Okay', strong: 'Strong', none: 'No topics' };
 
 export function LevelChip({ level }: { level: Level }) {
   return <Text style={[styles.chip, levelStyles[level]]}>{LEVEL_LABEL[level]}</Text>;
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   status: {
     fontSize: 12,
     fontWeight: '600',
-    borderRadius: 6,
+    borderRadius: radius.sm,
     paddingHorizontal: 7,
     paddingVertical: 2,
     overflow: 'hidden',

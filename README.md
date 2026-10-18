@@ -43,9 +43,10 @@ study-tracker/
 
 ## Roadmap
 
-- [ ] Backend setup
-- [ ] Course and assessment data model
-- [ ] Notes import (Obsidian first, then OneNote and GoodNotes)
-- [ ] AI progress analysis
-- [ ] Study time recommendations
-- [ ] Frontend / onboarding flow
+- [x] Backend setup
+- [x] Course and assessment data model
+- [x] Frontend / onboarding flow
+- [x] Notes import from Markdown and text files (Obsidian vaults, exported notes)
+- [x] Study time recommendations (daily plan sized by your study hours; courses with weaker notes get more time)
+- [ ] Notes import straight from cloud folders (OneDrive, Google Drive) and GoodNotes PDFs
+- [ ] AI progress analysis (today: notes coverage of each course's topics)

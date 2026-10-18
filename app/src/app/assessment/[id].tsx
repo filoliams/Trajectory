@@ -21,7 +21,7 @@ export default function EditAssessmentScreen() {
   }
 
   return (
-    <Sheet title={course.code}>
+    <Sheet title={`Edit ${course.code} assessment`}>
       <AssessmentForm
         initial={assessment}
         onSave={async (input) => {

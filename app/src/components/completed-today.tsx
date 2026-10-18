@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { T, mono } from '@/constants/trajectory';
+import { T, mono, radius } from '@/constants/trajectory';
 import { minutesLabel } from '@/lib/study-session';
 
 export type Finished = { id: string; name: string; code: string; studied: number };
@@ -51,7 +51,7 @@ export function CompletedToday({ items }: { items: Finished[] }) {
 }
 
 const styles = StyleSheet.create({
-  doneBox: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 18, overflow: 'hidden' },
+  doneBox: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, overflow: 'hidden' },
   doneHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
   doneCheck: { width: 22, height: 22, borderRadius: 11, backgroundColor: T.done, alignItems: 'center', justifyContent: 'center' },
   doneCheckText: { color: T.onAccent, fontSize: 13, fontWeight: '700' },

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Segmented } from '@/components/form';
-import { T } from '@/constants/trajectory';
+import { T, radius } from '@/constants/trajectory';
 
 type NotesApp = 'obsidian' | 'goodnotes' | 'onenote';
 type Step = { title: string; body: string };
@@ -97,8 +97,8 @@ export function NotesGuide() {
           <Text style={styles.stepBody}>{ORGANISE[app]} That’s how Trajectory matches your notes to topics.</Text>
         </View>
         <Text style={styles.small}>
-          Connecting the cloud folder to Trajectory comes in a later update. Until then, tap the notes marker next to each topic
-          on a course page.
+          On a course page, tap Import notes and choose your Markdown or text notes to tick off the topics they cover. You can also
+          tap the notes marker next to any topic.
         </Text>
       </View>
 
@@ -126,8 +126,8 @@ function Point({ children }: { children: string }) {
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
   flex: { flex: 1 },
-  card: { gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 16, padding: 16 },
-  cardQuiet: { gap: 4, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong, borderRadius: 16, padding: 14 },
+  card: { gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 16 },
+  cardQuiet: { gap: 4, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong, borderRadius: radius.lg, padding: 14 },
   cardTitle: { fontSize: 15, fontWeight: '700', color: T.ink },
   quietTitle: { fontSize: 14, fontWeight: '700', color: T.ink },
   point: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
@@ -138,6 +138,6 @@ const styles = StyleSheet.create({
   stepMain: { flex: 1, gap: 2 },
   stepTitle: { fontSize: 14, fontWeight: '600', color: T.ink },
   stepBody: { fontSize: 13, lineHeight: 19, color: T.inkSoft },
-  tip: { gap: 2, backgroundColor: T.ground, borderRadius: 12, padding: 12 },
+  tip: { gap: 2, backgroundColor: T.ground, borderRadius: radius.md, padding: 12 },
   small: { fontSize: 12, lineHeight: 17, color: T.muted },
 });

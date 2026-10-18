@@ -1,7 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { T } from '@/constants/trajectory';
+import { T, radius } from '@/constants/trajectory';
 import type { University } from '@/constants/universities';
 
 /** A short numbered guide to downloading a course profile from the university's site. */
@@ -31,7 +31,7 @@ export function ProfileGuide({ university, semesterLabel }: { university: Univer
 }
 
 const styles = StyleSheet.create({
-  card: { gap: 14, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 16, padding: 16 },
+  card: { gap: 14, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 16 },
   title: { fontSize: 15, fontWeight: '700', color: T.ink },
   step: { flexDirection: 'row', gap: 10 },
   num: { width: 22, height: 22, borderRadius: 11, backgroundColor: T.accentSoft, alignItems: 'center', justifyContent: 'center', marginTop: 1 },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { Assessment, Course } from '@/data/courses';
+import type { Assessment, Course, Level } from '@/data/courses';
 import { T } from '@/constants/trajectory';
 
 const DAY_MS = 86_400_000;
@@ -63,6 +63,24 @@ export function percentToGo(course: Course): number {
   return Math.min(100, Math.round(left * 10) / 10);
 }
 
+/** Share (0–1) of the entered weighting that's done, so a half-entered course isn't shown as nearly finished. */
+export function shareDone(course: Course): number {
+  const total = course.assessments.reduce((sum, a) => sum + a.weight, 0);
+  const done = course.assessments.filter((a) => a.status === 'done').reduce((sum, a) => sum + a.weight, 0);
+  return total > 0 ? done / total : 0;
+}
+
+/** How well the student's notes cover the course's topics. */
+export function notesLevel(course: Course): Level {
+  const { topics } = course;
+  if (topics.length === 0) return 'none';
+  const covered = topics.filter((t) => t.hasNotes).length / topics.length;
+  return covered < 0.4 ? 'weak' : covered < 0.75 ? 'okay' : 'strong';
+}
+
+/** Most hours a day one item gets, by notes level: weaker courses get more time. */
+const DAILY_CAP: Record<Level, number> = { weak: 2, none: 1.5, okay: 1.5, strong: 1 };
+
 export function urgencyColor(days: number): string {
   if (days < 2) return T.urgent;
   if (days < 5) return T.warn;
@@ -89,9 +107,9 @@ export function whyLabel(a: Assessment, now: number): string {
 
 export type PlanItem = { course: Course; assessment: Assessment };
 
-/** Hours of an assessment scheduled for today (at most 1.5h per item). */
-export function todayHours(a: Assessment): number {
-  return Math.min(a.hoursLeft, 1.5);
+/** Hours of an assessment scheduled for today (1–2h per item, more for courses with weaker notes). */
+export function todayHours(a: Assessment, course: Course): number {
+  return Math.min(a.hoursLeft, DAILY_CAP[notesLevel(course)]);
 }
 
 /** Today's plan: highest-priority items across all courses that fit in the hours available. */
@@ -102,7 +120,7 @@ export function todaysPlan(all: Course[], now: number, hoursAvailable = 4): Plan
   const plan: PlanItem[] = [];
   let used = 0;
   for (const item of ranked) {
-    const slot = todayHours(item.assessment);
+    const slot = todayHours(item.assessment, item.course);
     if (used + slot > hoursAvailable) continue;
     plan.push(item);
     used += slot;

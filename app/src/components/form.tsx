@@ -9,7 +9,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { T } from '@/constants/trajectory';
+import { T, radius } from '@/constants/trajectory';
 
 export function Field({ label, hint, ...input }: TextInputProps & { label: string; hint?: string }) {
   return (
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderWidth: 1.5,
     borderColor: T.lineStrong,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
     fontSize: 16,
     color: T.ink,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: 16, fontWeight: '600' },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.75 },
-  segmented: { flexDirection: 'row', gap: 4, backgroundColor: T.elevated, borderRadius: 12, padding: 4 },
+  segmented: { flexDirection: 'row', gap: 4, backgroundColor: T.elevated, borderRadius: radius.md, padding: 4 },
   segment: { flex: 1, minHeight: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   segmentOn: { backgroundColor: T.lineStrong },
   segmentText: { fontSize: 14, fontWeight: '600', color: T.muted },
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   selectText: { flex: 1, fontSize: 16, color: T.ink },
   selectPlaceholder: { color: T.placeholder },
   selectChevron: { fontSize: 14, color: T.muted },
-  selectList: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 12, padding: 4 },
+  selectList: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.md, padding: 4 },
   selectOption: { minHeight: 44, borderRadius: 9, paddingHorizontal: 12, justifyContent: 'center' },
   selectOptionOn: { backgroundColor: T.accentSoft },
   selectOptionText: { fontSize: 15, color: T.ink },

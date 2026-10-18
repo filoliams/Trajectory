@@ -34,7 +34,6 @@ export type Course = {
   code: string;
   name: string;
   semester: string;
-  level: Level; // from notes analysis, Phase 4; 'none' until then
   assessments: Assessment[];
   topics: Topic[]; // in course order
 };
@@ -120,7 +119,6 @@ export function courseFromRow(r: CourseRow, topics: TopicRow[] = []): Course {
     code: r.code,
     name: r.name ?? '',
     semester: r.semester ?? '',
-    level: 'none',
     assessments: (r.assessments ?? []).map(assessmentFromRow),
     topics: topics.filter((t) => t.course_id === r.id).map(topicFromRow),
   };

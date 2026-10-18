@@ -29,4 +29,13 @@ export const T = {
 
 export const mono = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
-export const radius = { sm: 8, md: 12, lg: 16, xl: 20 } as const;
+/** sm: chips and tags · md: inputs and small buttons · lg: cards · pill: buttons and badges. */
+export const radius = { sm: 8, md: 14, lg: 20, pill: 999 } as const;
+
+/** One type scale for every screen. */
+export const typo = {
+  display: { fontSize: 38, fontWeight: '800', color: T.ink, letterSpacing: -1.2 },
+  title: { fontSize: 22, fontWeight: '700', color: T.ink, letterSpacing: -0.4 },
+  heading: { fontSize: 18, fontWeight: '700', color: T.ink, letterSpacing: -0.2 },
+  eyebrow: { fontSize: 12, fontWeight: '700', color: T.muted, letterSpacing: 0.8, textTransform: 'uppercase' },
+} as const;

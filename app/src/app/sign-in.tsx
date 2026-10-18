@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, ErrorText, Field, Segmented } from '@/components/form';
-import { T } from '@/constants/trajectory';
+import { T, radius, typo } from '@/constants/trajectory';
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'sign_in' | 'sign_up';
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 16, maxWidth: 480, width: '100%', alignSelf: 'center' },
   brand: { gap: 6, marginBottom: 16 },
-  logo: { fontSize: 36, fontWeight: '700', color: T.ink, letterSpacing: -0.8 },
+  logo: { ...typo.display, fontSize: 48, letterSpacing: -1.8 },
   tagline: { fontSize: 16, color: T.muted },
-  notice: { fontSize: 14, lineHeight: 20, color: T.accentDark, backgroundColor: T.accentSoft, padding: 12, borderRadius: 12, overflow: 'hidden' },
+  notice: { fontSize: 14, lineHeight: 20, color: T.accentDark, backgroundColor: T.accentSoft, padding: 12, borderRadius: radius.md, overflow: 'hidden' },
 });

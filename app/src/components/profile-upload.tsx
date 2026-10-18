@@ -2,7 +2,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { T, mono } from '@/constants/trajectory';
+import { T, mono, radius } from '@/constants/trajectory';
 import { importFromFile, type PickedFile } from '@/lib/api';
 import { parseSemester, useStore } from '@/lib/store';
 
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: T.lineStrong,
@@ -165,11 +165,11 @@ const styles = StyleSheet.create({
   zoneOn: { borderColor: T.accent, backgroundColor: T.accentSoft },
   zonePressed: { opacity: 0.8 },
   zoneOffline: { opacity: 0.6 },
-  icon: { width: 44, height: 44, borderRadius: 22, backgroundColor: T.accentSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  icon: { width: 44, height: 44, borderRadius: radius.lg, backgroundColor: T.accentSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   iconText: { fontSize: 22, fontWeight: '700', color: T.accent },
   zoneTitle: { fontSize: 16, fontWeight: '600', color: T.ink, textAlign: 'center' },
   zoneBody: { fontSize: 13, color: T.muted, textAlign: 'center' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 14, padding: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.md, padding: 12 },
   rowFailed: { borderColor: T.dangerLine },
   rowMain: { flex: 1, gap: 2 },
   rowCode: { fontFamily: mono, fontSize: 14, color: T.ink },

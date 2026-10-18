@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -6,22 +6,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CompletedToday } from '@/components/completed-today';
 import { ProgressBar, StudyTimer } from '@/components/study-timer';
-import { T, mono } from '@/constants/trajectory';
+import { T, mono, radius, typo } from '@/constants/trajectory';
 import type { Status } from '@/data/courses';
 import { countdown, daysUntil, hoursLabel, todayHours, todaysPlan, urgencyColor, whyLabel } from '@/lib/planning';
+import { useDailyHours } from '@/lib/daily-hours';
 import { useStore } from '@/lib/store';
 import { minutesLabel, useStudySession } from '@/lib/study-session';
 
-// Phase 2 makes this a setting.
-const HOURS_AVAILABLE = 4;
 const HOUR_MS = 3_600_000;
 
 export default function TodayScreen() {
   const study = useStudySession();
   const { now } = study;
   const { courses, setStatus } = useStore();
-  const plan = todaysPlan(courses, now, HOURS_AVAILABLE);
-  const plannedHours = plan.reduce((sum, p) => sum + todayHours(p.assessment), 0);
+  const [hoursAvailable] = useDailyHours();
+  // A course page's "Start timer" lands here with the assessment to start.
+  const { start } = useLocalSearchParams<{ start?: string }>();
+  const plan = todaysPlan(courses, now, hoursAvailable);
+  const plannedHours = plan.reduce((sum, p) => sum + todayHours(p.assessment, p.course), 0);
   const dateLabel = new Date(now).toLocaleDateString('en-AU', {
     weekday: 'long',
     day: 'numeric',
@@ -38,7 +40,7 @@ export default function TodayScreen() {
   const all = courses.flatMap((course) =>
     course.assessments.map((assessment) => {
       const studied = study.studiedMs(assessment.id);
-      const target = todayHours(assessment) * HOUR_MS;
+      const target = todayHours(assessment, course) * HOUR_MS;
       return { course, assessment, studied, target, finished: studied > 0 && studied >= target };
     }),
   );
@@ -59,6 +61,14 @@ export default function TodayScreen() {
     if (status === 'not_started') setStatus(id, 'in_progress');
   };
   const next = todo[0];
+
+  const startTarget = start ? all.find((x) => x.assessment.id === start) : undefined;
+  useEffect(() => {
+    if (!start) return;
+    if (startTarget) startOn(startTarget.assessment.id, startTarget.assessment.status);
+    router.replace('/'); // drop the param so a reload doesn't start it again
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per request
+  }, [start]);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -96,11 +106,13 @@ export default function TodayScreen() {
 
         {todo.length === 0 && completed.length === 0 ? (
           <Animated.View entering={FadeInDown.delay(80)} style={styles.task}>
-            <Text style={styles.taskName}>{courses.length ? 'Nothing due right now' : 'No courses yet'}</Text>
+            <Text style={styles.taskName}>{!courses.length ? 'No courses yet' : courses.some((c) => c.assessments.length) ? 'Nothing due right now' : 'No assessments yet'}</Text>
             <Text style={styles.taskMeta}>
-              {courses.length
-                ? 'Everything with a due date is done. Nice work.'
-                : 'Add your courses from the Courses tab to get a plan.'}
+              {!courses.length
+                ? 'Add your courses from the Courses tab to get a plan.'
+                : courses.some((c) => c.assessments.length)
+                  ? 'Everything with a due date is done. Nice work.'
+                  : 'Add assessments from a course page and they will show up here.'}
             </Text>
           </Animated.View>
         ) : null}
@@ -123,7 +135,7 @@ export default function TodayScreen() {
               </View>
               <Text style={styles.taskName}>{assessment.name}</Text>
               <Text style={styles.taskMeta}>
-                {course.code} · {hoursLabel(todayHours(assessment)).replace('~', '')} today · {assessment.weight}% of grade
+                {course.code} · {hoursLabel(todayHours(assessment, course)).replace('~', '')} today · {assessment.weight}% of grade
               </Text>
               <View style={styles.taskProgress}>
                 <ProgressBar value={target ? studied / target : 0} color={T.accent} track={T.neutralSoft} height={6} />
@@ -151,6 +163,8 @@ export default function TodayScreen() {
                   </Text>
                 </Pressable>
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${course.code}`}
                   style={({ pressed }) => [styles.secondaryBtn, styles.courseBtn, pressed && styles.pressed]}
                   onPress={() => router.push({ pathname: '/course/[code]', params: { code: course.code } })}>
                   <Text style={styles.secondaryText}>Course</Text>
@@ -187,7 +201,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 },
   headerText: { gap: 2 },
   date: { fontSize: 14, fontWeight: '500', color: T.muted },
-  title: { fontSize: 40, fontWeight: '800', color: T.ink, letterSpacing: -1.2 },
+  title: typo.display,
   examPill: {
     fontFamily: mono,
     fontSize: 12,
@@ -201,7 +215,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  task: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 22, padding: 18, gap: 6 },
+  task: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 18, gap: 6 },
   taskFirst: { borderColor: T.lineStrong },
   taskActive: { borderWidth: 2, borderColor: T.accent },
   taskTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -211,7 +225,7 @@ const styles = StyleSheet.create({
   taskMeta: { fontSize: 14, color: T.muted },
   taskProgress: { gap: 6, marginTop: 4 },
   taskProgressText: { fontFamily: mono, fontSize: 12, color: T.muted },
-  why: { backgroundColor: T.ground, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, marginTop: 4 },
+  why: { backgroundColor: T.ground, borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 12, marginTop: 4 },
   whyText: { fontSize: 13, lineHeight: 19, color: T.inkSoft },
   whyLabel: { fontWeight: '700', color: T.ink },
   actions: { flexDirection: 'row', gap: 8, marginTop: 6 },

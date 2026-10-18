@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router/tabs';
 import { SymbolView } from 'expo-symbols';
+import { Platform } from 'react-native';
 
 import { T } from '@/constants/trajectory';
 
@@ -10,7 +11,9 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: T.accent,
         tabBarInactiveTintColor: T.muted,
-        tabBarStyle: { backgroundColor: T.surface, borderTopColor: T.line },
+        // The web tab bar's default height clips its labels.
+        tabBarStyle: [{ backgroundColor: T.surface, borderTopColor: T.line }, Platform.OS === 'web' && { height: 68, paddingTop: 6, paddingBottom: 6 }],
+        tabBarLabelStyle: { fontSize: 11, lineHeight: 16, fontWeight: '600', flexShrink: 0 },
         sceneStyle: { backgroundColor: T.ground },
       }}>
       <Tabs.Screen
@@ -28,6 +31,15 @@ export default function TabLayout() {
           title: 'Courses',
           tabBarIcon: ({ color }) => (
             <SymbolView name={{ ios: 'book.closed', android: 'menu_book', web: 'menu_book' }} tintColor={color} size={24} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <SymbolView name={{ ios: 'gearshape', android: 'settings', web: 'settings' }} tintColor={color} size={24} />
           ),
         }}
       />

@@ -7,7 +7,7 @@ import { NotesGuide } from '@/components/notes-guide';
 import { ProfileGuide } from '@/components/profile-guide';
 import { ProfileUpload } from '@/components/profile-upload';
 import { CURRENT_YEAR } from '@/config';
-import { T } from '@/constants/trajectory';
+import { T, typo } from '@/constants/trajectory';
 import { UNIVERSITIES, semesterLabel } from '@/constants/universities';
 import { useStore } from '@/lib/store';
 
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   bar: { flex: 1, height: 4, borderRadius: 999, backgroundColor: T.track },
   barOn: { backgroundColor: T.accent },
   step: { fontSize: 13, fontWeight: '500', color: T.muted },
-  title: { fontSize: 30, fontWeight: '700', color: T.ink, letterSpacing: -0.6 },
+  title: typo.display,
   body: { fontSize: 15, lineHeight: 22, color: T.muted },
   upload: { gap: 16 },
   uploadWide: { flexDirection: 'row', alignItems: 'flex-start' },

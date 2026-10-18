@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Button, ConfirmDelete, ErrorText, Field, Segmented } from '@/components/form';
-import { T } from '@/constants/trajectory';
+import { T, radius } from '@/constants/trajectory';
 import type { Assessment, AssessmentType, Status } from '@/data/courses';
 import type { AssessmentInput } from '@/lib/store';
 
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
   switchLabel: { fontSize: 13, fontWeight: '600', color: T.ink },
   switchHint: { fontSize: 12, color: T.muted },
-  review: { backgroundColor: T.warnSoft, borderRadius: 14, padding: 14, gap: 4 },
+  review: { backgroundColor: T.warnSoft, borderRadius: radius.md, padding: 14, gap: 4 },
   reviewTitle: { fontSize: 15, fontWeight: '700', color: T.warn },
   reviewText: { fontSize: 13, lineHeight: 19, color: T.inkSoft },
 });
