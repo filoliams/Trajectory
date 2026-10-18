@@ -15,7 +15,7 @@ export function Field({ label, hint, ...input }: TextInputProps & { label: strin
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput placeholderTextColor="#9AA0AA" style={styles.input} {...input} />
+      <TextInput placeholderTextColor={T.placeholder} style={styles.input} {...input} />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
@@ -44,7 +44,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
         pressed && styles.pressed,
       ]}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : T.ink} />
+        <ActivityIndicator color={variant === 'primary' ? T.onAccent : T.ink} />
       ) : (
         <Text style={[styles.buttonText, buttonTextStyles[variant]]}>{title}</Text>
       )}
@@ -177,28 +177,28 @@ const styles = StyleSheet.create({
   input: {
     height: 48,
     borderWidth: 1.5,
-    borderColor: '#C9CDD4',
+    borderColor: T.lineStrong,
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 16,
     color: T.ink,
     backgroundColor: T.surface,
   },
-  button: { minHeight: 48, borderRadius: 12, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
+  button: { minHeight: 48, borderRadius: 999, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   buttonText: { fontSize: 16, fontWeight: '600' },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.75 },
-  segmented: { flexDirection: 'row', gap: 4, backgroundColor: '#E4E6EA', borderRadius: 12, padding: 4 },
+  segmented: { flexDirection: 'row', gap: 4, backgroundColor: T.elevated, borderRadius: 12, padding: 4 },
   segment: { flex: 1, minHeight: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  segmentOn: { backgroundColor: T.surface },
-  segmentText: { fontSize: 14, fontWeight: '600', color: '#4A4F59' },
+  segmentOn: { backgroundColor: T.lineStrong },
+  segmentText: { fontSize: 14, fontWeight: '600', color: T.muted },
   segmentTextOn: { color: T.ink },
   error: { fontSize: 14, lineHeight: 20, color: T.urgent },
   select: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   selectOpen: { borderColor: T.accent },
   selectText: { flex: 1, fontSize: 16, color: T.ink },
-  selectPlaceholder: { color: '#9AA0AA' },
+  selectPlaceholder: { color: T.placeholder },
   selectChevron: { fontSize: 14, color: T.muted },
   selectList: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 12, padding: 4 },
   selectOption: { minHeight: 44, borderRadius: 9, paddingHorizontal: 12, justifyContent: 'center' },
@@ -210,12 +210,12 @@ const styles = StyleSheet.create({
 const buttonStyles = StyleSheet.create({
   primary: { backgroundColor: T.accent },
   secondary: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line },
-  danger: { backgroundColor: T.surface, borderWidth: 1, borderColor: '#F1C2BD' },
+  danger: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.dangerLine },
   ghost: { backgroundColor: 'transparent' },
 });
 
 const buttonTextStyles = StyleSheet.create({
-  primary: { color: '#FFFFFF' },
+  primary: { color: T.onAccent },
   secondary: { color: T.ink },
   danger: { color: T.urgent },
   ghost: { color: T.muted, fontWeight: '500' },

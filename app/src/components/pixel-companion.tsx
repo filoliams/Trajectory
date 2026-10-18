@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { mono } from '@/constants/trajectory';
+import { T, mono } from '@/constants/trajectory';
 import type { CompanionKind, StudyMode } from '@/lib/study-session';
 
 import { CRITTER_W, critterFrames, SPECIES, type Pose } from '@/components/critter-sprites';
@@ -254,7 +254,7 @@ function label(kind: CompanionKind, mode: StudyMode, happy: boolean): string {
 }
 
 const styles = StyleSheet.create({
-  stage: { borderRadius: 14, backgroundColor: '#22252D', overflow: 'hidden' },
+  stage: { borderRadius: 14, backgroundColor: T.elevated, overflow: 'hidden' },
   ground: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 8, backgroundColor: '#2C3039' },
   actor: { position: 'absolute', left: PAD, bottom: 6 },
   dim: { opacity: 0.8 },

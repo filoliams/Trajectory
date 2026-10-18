@@ -9,7 +9,7 @@ import { StoreProvider, useStore } from '@/lib/store';
 export default function RootLayout() {
   return (
     <StoreProvider>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Routes />
       <SyncStatus />
     </StoreProvider>

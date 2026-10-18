@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   wrap: { gap: 12 },
   flex: { flex: 1 },
   card: { gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 16, padding: 16 },
-  cardQuiet: { gap: 4, borderWidth: 1, borderStyle: 'dashed', borderColor: '#C9CDD4', borderRadius: 16, padding: 14 },
+  cardQuiet: { gap: 4, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong, borderRadius: 16, padding: 14 },
   cardTitle: { fontSize: 15, fontWeight: '700', color: T.ink },
   quietTitle: { fontSize: 14, fontWeight: '700', color: T.ink },
   point: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },

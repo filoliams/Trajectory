@@ -93,7 +93,7 @@ export function TopicList({ course }: { course: Course }) {
             value={draft}
             onChangeText={setDraft}
             placeholder="Add a topic, e.g. Hypothesis testing"
-            placeholderTextColor="#9AA0AA"
+            placeholderTextColor={T.placeholder}
             style={styles.input}
             onSubmitEditing={add}
             returnKeyType="done"
@@ -146,13 +146,13 @@ const styles = StyleSheet.create({
   divider: { borderBottomWidth: 1, borderBottomColor: T.lineSoft },
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotOn: { backgroundColor: T.accent },
-  dotOff: { borderWidth: 1.5, borderColor: '#B4B9C2' },
+  dotOff: { borderWidth: 1.5, borderColor: T.lineStrong },
   rowText: { flex: 1, gap: 1 },
   name: { fontSize: 15, fontWeight: '600', color: T.ink },
 
   chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, minWidth: 74, alignItems: 'center' },
   chipOn: { backgroundColor: T.accentSoft },
-  chipOff: { borderWidth: 1, borderStyle: 'dashed', borderColor: '#C9CDD4' },
+  chipOff: { borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong },
   chipText: { fontSize: 12, fontWeight: '600' },
   chipTextOn: { color: T.accentDark },
   chipTextOff: { color: T.muted },
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   remove: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 6 },
   removeText: { fontSize: 13, fontWeight: '600', color: T.urgent },
 
-  empty: { backgroundColor: T.surface, borderWidth: 1, borderStyle: 'dashed', borderColor: '#C9CDD4', borderRadius: 16, padding: 16, gap: 4 },
+  empty: { backgroundColor: T.surface, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong, borderRadius: 16, padding: 16, gap: 4 },
   addRow: { flexDirection: 'row', gap: 8 },
   input: {
     flex: 1,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     color: T.ink,
   },
   addBtn: { minHeight: 44, paddingHorizontal: 16, borderRadius: 12, backgroundColor: T.accent, alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  addBtnText: { fontSize: 15, fontWeight: '600', color: T.onAccent },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.7 },
   hint: { fontSize: 12, lineHeight: 17, color: T.muted, paddingHorizontal: 4 },

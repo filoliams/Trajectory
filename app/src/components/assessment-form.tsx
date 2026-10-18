@@ -125,7 +125,7 @@ export function AssessmentForm({ initial, onSave, onDelete }: Props) {
           <Text style={styles.switchLabel}>Hurdle</Text>
           <Text style={styles.switchHint}>You must pass this to pass the course.</Text>
         </View>
-        <Switch value={isHurdle} onValueChange={setIsHurdle} trackColor={{ true: T.accent, false: '#D5D8DE' }} />
+        <Switch value={isHurdle} onValueChange={setIsHurdle} trackColor={{ true: T.accent, false: T.track }} />
       </View>
 
       <ErrorText>{error}</ErrorText>

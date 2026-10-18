@@ -108,7 +108,7 @@ export function StudyTimer(p: Props) {
 
       {p.current && p.mode !== 'idle' ? (
         <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.taskBlock}>
-          <ProgressBar value={taskProgress} color={T.accent} track="#33363E" />
+          <ProgressBar value={taskProgress} color={T.accent} track={T.track} />
           <Text style={styles.muted}>
             {minutesLabel(left)} left of {minutesLabel(p.current.targetMs)} today
           </Text>
@@ -141,7 +141,7 @@ export function StudyTimer(p: Props) {
             {p.doneCount} of {p.planCount} done
           </Text>
         </View>
-        <ProgressBar value={dayProgress} color={T.accent} track="#33363E" height={6} />
+        <ProgressBar value={dayProgress} color={T.accent} track={T.track} height={6} />
       </View>
     </View>
   );
@@ -153,7 +153,7 @@ function Btn({ label, onPress, kind }: { label: string; onPress: () => void; kin
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.btn, kind === 'primary' ? styles.btnPrimary : styles.btnStop, pressed && styles.pressed]}>
-      <Text style={styles.btnText}>{label}</Text>
+      <Text style={[styles.btnText, kind === 'primary' && styles.btnTextPrimary]}>{label}</Text>
     </Pressable>
   );
 }
@@ -161,32 +161,33 @@ function Btn({ label, onPress, kind }: { label: string; onPress: () => void; kin
 const BREAK = '#F2B33D';
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: T.ink, borderRadius: 20, padding: 14, gap: 12 },
-  picker: { flexDirection: 'row', alignSelf: 'center', backgroundColor: '#22252D', borderRadius: 999, padding: 3 },
+  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 24, padding: 14, gap: 12 },
+  picker: { flexDirection: 'row', alignSelf: 'center', backgroundColor: T.elevated, borderRadius: 999, padding: 3 },
   pick: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
-  pickOn: { backgroundColor: '#3A3F4B' },
+  pickOn: { backgroundColor: T.lineStrong },
   pickText: { fontSize: 12, fontWeight: '600', color: T.onDarkMuted },
-  pickTextOn: { color: '#FFFFFF' },
+  pickTextOn: { color: T.ink },
 
   readout: { gap: 2, paddingHorizontal: 4 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   status: { fontSize: 13, fontWeight: '600', color: T.onDarkMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  clock: { fontFamily: mono, fontSize: 44, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1 },
+  clock: { fontFamily: mono, fontSize: 56, fontWeight: '800', color: T.ink, letterSpacing: -2 },
   clockBreak: { color: BREAK },
   sub: { fontSize: 14, color: T.onDarkMuted },
 
   taskBlock: { gap: 8, paddingHorizontal: 4 },
   controls: { flexDirection: 'row', gap: 10 },
-  btn: { flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  btn: { flex: 1, height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: T.accent },
   btnStop: { backgroundColor: '#3A2326', borderWidth: 1, borderColor: '#6B2E33' },
-  btnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  btnText: { fontSize: 16, fontWeight: '700', color: T.ink },
+  btnTextPrimary: { color: T.onAccent },
   pressed: { opacity: 0.7 },
 
-  dayBlock: { gap: 8, borderTopWidth: 1, borderTopColor: '#2A2D35', paddingTop: 12, paddingHorizontal: 4 },
+  dayBlock: { gap: 8, borderTopWidth: 1, borderTopColor: T.line, paddingTop: 12, paddingHorizontal: 4 },
   dayTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  dayBig: { fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
+  dayBig: { fontSize: 20, fontWeight: '600', color: T.ink },
   daySmall: { fontSize: 13, fontWeight: '500', color: T.onDarkMuted },
   muted: { fontSize: 13, color: T.onDarkMuted },
 

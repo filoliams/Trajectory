@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   doneBox: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: 18, overflow: 'hidden' },
   doneHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
   doneCheck: { width: 22, height: 22, borderRadius: 11, backgroundColor: T.done, alignItems: 'center', justifyContent: 'center' },
-  doneCheckText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  doneCheckText: { color: T.onAccent, fontSize: 13, fontWeight: '700' },
   doneTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: T.ink },
   doneCount: { color: T.muted, fontWeight: '500' },
   doneTotal: { fontFamily: mono, fontSize: 13, color: T.muted },

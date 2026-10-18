@@ -42,3 +42,5 @@ build/
 Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+graphify-out/

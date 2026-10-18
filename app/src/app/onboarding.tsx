@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, padding: 20, paddingTop: 16, gap: 14, maxWidth: 560, width: '100%', alignSelf: 'center' },
   contentWide: { maxWidth: 960 },
   progress: { flexDirection: 'row', gap: 6 },
-  bar: { flex: 1, height: 4, borderRadius: 999, backgroundColor: '#D5D8DE' },
+  bar: { flex: 1, height: 4, borderRadius: 999, backgroundColor: T.track },
   barOn: { backgroundColor: T.accent },
   step: { fontSize: 13, fontWeight: '500', color: T.muted },
   title: { fontSize: 30, fontWeight: '700', color: T.ink, letterSpacing: -0.6 },

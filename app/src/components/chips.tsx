@@ -43,6 +43,6 @@ const styles = StyleSheet.create({
 const levelStyles = StyleSheet.create({
   weak: { color: T.warn, backgroundColor: T.warnSoft },
   okay: { color: T.inkSoft, backgroundColor: T.neutralSoft },
-  strong: { color: '#FFFFFF', backgroundColor: T.accent },
-  none: { color: T.muted, borderWidth: 1, borderStyle: 'dashed', borderColor: '#C9CDD4' },
+  strong: { color: T.onAccent, backgroundColor: T.accent },
+  none: { color: T.muted, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong },
 });
