@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Assessment, Course, Level } from '@/data/courses';
+import { courseLevel } from '@/lib/levels';
 import { T } from '@/constants/trajectory';
 
 const DAY_MS = 86_400_000;
@@ -70,12 +71,9 @@ export function shareDone(course: Course): number {
   return total > 0 ? done / total : 0;
 }
 
-/** How well the student's notes cover the course's topics. */
+/** How well the student's notes cover the course's topics: analysed levels once there are enough, else coverage. */
 export function notesLevel(course: Course): Level {
-  const { topics } = course;
-  if (topics.length === 0) return 'none';
-  const covered = topics.filter((t) => t.hasNotes).length / topics.length;
-  return covered < 0.4 ? 'weak' : covered < 0.75 ? 'okay' : 'strong';
+  return courseLevel(course.topics);
 }
 
 /** Most hours a day one item gets, by notes level: weaker courses get more time. */

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ErrorText } from '@/components/form';
 import { T, radius, typo } from '@/constants/trajectory';
 import type { Course, Topic } from '@/data/courses';
+import type { Understanding } from '@/lib/levels';
 import { coveredTopics } from '@/lib/notes-match';
 import { useStore } from '@/lib/store';
 
@@ -19,6 +20,7 @@ export function TopicList({ course }: { course: Course }) {
   const [error, setError] = useState<string | null>(null);
 
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [openReason, setOpenReason] = useState<string | null>(null);
 
   const topics = course.topics;
   const withNotes = topics.filter((t) => t.hasNotes).length;
@@ -104,8 +106,21 @@ export function TopicList({ course }: { course: Course }) {
             <View key={t.id} style={[styles.row, i < topics.length - 1 && styles.divider]}>
               <View style={[styles.dot, t.hasNotes ? styles.dotOn : styles.dotOff]} />
               <View style={styles.rowText}>
-                <Text style={styles.name}>{t.name}</Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name}>{t.name}</Text>
+                  {t.understanding ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${UNDERSTANDING_LABEL[t.understanding]}. ${openReason === t.id ? 'Hide' : 'Show'} why`}
+                      hitSlop={6}
+                      onPress={() => setOpenReason((id) => (id === t.id ? null : t.id))}
+                      style={[styles.level, levelStyles[t.understanding]]}>
+                      <Text style={[styles.levelText, levelTextStyles[t.understanding]]}>{UNDERSTANDING_LABEL[t.understanding]}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
                 {t.week ? <Text style={styles.meta}>{t.week}</Text> : null}
+                {openReason === t.id && t.understandingReason ? <Text style={styles.reason}>{t.understandingReason}</Text> : null}
               </View>
               {editing ? (
                 <Pressable accessibilityRole="button" onPress={() => remove(t)} style={styles.remove}>
@@ -190,6 +205,10 @@ const styles = StyleSheet.create({
   dotOn: { backgroundColor: T.accent },
   dotOff: { borderWidth: 1.5, borderColor: T.lineStrong },
   rowText: { flex: 1, gap: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  level: { borderRadius: radius.sm, paddingHorizontal: 7, paddingVertical: 2 },
+  levelText: { fontSize: 11, fontWeight: '700' },
+  reason: { fontSize: 13, lineHeight: 18, color: T.inkSoft, marginTop: 4 },
   name: { fontSize: 15, fontWeight: '600', color: T.ink },
 
   chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, minWidth: 74, alignItems: 'center' },
@@ -220,4 +239,21 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.7 },
   hint: { fontSize: 12, lineHeight: 17, color: T.muted, paddingHorizontal: 4 },
+});
+
+/** Labels and colours for a topic's analysed level, matching the course chip's scale. */
+const UNDERSTANDING_LABEL: Record<Understanding, string> = { none: 'Not covered', weak: 'Weak', okay: 'Okay', strong: 'Strong' };
+
+const levelStyles = StyleSheet.create({
+  none: { borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong },
+  weak: { backgroundColor: T.warnSoft },
+  okay: { backgroundColor: T.neutralSoft },
+  strong: { backgroundColor: T.accent },
+});
+
+const levelTextStyles = StyleSheet.create({
+  none: { color: T.muted },
+  weak: { color: T.warn },
+  okay: { color: T.inkSoft },
+  strong: { color: T.onAccent },
 });

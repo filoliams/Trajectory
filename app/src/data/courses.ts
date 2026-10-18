@@ -1,5 +1,7 @@
 /** App-side shapes for courses and assessments, plus mapping from database rows. */
 
+import type { Understanding } from '@/lib/levels';
+
 export type Level = 'weak' | 'okay' | 'strong' | 'none';
 export type Status = 'not_started' | 'in_progress' | 'done';
 export type AssessmentType = 'exam' | 'assignment' | 'quiz' | 'other';
@@ -27,6 +29,9 @@ export type Topic = {
   week: string | null; // e.g. "Week 3", from the course profile
   hasNotes: boolean;
   imported: boolean;
+  /** How well the student's notes cover it, from note analysis; null until analysed. */
+  understanding: Understanding | null;
+  understandingReason: string | null;
 };
 
 export type Course = {
@@ -63,6 +68,8 @@ export type TopicRow = {
   position: number;
   has_notes: boolean;
   source: string;
+  understanding?: string | null; // missing before the note-ingestion migration
+  understanding_reason?: string | null;
 };
 
 export type CourseRow = {
@@ -110,6 +117,8 @@ export function topicFromRow(r: TopicRow): Topic {
     week: r.week,
     hasNotes: !!r.has_notes,
     imported: r.source === 'imported',
+    understanding: asUnderstanding(r.understanding),
+    understandingReason: r.understanding_reason ?? null,
   };
 }
 
@@ -122,4 +131,10 @@ export function courseFromRow(r: CourseRow, topics: TopicRow[] = []): Course {
     assessments: (r.assessments ?? []).map(assessmentFromRow),
     topics: topics.filter((t) => t.course_id === r.id).map(topicFromRow),
   };
+}
+
+const UNDERSTANDINGS: readonly Understanding[] = ['none', 'weak', 'okay', 'strong'];
+
+function asUnderstanding(value: string | null | undefined): Understanding | null {
+  return UNDERSTANDINGS.includes(value as Understanding) ? (value as Understanding) : null;
 }

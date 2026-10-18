@@ -145,7 +145,8 @@ async function fetchSnapshot(userId: string): Promise<Snapshot> {
   // Topics and study time are read on their own so the app still opens if those tables haven't been created yet.
   const topicResult = await supabase
     .from('topics')
-    .select('id, course_id, name, week, position, has_notes, source')
+    // '*' so the app keeps working before and after the note-ingestion migration adds columns.
+    .select('*')
     .in('course_id', rows.map((r) => r.id))
     .order('position')
     .order('id');

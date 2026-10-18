@@ -47,6 +47,6 @@ study-tracker/
 - [x] Course and assessment data model
 - [x] Frontend / onboarding flow
 - [x] Notes import from Markdown and text files (Obsidian vaults, exported notes)
+- [ ] Note ingestion ([SPEC.md](SPEC.md)): server pipeline [`ingest-core`](SPEC-ingest-core.md) built, awaiting deploy; Files-app sync and Microsoft (OneDrive/OneNote) connector next
 - [x] Study time recommendations (daily plan sized by your study hours; courses with weaker notes get more time)
-- [ ] Notes import straight from cloud folders (OneDrive, Google Drive) and GoodNotes PDFs
-- [ ] AI progress analysis (today: notes coverage of each course's topics)
+- [ ] AI progress analysis: built into note ingestion (per-topic levels and reasons from Claude), awaiting deploy

@@ -1,6 +1,6 @@
 # Spec: AI progress analysis
 
-Status: **draft — awaiting review**
+Status: **superseded** by [SPEC-ingest-core.md](../SPEC-ingest-core.md). The analysis now runs in the `notes-ingest` Edge Function instead of a FastAPI endpoint, and is part of note ingestion. The rubric and the `topics.understanding*` columns below carried over.
 
 ## Objective
 
