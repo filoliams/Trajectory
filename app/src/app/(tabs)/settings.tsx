@@ -40,15 +40,18 @@ export default function SettingsScreen() {
 
         <Section title="Account">
           <Row label="Signed in as" value={session?.user.email ?? ''} />
-          <Row
-            label="Sync"
-            value={!online ? 'Offline — changes save when you reconnect' : pendingCount ? `${pendingCount} change(s) saving…` : 'Up to date'}
-          />
+          <Row label="Sync" value={syncLabel(online, pendingCount)} />
           <Button title="Sign out" variant="secondary" onPress={signOut} />
         </Section>
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function syncLabel(online: boolean, pendingCount: number): string {
+  if (!online) return 'Offline — changes save when you reconnect';
+  if (pendingCount) return `${pendingCount} change(s) saving…`;
+  return 'Up to date';
 }
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {

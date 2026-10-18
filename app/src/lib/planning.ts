@@ -129,6 +129,18 @@ export function todaysPlan(all: Course[], now: number, hoursAvailable = 4): Plan
   return plan;
 }
 
+/** Every upcoming, unfinished deadline across all courses, soonest first. */
+export function upcoming(all: Course[], now: number): PlanItem[] {
+  return all
+    .flatMap((course) => byPriority(course.assessments, now).map((assessment) => ({ course, assessment })))
+    .sort((x, y) => daysUntil(x.assessment.due, now) - daysUntil(y.assessment.due, now));
+}
+
+/** "4d 01h" — the countdown without minutes, for compact rows. */
+export function shortCountdown(iso: string | null, now: number): string {
+  return countdown(iso, now).split(' ').slice(0, 2).join(' ');
+}
+
 /** Unfinished items with no due date yet (they can't be ranked). */
 export function undated(items: Assessment[]): Assessment[] {
   return items.filter((a) => a.status !== 'done' && a.due === null);

@@ -9,7 +9,7 @@ import { ProgressBar, StudyTimer } from '@/components/study-timer';
 import { TrajectoryView } from '@/components/trajectory-view';
 import { T, WIDE, font, mono, monoBold, radius, typo } from '@/constants/trajectory';
 import type { Course, Status } from '@/data/courses';
-import { byPriority, countdown, daysUntil, dueLabel, hoursLabel, todayHours, todaysPlan, urgencyColor, whyLabel } from '@/lib/planning';
+import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
 import { useDailyHours } from '@/lib/daily-hours';
 import { useStore } from '@/lib/store';
 import { minutesLabel, useStudySession } from '@/lib/study-session';
@@ -69,6 +69,7 @@ export default function TodayScreen() {
     if (status === 'not_started') setStatus(id, 'in_progress');
   };
   const next = todo[0];
+  const empty = emptyState(courses);
 
   const startTarget = start ? all.find((x) => x.assessment.id === start) : undefined;
   useEffect(() => {
@@ -130,20 +131,8 @@ export default function TodayScreen() {
             {wide ? trajectory : null}
             {todo.length === 0 && completed.length === 0 ? (
               <Animated.View entering={FadeInDown.delay(80)} style={styles.task}>
-                <Text style={styles.taskName}>
-                  {!courses.length
-                    ? 'No courses yet'
-                    : courses.some((c) => c.assessments.length)
-                      ? 'Nothing due right now'
-                      : 'No assessments yet'}
-                </Text>
-                <Text style={styles.taskMeta}>
-                  {!courses.length
-                    ? 'Add your courses from the Courses tab to get a plan.'
-                    : courses.some((c) => c.assessments.length)
-                      ? 'Everything with a due date is done. Nice work.'
-                      : 'Add assessments from a course page and they will show up here.'}
-                </Text>
+                <Text style={styles.taskName}>{empty.title}</Text>
+                <Text style={styles.taskMeta}>{empty.text}</Text>
               </Animated.View>
             ) : null}
 
@@ -235,10 +224,7 @@ export default function TodayScreen() {
 
 /** The next few deadlines across every course, filling the column under the timer on wide screens. */
 function ComingUp({ courses, now }: { courses: Course[]; now: number }) {
-  const next = courses
-    .flatMap((course) => byPriority(course.assessments, now).map((assessment) => ({ course, assessment })))
-    .sort((a, b) => daysUntil(a.assessment.due, now) - daysUntil(b.assessment.due, now))
-    .slice(0, 5);
+  const next = upcoming(courses, now).slice(0, 5);
   if (next.length === 0) return null;
   return (
     <Animated.View entering={FadeInDown.delay(120).duration(500)} style={styles.coming}>
@@ -258,12 +244,21 @@ function ComingUp({ courses, now }: { courses: Course[]; now: number }) {
             </Text>
           </View>
           <Text style={[styles.comingDue, { color: urgencyColor(daysUntil(assessment.due, now)) }]}>
-            {countdown(assessment.due, now).split(' ').slice(0, 2).join(' ')}
+            {shortCountdown(assessment.due, now)}
           </Text>
         </Pressable>
       ))}
     </Animated.View>
   );
+}
+
+/** What Today says when there's nothing to plan, depending on why. */
+function emptyState(courses: Course[]): { title: string; text: string } {
+  if (!courses.length) return { title: 'No courses yet', text: 'Add your courses from the Courses tab to get a plan.' };
+  if (!courses.some((c) => c.assessments.length)) {
+    return { title: 'No assessments yet', text: 'Add assessments from a course page and they will show up here.' };
+  }
+  return { title: 'Nothing due right now', text: 'Everything with a due date is done. Nice work.' };
 }
 
 /** The heading on each card, from today's progress alone. */

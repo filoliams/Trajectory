@@ -15,7 +15,7 @@ import Animated, {
 import { PressScale } from '@/components/press-scale';
 import { T, font, mono, monoBold, radius, typo } from '@/constants/trajectory';
 import type { Assessment, Course } from '@/data/courses';
-import { byPriority, countdown, daysUntil, dueLabel, urgencyBarColor } from '@/lib/planning';
+import { countdown, daysUntil, dueLabel, shortCountdown, upcoming, urgencyBarColor } from '@/lib/planning';
 
 const HEIGHT = 210;
 const TRAIL = 64;
@@ -56,9 +56,7 @@ type Item = { assessment: Assessment; course: Course; t: number };
  */
 export function TrajectoryView({ courses, now }: { courses: Course[]; now: number }) {
   const [w, setW] = useState(0);
-  const dated = courses
-    .flatMap((course) => byPriority(course.assessments, now).map((assessment) => ({ course, assessment })))
-    .sort((a, b) => daysUntil(a.assessment.due, now) - daysUntil(b.assessment.due, now));
+  const dated = upcoming(courses, now);
   const spanDays = Math.max(MIN_SPAN_DAYS, ...dated.map((d) => Math.ceil(daysUntil(d.assessment.due, now))));
   const items: Item[] = dated.map((d) => ({ ...d, t: Math.min(1, Math.max(0.05, daysUntil(d.assessment.due, now) / spanDays)) }));
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -141,7 +139,7 @@ export function TrajectoryView({ courses, now }: { courses: Course[]; now: numbe
           </View>
           <View style={styles.detailRight}>
             <Text style={[styles.detailCountdown, { color: urgencyBarColor(daysUntil(selected.assessment.due, now)) }]}>
-              {countdown(selected.assessment.due, now).split(' ').slice(0, 2).join(' ')}
+              {shortCountdown(selected.assessment.due, now)}
             </Text>
             <PressScale
               accessibilityRole="button"
