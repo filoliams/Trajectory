@@ -103,8 +103,8 @@ export default function OnboardingScreen() {
             <>
               <Text style={styles.title}>Add your courses</Text>
               <Text style={styles.body}>
-                Upload the course profile for each of your courses. We'll read it for assessments, weightings and due dates,
-                and mark anything we're unsure about for you to check.
+                Upload the course profile for each of your courses. We’ll read it for assessments, weightings and due dates,
+                and mark anything we’re unsure about for you to check.
               </Text>
               <Select
                 label="University"
@@ -161,7 +161,7 @@ export default function OnboardingScreen() {
             <>
               <Text style={styles.title}>Your notes</Text>
               <Text style={styles.body}>
-                Trajectory checks your notes against each course's topics, so you can see what you've covered and what still
+                Trajectory checks your notes against each course’s topics, so you can see what you’ve covered and what still
                 needs notes.
               </Text>
               <NotesGuide />

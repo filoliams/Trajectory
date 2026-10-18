@@ -121,8 +121,8 @@ export function TopicList({ course }: { course: Course }) {
         <View style={styles.empty}>
           <Text style={styles.name}>No topics yet</Text>
           <Text style={styles.meta}>
-            This course profile doesn't list weekly topics. Add them from your lecture schedule with + Add, then tap
-            each one's notes marker once you've written notes for it.
+            This course profile doesn’t list weekly topics. Add them from your lecture schedule with + Add, then tap
+            each one’s notes marker once you’ve written notes for it.
           </Text>
         </View>
       ) : null}

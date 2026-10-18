@@ -47,7 +47,7 @@ export default function CoursesScreen() {
         {courses.length === 0 && !loading ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No courses yet</Text>
-            <Text style={styles.emptyText}>Add a course and we'll import its assessments.</Text>
+            <Text style={styles.emptyText}>Add a course and we’ll import its assessments.</Text>
             <Button title="Add a course" onPress={() => router.push('/course/add')} />
           </View>
         ) : null}
