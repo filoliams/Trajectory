@@ -1,0 +1,8 @@
+MATH1051 Calculus & Linear Algebra I
+- Limits [Week 2]
+- Derivatives [Week 3]
+- Integration by parts [Week 6]
+CSSE2310 Computer Systems Principles
+- Pointers
+- Processes and fork
+- Pipes
