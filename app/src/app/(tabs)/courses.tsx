@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import Animated, { FadeInDown, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LevelChip } from '@/components/chips';
@@ -35,6 +36,13 @@ export default function CoursesScreen() {
         </View>
 
         <ErrorText>{error}</ErrorText>
+
+        {courses.length === 0 && loading ? (
+          <View style={styles.list}>
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        ) : null}
 
         {courses.length === 0 && !loading ? (
           <View style={styles.empty}>
@@ -91,6 +99,22 @@ export default function CoursesScreen() {
   );
 }
 
+/** A course card's shape, breathing while the first load finishes. */
+function SkeletonCard() {
+  const pulse = useSharedValue(0.5);
+  useEffect(() => {
+    pulse.value = withRepeat(withTiming(1, { duration: 800, reduceMotion: ReduceMotion.System }), -1, true);
+  }, [pulse]);
+  const style = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  return (
+    <Animated.View style={[styles.card, style]} accessibilityLabel="Loading courses">
+      <View style={[styles.bone, { width: 120, height: 22 }]} />
+      <View style={[styles.bone, { height: 44, borderRadius: radius.md }]} />
+      <View style={[styles.bone, { height: 6 }]} />
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: T.ground },
   content: { padding: 16, paddingTop: 12, gap: 10, maxWidth: 720, width: '100%', alignSelf: 'center' },
@@ -103,10 +127,11 @@ const styles = StyleSheet.create({
   semester: { fontSize: 13, color: T.muted },
   addBtn: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: T.accent, alignItems: 'center', justifyContent: 'center' },
   addText: { fontSize: 26, lineHeight: 28, color: T.onAccent, fontWeight: '500' },
-  empty: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 20, gap: 10 },
+  empty: { backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg, padding: 20, gap: 10 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: T.ink },
   emptyText: { fontSize: 14, color: T.muted },
-  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 16, gap: 12 },
+  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg, padding: 16, gap: 12 },
+  bone: { backgroundColor: T.elevated, borderRadius: radius.sm },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
   cardText: { flex: 1, gap: 2 },
   code: { fontFamily: font.bold, fontSize: 22, color: T.ink, letterSpacing: -0.4 },

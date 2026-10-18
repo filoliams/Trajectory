@@ -161,7 +161,7 @@ function Btn({ label, onPress, kind }: { label: string; onPress: () => void; kin
 const BREAK = '#F2B33D';
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 14, gap: 12 },
+  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg, padding: 14, gap: 12 },
   picker: { flexDirection: 'row', alignSelf: 'center', backgroundColor: T.elevated, borderRadius: 999, padding: 3 },
   pick: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
   pickOn: { backgroundColor: T.lineStrong },

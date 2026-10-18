@@ -19,6 +19,8 @@ import { byPriority, countdown, daysUntil, dueLabel, urgencyBarColor } from '@/l
 
 const HEIGHT = 210;
 const TRAIL = 64;
+const DOT = 4;
+const COMET = 7;
 const DAY_MS = 86_400_000;
 const MIN_SPAN_DAYS = 21;
 const motion = { reduceMotion: ReduceMotion.System };
@@ -69,10 +71,20 @@ export function TrajectoryView({ courses, now }: { courses: Course[]; now: numbe
     const ease = { duration: 8000, easing: Easing.inOut(Easing.sin), ...motion };
     yaw.value = withRepeat(withSequence(withTiming(0.3, ease), withTiming(-0.3, ease)), -1, false, undefined, ReduceMotion.System);
     reveal.value = withTiming(1.1, { duration: 1600, easing: Easing.out(Easing.cubic), ...motion });
-    comet.value = withRepeat(withTiming(1, { duration: 5200, easing: Easing.inOut(Easing.quad), ...motion }), -1, false, undefined, ReduceMotion.System);
+    comet.value = withRepeat(
+      withTiming(1, { duration: 5200, easing: Easing.inOut(Easing.quad), ...motion }),
+      -1,
+      false,
+      undefined,
+      ReduceMotion.System,
+    );
   }, [yaw, reveal, comet]);
 
-  const end = new Date(now + spanDays * DAY_MS).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Brisbane' });
+  const end = new Date(now + spanDays * DAY_MS).toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Australia/Brisbane',
+  });
 
   return (
     <View style={styles.card}>
@@ -145,15 +157,13 @@ export function TrajectoryView({ courses, now }: { courses: Course[]; now: numbe
 }
 
 function TrailDot({ t, yaw, reveal, w }: { t: number; yaw: SharedValue<number>; reveal: SharedValue<number>; w: number }) {
+  // Size changes go through transform (no layout per frame).
   const style = useAnimatedStyle(() => {
     const p = project(t, yaw.value, w);
-    const size = 3.2 * p.scale;
     const shown = Math.min(1, Math.max(0, (reveal.value - t) * 6));
     return {
-      width: size,
-      height: size,
       opacity: shown * (0.25 + 0.45 * p.scale),
-      transform: [{ translateX: p.x - size / 2 }, { translateY: p.y - size / 2 }],
+      transform: [{ translateX: p.x - DOT / 2 }, { translateY: p.y - DOT / 2 }, { scale: (3.2 * p.scale) / DOT }],
     };
   });
   return <Animated.View style={[styles.dot, style]} />;
@@ -163,12 +173,9 @@ function TrailDot({ t, yaw, reveal, w }: { t: number; yaw: SharedValue<number>; 
 function Comet({ progress, yaw, w }: { progress: SharedValue<number>; yaw: SharedValue<number>; w: number }) {
   const style = useAnimatedStyle(() => {
     const p = project(progress.value, yaw.value, w);
-    const size = 7 * p.scale;
     return {
-      width: size,
-      height: size,
       opacity: Math.sin(Math.PI * progress.value) * 0.9,
-      transform: [{ translateX: p.x - size / 2 }, { translateY: p.y - size / 2 }],
+      transform: [{ translateX: p.x - COMET / 2 }, { translateY: p.y - COMET / 2 }, { scale: p.scale }],
     };
   });
   return <Animated.View pointerEvents="none" style={[styles.comet, style]} />;
@@ -177,7 +184,13 @@ function Comet({ progress, yaw, w }: { progress: SharedValue<number>; yaw: Share
 function NowMarker({ yaw, w }: { yaw: SharedValue<number>; w: number }) {
   const pulse = useSharedValue(0);
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.out(Easing.quad), ...motion }), -1, false, undefined, ReduceMotion.System);
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1800, easing: Easing.out(Easing.quad), ...motion }),
+      -1,
+      false,
+      undefined,
+      ReduceMotion.System,
+    );
   }, [pulse]);
   const at = useAnimatedStyle(() => {
     const p = project(0, yaw.value, w);
@@ -214,17 +227,14 @@ function Node({
   const { t } = item;
   const style = useAnimatedStyle(() => {
     const p = project(t, yaw.value, w);
-    const size = base * p.scale * (selected ? 1.3 : 1);
     const pop = Math.min(1, Math.max(0, (reveal.value - t) * 5));
     return {
-      width: size,
-      height: size,
       zIndex: Math.round(300 - p.z * 100),
-      transform: [{ translateX: p.x - size / 2 }, { translateY: p.y - size / 2 }, { scale: pop }],
+      transform: [{ translateX: p.x - base / 2 }, { translateY: p.y - base / 2 }, { scale: p.scale * (selected ? 1.3 : 1) * pop }],
     };
   });
   return (
-    <Animated.View style={[styles.node, style]}>
+    <Animated.View style={[styles.node, { width: base, height: base }, style]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${item.course.code} ${item.assessment.name}, ${countdown(item.assessment.due, now)}`}
@@ -238,13 +248,21 @@ function Node({
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 16, gap: 12, overflow: 'hidden' },
+  card: {
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    borderRadius: radius.lg,
+    padding: 16,
+    gap: 12,
+    overflow: 'hidden',
+  },
   head: { gap: 4 },
   title: typo.heading,
   sub: { fontSize: 13, color: T.muted },
   stage: { height: HEIGHT, marginHorizontal: -16 },
-  dot: { position: 'absolute', left: 0, top: 0, borderRadius: 999, backgroundColor: T.inkSoft },
-  comet: { position: 'absolute', left: 0, top: 0, borderRadius: 999, backgroundColor: T.accent },
+  dot: { position: 'absolute', left: 0, top: 0, width: DOT, height: DOT, borderRadius: 999, backgroundColor: T.inkSoft },
+  comet: { position: 'absolute', left: 0, top: 0, width: COMET, height: COMET, borderRadius: 999, backgroundColor: T.accent },
   now: { position: 'absolute', left: 0, top: 0, width: 18, height: 18, alignItems: 'center', justifyContent: 'center', zIndex: 400 },
   nowRing: { position: 'absolute', width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: T.accent },
   nowCore: { width: 10, height: 10, borderRadius: 5, backgroundColor: T.accent },

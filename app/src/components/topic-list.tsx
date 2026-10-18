@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   textBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   textBtnLabel: { fontSize: 17, fontWeight: '600', color: T.accent },
 
-  list: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg },
+  list: { backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, paddingVertical: 9, paddingHorizontal: 14 },
   divider: { borderBottomWidth: 1, borderBottomColor: T.lineSoft },
   dot: { width: 8, height: 8, borderRadius: 4 },

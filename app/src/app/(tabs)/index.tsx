@@ -8,8 +8,8 @@ import { CompletedToday } from '@/components/completed-today';
 import { ProgressBar, StudyTimer } from '@/components/study-timer';
 import { TrajectoryView } from '@/components/trajectory-view';
 import { T, WIDE, font, mono, monoBold, radius, typo } from '@/constants/trajectory';
-import type { Status } from '@/data/courses';
-import { countdown, daysUntil, hoursLabel, todayHours, todaysPlan, urgencyColor, whyLabel } from '@/lib/planning';
+import type { Course, Status } from '@/data/courses';
+import { byPriority, countdown, daysUntil, dueLabel, hoursLabel, todayHours, todaysPlan, urgencyColor, whyLabel } from '@/lib/planning';
 import { useDailyHours } from '@/lib/daily-hours';
 import { useStore } from '@/lib/store';
 import { minutesLabel, useStudySession } from '@/lib/study-session';
@@ -123,6 +123,7 @@ export default function TodayScreen() {
                 onStop={study.stop}
               />
             </Animated.View>
+            {wide ? <ComingUp courses={courses} now={now} /> : null}
           </View>
 
           <View style={wide ? styles.colWide : styles.stack}>
@@ -232,6 +233,39 @@ export default function TodayScreen() {
   );
 }
 
+/** The next few deadlines across every course, filling the column under the timer on wide screens. */
+function ComingUp({ courses, now }: { courses: Course[]; now: number }) {
+  const next = courses
+    .flatMap((course) => byPriority(course.assessments, now).map((assessment) => ({ course, assessment })))
+    .sort((a, b) => daysUntil(a.assessment.due, now) - daysUntil(b.assessment.due, now))
+    .slice(0, 5);
+  if (next.length === 0) return null;
+  return (
+    <Animated.View entering={FadeInDown.delay(120).duration(500)} style={styles.coming}>
+      <Text style={typo.heading}>Coming up</Text>
+      {next.map(({ course, assessment }) => (
+        <Pressable
+          key={assessment.id}
+          accessibilityRole="button"
+          onPress={() => router.push({ pathname: '/course/[code]', params: { code: course.code } })}
+          style={({ pressed }) => [styles.comingRow, pressed && styles.pressed]}>
+          <View style={styles.comingText}>
+            <Text style={styles.comingName} numberOfLines={1}>
+              {assessment.name}
+            </Text>
+            <Text style={styles.comingMeta}>
+              {course.code} · {dueLabel(assessment.due)}
+            </Text>
+          </View>
+          <Text style={[styles.comingDue, { color: urgencyColor(daysUntil(assessment.due, now)) }]}>
+            {countdown(assessment.due, now).split(' ').slice(0, 2).join(' ')}
+          </Text>
+        </Pressable>
+      ))}
+    </Animated.View>
+  );
+}
+
 /** The heading on each card, from today's progress alone. */
 function statusHeading(mode: 'idle' | 'study' | 'break', studied: number, target: number): { text: string; color: string } {
   if (mode === 'study') return { text: 'Studying now', color: T.accent };
@@ -289,7 +323,7 @@ const styles = StyleSheet.create({
   task: {
     backgroundColor: T.surface,
     borderWidth: 1,
-    borderColor: T.line,
+    borderColor: 'transparent',
     borderRadius: radius.lg,
     padding: 18,
     gap: 6,
@@ -342,4 +376,10 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
 
   footnote: { fontSize: 13, color: T.muted, textAlign: 'center', marginTop: 4 },
+  coming: { backgroundColor: T.surface, borderRadius: radius.lg, padding: 18, gap: 4 },
+  comingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8 },
+  comingText: { flex: 1, gap: 2 },
+  comingName: { fontFamily: font.semibold, fontSize: 15, color: T.ink },
+  comingMeta: { fontSize: 13, color: T.muted },
+  comingDue: { fontFamily: monoBold, fontSize: 15 },
 });

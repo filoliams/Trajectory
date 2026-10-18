@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   title: { ...typo.display, marginBottom: 4 },
   section: { gap: 8 },
   eyebrow: { ...typo.eyebrow, paddingHorizontal: 4 },
-  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 16, gap: 14 },
+  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg, padding: 16, gap: 14 },
   hint: { fontSize: 13, lineHeight: 18, color: T.muted, paddingHorizontal: 4 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   rowLabel: { flexShrink: 0, fontSize: 15, color: T.muted },

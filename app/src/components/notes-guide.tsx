@@ -126,7 +126,7 @@ function Point({ children }: { children: string }) {
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
   flex: { flex: 1 },
-  card: { gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 16 },
+  card: { gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg, padding: 16 },
   cardQuiet: { gap: 4, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong, borderRadius: radius.lg, padding: 14 },
   cardTitle: { fontSize: 15, fontWeight: '700', color: T.ink },
   quietTitle: { fontSize: 14, fontWeight: '700', color: T.ink },

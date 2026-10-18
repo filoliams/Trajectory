@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   body: { fontSize: 15, lineHeight: 22, color: T.muted },
   manual: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   manualBtn: { width: 84 },
-  result: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.md, padding: 12 },
+  result: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.md, padding: 12 },
   resultCode: { fontFamily: mono, fontSize: 14, color: T.ink },
   resultText: { flex: 1, fontSize: 13, color: T.muted },
 });

@@ -1,8 +1,11 @@
 import { Geist_600SemiBold, Geist_700Bold, Geist_800ExtraBold, useFonts } from '@expo-google-fonts/geist';
 import { GeistMono_600SemiBold, GeistMono_700Bold } from '@expo-google-fonts/geist-mono';
 import { Stack } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { SyncStatus } from '@/components/sync-status';
 import { T } from '@/constants/trajectory';
@@ -13,6 +16,9 @@ import '@/global.css';
 export default function RootLayout() {
   return (
     <StoreProvider>
+      <Head>
+        <title>Trajectory</title>
+      </Head>
       <StatusBar style="light" />
       <Routes />
       <SyncStatus />
@@ -23,15 +29,22 @@ export default function RootLayout() {
 function Routes() {
   const { authReady, session, profile } = useStore();
   // A font that fails to load falls back to the system face rather than blocking the app.
-  const [fontsLoaded, fontError] = useFonts({ Geist_600SemiBold, Geist_700Bold, Geist_800ExtraBold, GeistMono_600SemiBold, GeistMono_700Bold });
+  const [fontsLoaded, fontError] = useFonts({
+    Geist_600SemiBold,
+    Geist_700Bold,
+    Geist_800ExtraBold,
+    GeistMono_600SemiBold,
+    GeistMono_700Bold,
+  });
   const signedIn = !!session;
   const profileLoaded = !!profile;
 
   // Wait until we know whether you're signed in (and, if so, whether you've finished onboarding).
   if (!authReady || (signedIn && !profileLoaded) || !(fontsLoaded || fontError)) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={T.ink} />
+      <View style={styles.loading} accessibilityLabel="Loading Trajectory">
+        <Text style={styles.wordmark}>Trajectory</Text>
+        <LoadingDot />
       </View>
     );
   }
@@ -60,6 +73,22 @@ function Routes() {
   );
 }
 
+/** Breathing lime dot under the wordmark while the app starts. */
+function LoadingDot() {
+  const pulse = useSharedValue(0.3);
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 900, easing: Easing.inOut(Easing.quad), reduceMotion: ReduceMotion.System }),
+      -1,
+      true,
+    );
+  }, [pulse]);
+  const style = useAnimatedStyle(() => ({ opacity: pulse.value, transform: [{ scale: 0.8 + pulse.value * 0.4 }] }));
+  return <Animated.View style={[styles.dot, style]} />;
+}
+
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: T.ground },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, backgroundColor: T.ground },
+  wordmark: { fontSize: 28, fontWeight: '800', color: T.ink, letterSpacing: -1 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: T.accent },
 });
