@@ -11,6 +11,8 @@ import { T, WIDE, font, mono, monoBold, radius, typo } from '@/constants/traject
 import type { Course, Status } from '@/data/courses';
 import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
 import { useDailyHours } from '@/lib/daily-hours';
+import { dayKey } from '@/lib/day';
+import { useHolidays } from '@/lib/holidays';
 import { useStore } from '@/lib/store';
 import { minutesLabel, useStudySession } from '@/lib/study-session';
 
@@ -21,6 +23,8 @@ export default function TodayScreen() {
   const { now } = study;
   const { courses, setStatus } = useStore();
   const [hoursAvailable] = useDailyHours();
+  const holidays = useHolidays(now);
+  const holidayToday = holidays.get(dayKey(now));
   const wide = useWindowDimensions().width >= WIDE;
   // A course page's "Start timer" lands here with the assessment to start.
   const { start } = useLocalSearchParams<{ start?: string }>();
@@ -90,7 +94,10 @@ export default function TodayScreen() {
       <ScrollView contentContainerStyle={[styles.content, wide && styles.contentWide]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.date}>{dateLabel}</Text>
+            <Text style={styles.date}>
+              {dateLabel}
+              {holidayToday ? <Text style={styles.holiday}> · Public holiday: {holidayToday}</Text> : null}
+            </Text>
             <Text style={styles.title}>Today</Text>
           </View>
           {examDays !== null ? <Text style={styles.examPill}>exams in {examDays}d</Text> : null}
@@ -124,7 +131,7 @@ export default function TodayScreen() {
                 onStop={study.stop}
               />
             </Animated.View>
-            {wide ? <ComingUp courses={courses} now={now} /> : null}
+            {wide ? <ComingUp courses={courses} now={now} holidays={holidays} /> : null}
           </View>
 
           <View style={wide ? styles.colWide : styles.stack}>
@@ -223,7 +230,7 @@ export default function TodayScreen() {
 }
 
 /** The next few deadlines across every course, filling the column under the timer on wide screens. */
-function ComingUp({ courses, now }: { courses: Course[]; now: number }) {
+function ComingUp({ courses, now, holidays }: { courses: Course[]; now: number; holidays: Map<string, string> }) {
   const next = upcoming(courses, now).slice(0, 5);
   if (next.length === 0) return null;
   return (
@@ -241,6 +248,7 @@ function ComingUp({ courses, now }: { courses: Course[]; now: number }) {
             </Text>
             <Text style={styles.comingMeta}>
               {course.code} · {dueLabel(assessment.due)}
+              {assessment.due && holidays.has(dayKey(new Date(assessment.due).getTime())) ? <Text style={styles.holiday}> · Public holiday</Text> : null}
             </Text>
           </View>
           <Text style={[styles.comingDue, { color: urgencyColor(daysUntil(assessment.due, now)) }]}>
@@ -301,6 +309,7 @@ const styles = StyleSheet.create({
   },
   headerText: { gap: 2 },
   date: { fontSize: 14, fontWeight: '500', color: T.muted },
+  holiday: { color: T.accent, fontWeight: '600' },
   title: typo.display,
   examPill: {
     fontFamily: mono,
