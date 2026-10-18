@@ -1,19 +1,23 @@
 import { Tabs } from 'expo-router/tabs';
 import { SymbolView } from 'expo-symbols';
-import { Platform } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 
-import { T } from '@/constants/trajectory';
+import { T, WIDE } from '@/constants/trajectory';
 
 export default function TabLayout() {
+  // Wide screens get a side rail instead of a bar stretched across the bottom.
+  const wide = useWindowDimensions().width >= WIDE;
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: T.accent,
         tabBarInactiveTintColor: T.muted,
+        tabBarPosition: wide ? 'left' : 'bottom',
+        tabBarVariant: wide ? 'material' : 'uikit',
         // The web tab bar's default height clips its labels.
-        tabBarStyle: [{ backgroundColor: T.surface, borderTopColor: T.line }, Platform.OS === 'web' && { height: 68, paddingTop: 6, paddingBottom: 6 }],
-        tabBarLabelStyle: { fontSize: 11, lineHeight: 16, fontWeight: '600', flexShrink: 0 },
+        tabBarStyle: [{ backgroundColor: T.surface, borderTopColor: T.line }, !wide && Platform.OS === 'web' && { height: 68, paddingTop: 6, paddingBottom: 6 }, wide && { width: 208, minWidth: 208, maxWidth: 208, borderRightColor: T.line, paddingTop: 24, paddingHorizontal: 8 }],
+        tabBarLabelStyle: { fontSize: wide ? 15 : 11, lineHeight: wide ? 20 : 16, fontWeight: '600', flexShrink: 0 },
         sceneStyle: { backgroundColor: T.ground },
       }}>
       <Tabs.Screen

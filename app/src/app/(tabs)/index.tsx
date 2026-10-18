@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CompletedToday } from '@/components/completed-today';
 import { ProgressBar, StudyTimer } from '@/components/study-timer';
-import { T, mono, radius, typo } from '@/constants/trajectory';
+import { TrajectoryView } from '@/components/trajectory-view';
+import { T, WIDE, font, mono, monoBold, radius, typo } from '@/constants/trajectory';
 import type { Status } from '@/data/courses';
 import { countdown, daysUntil, hoursLabel, todayHours, todaysPlan, urgencyColor, whyLabel } from '@/lib/planning';
 import { useDailyHours } from '@/lib/daily-hours';
@@ -20,6 +21,7 @@ export default function TodayScreen() {
   const { now } = study;
   const { courses, setStatus } = useStore();
   const [hoursAvailable] = useDailyHours();
+  const wide = useWindowDimensions().width >= WIDE;
   // A course page's "Start timer" lands here with the assessment to start.
   const { start } = useLocalSearchParams<{ start?: string }>();
   const plan = todaysPlan(courses, now, hoursAvailable);
@@ -41,7 +43,13 @@ export default function TodayScreen() {
     course.assessments.map((assessment) => {
       const studied = study.studiedMs(assessment.id);
       const target = todayHours(assessment, course) * HOUR_MS;
-      return { course, assessment, studied, target, finished: studied > 0 && studied >= target };
+      return {
+        course,
+        assessment,
+        studied,
+        target,
+        finished: studied > 0 && studied >= target,
+      };
     }),
   );
   const todo = plan.flatMap((p) => all.filter((x) => x.assessment.id === p.assessment.id && !x.finished));
@@ -70,9 +78,15 @@ export default function TodayScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per request
   }, [start]);
 
+  const trajectory = (
+    <Animated.View entering={FadeInDown.delay(160).duration(500)}>
+      <TrajectoryView courses={courses} now={now} />
+    </Animated.View>
+  );
+
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, wide && styles.contentWide]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.date}>{dateLabel}</Text>
@@ -81,106 +95,138 @@ export default function TodayScreen() {
           {examDays !== null ? <Text style={styles.examPill}>exams in {examDays}d</Text> : null}
         </View>
 
-        <Animated.View entering={FadeInDown.duration(400)}>
-          <StudyTimer
-            mode={active ? study.mode : 'idle'}
-            current={
-              active
-                ? { label: `${active.course.code} · ${active.assessment.name}`, studiedMs: active.studied, targetMs: active.target }
-                : null
-            }
-            breakMs={study.breakMs}
-            totalStudiedMs={study.totalStudiedMs}
-            plannedMs={plannedHours * HOUR_MS}
-            doneCount={plan.length - todo.length}
-            planCount={plan.length}
-            celebrating={study.cheering}
-            companion={study.companion}
-            onCompanion={study.setCompanion}
-            onStart={next ? () => startOn(next.assessment.id, next.assessment.status) : undefined}
-            onBreak={study.takeBreak}
-            onResume={study.resume}
-            onStop={study.stop}
-          />
-        </Animated.View>
-
-        {todo.length === 0 && completed.length === 0 ? (
-          <Animated.View entering={FadeInDown.delay(80)} style={styles.task}>
-            <Text style={styles.taskName}>{!courses.length ? 'No courses yet' : courses.some((c) => c.assessments.length) ? 'Nothing due right now' : 'No assessments yet'}</Text>
-            <Text style={styles.taskMeta}>
-              {!courses.length
-                ? 'Add your courses from the Courses tab to get a plan.'
-                : courses.some((c) => c.assessments.length)
-                  ? 'Everything with a due date is done. Nice work.'
-                  : 'Add assessments from a course page and they will show up here.'}
-            </Text>
-          </Animated.View>
-        ) : null}
-
-        {todo.map(({ course, assessment, studied, target }, i) => {
-          const days = daysUntil(assessment.due, now);
-          const first = i === 0;
-          const isActive = active?.assessment.id === assessment.id;
-          const status = statusHeading(isActive ? study.mode : 'idle', studied, target);
-          return (
-            <Animated.View
-              key={assessment.id}
-              entering={FadeInDown.delay(80 + i * 70).springify().damping(18)}
-              exiting={FadeOut.duration(200)}
-              layout={LinearTransition.springify().damping(18)}
-              style={[styles.task, first && styles.taskFirst, isActive && styles.taskActive]}>
-              <View style={styles.taskTop}>
-                <Text style={[styles.statusHeading, { color: status.color }]}>{status.text}</Text>
-                <Text style={[styles.countdown, { color: urgencyColor(days) }]}>{countdown(assessment.due, now)}</Text>
-              </View>
-              <Text style={styles.taskName}>{assessment.name}</Text>
-              <Text style={styles.taskMeta}>
-                {course.code} · {hoursLabel(todayHours(assessment, course)).replace('~', '')} today · {assessment.weight}% of grade
-              </Text>
-              <View style={styles.taskProgress}>
-                <ProgressBar value={target ? studied / target : 0} color={T.accent} track={T.neutralSoft} height={6} />
-                <Text style={styles.taskProgressText}>
-                  {minutesLabel(studied)} of {minutesLabel(target)}
-                </Text>
-              </View>
-              {first && (
-                <View style={styles.why}>
-                  <Text style={styles.whyText}>
-                    <Text style={styles.whyLabel}>Why this? </Text>
-                    {assessment.why ?? whyLabel(assessment, now)}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.actions}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() =>
-                    !isActive ? startOn(assessment.id, assessment.status) : study.mode === 'break' ? study.resume() : study.takeBreak()
-                  }
-                  style={({ pressed }) => [styles.startBtn, !first && !isActive && styles.secondaryBtn, pressed && styles.pressed]}>
-                  <Text style={[styles.startText, !first && !isActive && styles.secondaryText]}>
-                    {isActive ? (study.mode === 'break' ? 'Back to it' : 'Take a break') : studied > 0 ? 'Resume timer' : 'Start timer'}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${course.code}`}
-                  style={({ pressed }) => [styles.secondaryBtn, styles.courseBtn, pressed && styles.pressed]}
-                  onPress={() => router.push({ pathname: '/course/[code]', params: { code: course.code } })}>
-                  <Text style={styles.secondaryText}>Course</Text>
-                </Pressable>
-              </View>
+        <View style={wide ? styles.columns : styles.stack}>
+          <View style={wide ? styles.colWide : styles.stack}>
+            <Animated.View entering={FadeInDown.duration(400)}>
+              <StudyTimer
+                mode={active ? study.mode : 'idle'}
+                current={
+                  active
+                    ? {
+                        label: `${active.course.code} · ${active.assessment.name}`,
+                        studiedMs: active.studied,
+                        targetMs: active.target,
+                      }
+                    : null
+                }
+                breakMs={study.breakMs}
+                totalStudiedMs={study.totalStudiedMs}
+                plannedMs={plannedHours * HOUR_MS}
+                doneCount={plan.length - todo.length}
+                planCount={plan.length}
+                celebrating={study.cheering}
+                companion={study.companion}
+                onCompanion={study.setCompanion}
+                onStart={next ? () => startOn(next.assessment.id, next.assessment.status) : undefined}
+                onBreak={study.takeBreak}
+                onResume={study.resume}
+                onStop={study.stop}
+              />
             </Animated.View>
-          );
-        })}
+          </View>
 
-        {completed.length > 0 ? (
-          <Animated.View layout={LinearTransition.springify().damping(18)}>
-            <CompletedToday items={completed.map((c) => ({ id: c.assessment.id, name: c.assessment.name, code: c.course.code, studied: c.studied }))} />
-          </Animated.View>
-        ) : null}
+          <View style={wide ? styles.colWide : styles.stack}>
+            {wide ? trajectory : null}
+            {todo.length === 0 && completed.length === 0 ? (
+              <Animated.View entering={FadeInDown.delay(80)} style={styles.task}>
+                <Text style={styles.taskName}>
+                  {!courses.length
+                    ? 'No courses yet'
+                    : courses.some((c) => c.assessments.length)
+                      ? 'Nothing due right now'
+                      : 'No assessments yet'}
+                </Text>
+                <Text style={styles.taskMeta}>
+                  {!courses.length
+                    ? 'Add your courses from the Courses tab to get a plan.'
+                    : courses.some((c) => c.assessments.length)
+                      ? 'Everything with a due date is done. Nice work.'
+                      : 'Add assessments from a course page and they will show up here.'}
+                </Text>
+              </Animated.View>
+            ) : null}
 
-        <Text style={styles.footnote}>Only study time counts towards today. Breaks pause the clock.</Text>
+            {todo.map(({ course, assessment, studied, target }, i) => {
+              const days = daysUntil(assessment.due, now);
+              const first = i === 0;
+              const isActive = active?.assessment.id === assessment.id;
+              const status = statusHeading(isActive ? study.mode : 'idle', studied, target);
+              return (
+                <Animated.View
+                  key={assessment.id}
+                  entering={FadeInDown.delay(80 + i * 70)
+                    .springify()
+                    .damping(18)}
+                  exiting={FadeOut.duration(200)}
+                  layout={LinearTransition.springify().damping(18)}
+                  style={[styles.task, first && styles.taskFirst, isActive && styles.taskActive]}>
+                  <View style={styles.taskTop}>
+                    <Text style={[styles.statusHeading, { color: status.color }]}>{status.text}</Text>
+                    <Text style={[styles.countdown, { color: urgencyColor(days) }]}>{countdown(assessment.due, now)}</Text>
+                  </View>
+                  <Text style={styles.taskName}>{assessment.name}</Text>
+                  <Text style={styles.taskMeta}>
+                    {course.code} · {hoursLabel(todayHours(assessment, course)).replace('~', '')} today · {assessment.weight}% of grade
+                  </Text>
+                  <View style={styles.taskProgress}>
+                    <ProgressBar value={target ? studied / target : 0} color={T.accent} track={T.neutralSoft} height={6} />
+                    <Text style={styles.taskProgressText}>
+                      {minutesLabel(studied)} of {minutesLabel(target)}
+                    </Text>
+                  </View>
+                  {first && (
+                    <View style={styles.why}>
+                      <Text style={styles.whyText}>
+                        <Text style={styles.whyLabel}>Why this? </Text>
+                        {assessment.why ?? whyLabel(assessment, now)}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.actions}>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() =>
+                        !isActive ? startOn(assessment.id, assessment.status) : study.mode === 'break' ? study.resume() : study.takeBreak()
+                      }
+                      style={({ pressed }) => [styles.startBtn, !first && !isActive && styles.secondaryBtn, pressed && styles.pressed]}>
+                      <Text style={[styles.startText, !first && !isActive && styles.secondaryText]}>
+                        {isActive ? (study.mode === 'break' ? 'Back to it' : 'Take a break') : studied > 0 ? 'Resume timer' : 'Start timer'}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${course.code}`}
+                      style={({ pressed }) => [styles.secondaryBtn, styles.courseBtn, pressed && styles.pressed]}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/course/[code]',
+                          params: { code: course.code },
+                        })
+                      }>
+                      <Text style={styles.secondaryText}>Course</Text>
+                    </Pressable>
+                  </View>
+                </Animated.View>
+              );
+            })}
+
+            {completed.length > 0 ? (
+              <Animated.View layout={LinearTransition.springify().damping(18)}>
+                <CompletedToday
+                  items={completed.map((c) => ({
+                    id: c.assessment.id,
+                    name: c.assessment.name,
+                    code: c.course.code,
+                    studied: c.studied,
+                  }))}
+                />
+              </Animated.View>
+            ) : null}
+
+            {wide ? null : trajectory}
+            <Text style={styles.footnote}>Only study time counts towards today. Breaks pause the clock.</Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -190,15 +236,40 @@ export default function TodayScreen() {
 function statusHeading(mode: 'idle' | 'study' | 'break', studied: number, target: number): { text: string; color: string } {
   if (mode === 'study') return { text: 'Studying now', color: T.accent };
   if (mode === 'break') return { text: 'On a break', color: T.warn };
-  if (studied > 0) return { text: `In progress · ${Math.floor((studied / target) * 100)}%`, color: T.accent };
+  if (studied > 0)
+    return {
+      text: `In progress · ${Math.floor((studied / target) * 100)}%`,
+      color: T.accent,
+    };
   return { text: 'Not started', color: T.muted };
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: T.ground },
-  content: { padding: 20, paddingTop: 12, gap: 12, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  content: {
+    padding: 20,
+    paddingTop: 12,
+    gap: 12,
+    maxWidth: 720,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  contentWide: {
+    maxWidth: 1240,
+    paddingHorizontal: 40,
+    paddingTop: 28,
+    gap: 20,
+  },
+  stack: { gap: 12 },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
+  colWide: { flex: 1, minWidth: 0, gap: 12 },
 
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 6,
+  },
   headerText: { gap: 2 },
   date: { fontSize: 14, fontWeight: '500', color: T.muted },
   title: typo.display,
@@ -215,25 +286,59 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  task: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 18, gap: 6 },
+  task: {
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.line,
+    borderRadius: radius.lg,
+    padding: 18,
+    gap: 6,
+  },
   taskFirst: { borderColor: T.lineStrong },
   taskActive: { borderWidth: 2, borderColor: T.accent },
-  taskTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusHeading: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  countdown: { fontFamily: mono, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  taskName: { fontSize: 17, fontWeight: '600', color: T.ink },
+  taskTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusHeading: { fontFamily: font.semibold, fontSize: 14 },
+  countdown: { fontFamily: monoBold, fontSize: 22, letterSpacing: -0.5 },
+  taskName: { fontFamily: font.bold, fontSize: 18, color: T.ink, letterSpacing: -0.2 },
   taskMeta: { fontSize: 14, color: T.muted },
   taskProgress: { gap: 6, marginTop: 4 },
   taskProgressText: { fontFamily: mono, fontSize: 12, color: T.muted },
-  why: { backgroundColor: T.ground, borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 12, marginTop: 4 },
+  why: {
+    backgroundColor: T.ground,
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 4,
+  },
   whyText: { fontSize: 13, lineHeight: 19, color: T.inkSoft },
   whyLabel: { fontWeight: '700', color: T.ink },
   actions: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  startBtn: { flex: 1, height: 44, borderRadius: 999, backgroundColor: T.accent, alignItems: 'center', justifyContent: 'center' },
+  startBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: T.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   startText: { fontSize: 15, fontWeight: '600', color: T.onAccent },
-  secondaryBtn: { backgroundColor: T.surface, borderWidth: 1, borderColor: T.line },
+  secondaryBtn: {
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.line,
+  },
   secondaryText: { fontSize: 15, fontWeight: '500', color: T.ink },
-  courseBtn: { height: 44, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  courseBtn: {
+    height: 44,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pressed: { opacity: 0.7 },
 
   footnote: { fontSize: 13, color: T.muted, textAlign: 'center', marginTop: 4 },

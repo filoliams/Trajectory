@@ -7,3 +7,19 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+/* Each Geist weight is its own family; stop the browser faking bold on top of it. */
+* {
+  font-synthesis: none;
+}
+
+/* Visible keyboard focus on everything you can press. */
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+[role='radio']:focus-visible,
+[role='switch']:focus-visible,
+[role='combobox']:focus-visible,
+a:focus-visible {
+  outline: 2px solid #c6f432;
+  outline-offset: 2px;
+}

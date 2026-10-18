@@ -1,10 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LevelChip, StatusChip } from '@/components/chips';
 import { TopicList } from '@/components/topic-list';
-import { T, mono, radius, typo } from '@/constants/trajectory';
+import { T, WIDE, font, mono, radius, typo } from '@/constants/trajectory';
 import type { Assessment } from '@/data/courses';
 import {
   byPriority,
@@ -28,6 +28,7 @@ export default function CourseDetailScreen() {
   const { courses, loading, reload, setStatus } = useStore();
   const course = courses.find((c) => c.code === code);
   const now = useNow();
+  const wide = useWindowDimensions().width >= WIDE;
 
   if (!course) {
     return (
@@ -50,7 +51,7 @@ export default function CourseDetailScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, wide && styles.contentWide]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />}>
         <View style={styles.topBar}>
           <BackButton />
@@ -75,86 +76,100 @@ export default function CourseDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>Assessments by priority</Text>
-            <Pressable
-              accessibilityRole="button"
-              style={styles.textBtn}
-              onPress={() => router.push({ pathname: '/assessment/new', params: { course: course.code } })}>
-              <Text style={styles.textBtnLabel}>+ Add</Text>
-            </Pressable>
-          </View>
+        <View style={wide ? styles.columns : styles.stack}>
+          <View style={wide ? styles.colWide : styles.stack}>
+            <View style={styles.section}>
+              <View style={styles.sectionHead}>
+                <Text style={styles.sectionTitle}>Assessments by priority</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.textBtn}
+                  onPress={() => router.push({ pathname: '/assessment/new', params: { course: course.code } })}>
+                  <Text style={styles.textBtnLabel}>+ Add</Text>
+                </Pressable>
+              </View>
 
-          {ranked.length === 0 && noDate.length === 0 ? (
-            <Text style={styles.empty}>Nothing left to do here. Add an assessment with + Add.</Text>
-          ) : null}
+              {ranked.length === 0 && noDate.length === 0 ? (
+                <Text style={styles.empty}>Nothing left to do here. Add an assessment with + Add.</Text>
+              ) : null}
 
-          {ranked.map((a, i) => {
-            const days = daysUntil(a.due, now);
-            const first = i === 0;
-            return (
-              <Pressable key={a.id} onPress={() => openEdit(a)} style={[styles.item, first && styles.itemFirst]}>
-                <View style={[styles.rank, first && styles.rankFirst]}>
-                  <Text style={[styles.rankText, first && styles.rankTextFirst]}>{i + 1}</Text>
-                </View>
-                <View style={styles.itemBody}>
-                  <View style={styles.itemTop}>
+              {ranked.map((a, i) => {
+                const days = daysUntil(a.due, now);
+                const first = i === 0;
+                return (
+                  <Pressable key={a.id} onPress={() => openEdit(a)} style={[styles.item, first && styles.itemFirst]}>
+                    <View style={[styles.rank, first && styles.rankFirst]}>
+                      <Text style={[styles.rankText, first && styles.rankTextFirst]}>{i + 1}</Text>
+                    </View>
+                    <View style={styles.itemBody}>
+                      <View style={styles.itemTop}>
+                        <Text style={styles.itemName}>{a.name}</Text>
+                        <Text style={[styles.countdown, { color: urgencyColor(days) }]}>{countdown(a.due, now)}</Text>
+                      </View>
+                      <View style={styles.itemMeta}>
+                        <Text style={styles.metaText}>{dueLabel(a.due)}</Text>
+                        <Text style={styles.weight}>{a.weight}%</Text>
+                      </View>
+                      <View style={styles.track}>
+                        <View
+                          style={[
+                            styles.fill,
+                            { width: `${Math.min(Math.max(a.weight, 2), 100)}%`, backgroundColor: urgencyBarColor(days) },
+                          ]}
+                        />
+                      </View>
+                      <View style={styles.statusRow}>
+                        <StatusChip status={a.status} />
+                        <Text style={styles.metaText}>{hoursLabel(a.hoursLeft)} left</Text>
+                        {a.isHurdle ? <Text style={styles.hurdle}>Hurdle</Text> : null}
+                        {a.needsReview ? <Text style={styles.review}>Check date</Text> : null}
+                      </View>
+                      <Text style={styles.why}>{a.needsReview && a.note ? a.note : (a.why ?? whyLabel(a, now))}</Text>
+                      <View style={styles.quickRow}>
+                        <QuickButton
+                          label="Start timer"
+                          primary
+                          onPress={() => router.navigate({ pathname: '/', params: { start: a.id } })}
+                        />
+                        <QuickButton label="Mark done" onPress={() => setStatus(a.id, 'done')} />
+                        <QuickButton label="Edit" onPress={() => openEdit(a)} />
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {noDate.length > 0 ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Needs a due date</Text>
+                {noDate.map((a) => (
+                  <Pressable key={a.id} accessibilityRole="button" onPress={() => openEdit(a)} style={styles.simpleRow}>
                     <Text style={styles.itemName}>{a.name}</Text>
-                    <Text style={[styles.countdown, { color: urgencyColor(days) }]}>{countdown(a.due, now)}</Text>
-                  </View>
-                  <View style={styles.itemMeta}>
-                    <Text style={styles.metaText}>{dueLabel(a.due)}</Text>
-                    <Text style={styles.weight}>{a.weight}%</Text>
-                  </View>
-                  <View style={styles.track}>
-                    <View style={[styles.fill, { width: `${Math.min(Math.max(a.weight, 2), 100)}%`, backgroundColor: urgencyBarColor(days) }]} />
-                  </View>
-                  <View style={styles.statusRow}>
-                    <StatusChip status={a.status} />
-                    <Text style={styles.metaText}>{hoursLabel(a.hoursLeft)} left</Text>
-                    {a.isHurdle ? <Text style={styles.hurdle}>Hurdle</Text> : null}
-                    {a.needsReview ? <Text style={styles.review}>Check date</Text> : null}
-                  </View>
-                  <Text style={styles.why}>{a.needsReview && a.note ? a.note : (a.why ?? whyLabel(a, now))}</Text>
-                  <View style={styles.quickRow}>
-                    <QuickButton label="Start timer" primary onPress={() => router.navigate({ pathname: '/', params: { start: a.id } })} />
-                    <QuickButton label="Mark done" onPress={() => setStatus(a.id, 'done')} />
-                    <QuickButton label="Edit" onPress={() => openEdit(a)} />
-                  </View>
-                </View>
-              </Pressable>
-            );
-          })}
+                    <Text style={styles.review}>Add date</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {finished.length > 0 ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Done or past</Text>
+                {finished.map((a) => (
+                  <Pressable key={a.id} accessibilityRole="button" onPress={() => openEdit(a)} style={styles.simpleRow}>
+                    <Text style={[styles.itemName, styles.doneText]}>{a.name}</Text>
+                    <Text style={styles.metaText}>
+                      {a.weight}% · {a.status === 'done' ? 'Done' : 'Past due'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
+          <View style={wide ? styles.colWide : styles.stack}>
+            <TopicList course={course} />
+          </View>
         </View>
-
-        {noDate.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Needs a due date</Text>
-            {noDate.map((a) => (
-              <Pressable key={a.id} accessibilityRole="button" onPress={() => openEdit(a)} style={styles.simpleRow}>
-                <Text style={styles.itemName}>{a.name}</Text>
-                <Text style={styles.review}>Add date</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        {finished.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Done or past</Text>
-            {finished.map((a) => (
-              <Pressable key={a.id} accessibilityRole="button" onPress={() => openEdit(a)} style={styles.simpleRow}>
-                <Text style={[styles.itemName, styles.doneText]}>{a.name}</Text>
-                <Text style={styles.metaText}>
-                  {a.weight}% · {a.status === 'done' ? 'Done' : 'Past due'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        <TopicList course={course} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -173,7 +188,10 @@ function BackButton() {
 
 function QuickButton({ label, onPress, primary }: { label: string; onPress: () => void; primary?: boolean }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.quick, primary && styles.quickPrimary, pressed && styles.pressed]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.quick, primary && styles.quickPrimary, pressed && styles.pressed]}>
       <Text style={[styles.quickText, primary && styles.quickTextPrimary]}>{label}</Text>
     </Pressable>
   );
@@ -191,6 +209,10 @@ function Tile({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: T.ground },
   content: { padding: 16, paddingBottom: 40, gap: 18, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  contentWide: { maxWidth: 1240, paddingHorizontal: 40, paddingTop: 20 },
+  stack: { gap: 18 },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 24 },
+  colWide: { flex: 1, minWidth: 0, gap: 18 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   back: { minHeight: 44, justifyContent: 'center' },
   textBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
@@ -210,7 +232,16 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typo.heading, paddingHorizontal: 4 },
   empty: { fontSize: 14, color: T.muted, paddingHorizontal: 4 },
 
-  item: { flexDirection: 'row', gap: 10, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, padding: 12, paddingHorizontal: 14 },
+  item: {
+    flexDirection: 'row',
+    gap: 10,
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.line,
+    borderRadius: radius.lg,
+    padding: 12,
+    paddingHorizontal: 14,
+  },
   itemFirst: { borderWidth: 1.5, borderColor: T.accent },
   rank: { width: 26, height: 26, borderRadius: 8, backgroundColor: T.neutralSoft, alignItems: 'center', justifyContent: 'center' },
   rankFirst: { backgroundColor: T.accent },
@@ -218,7 +249,7 @@ const styles = StyleSheet.create({
   rankTextFirst: { color: T.onAccent },
   itemBody: { flex: 1, gap: 5 },
   itemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  itemName: { flex: 1, fontSize: 15, fontWeight: '600', color: T.ink },
+  itemName: { flex: 1, fontFamily: font.semibold, fontSize: 16, color: T.ink },
   doneText: { color: T.muted, fontWeight: '500' },
   countdown: { fontFamily: mono, fontSize: 14, fontWeight: '600' },
   itemMeta: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
@@ -227,14 +258,51 @@ const styles = StyleSheet.create({
   track: { height: 4, borderRadius: 9, backgroundColor: T.lineSoft, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 9 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  hurdle: { fontSize: 12, fontWeight: '600', color: T.inkSoft, borderWidth: 1, borderColor: T.line, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 1 },
-  review: { fontSize: 12, fontWeight: '600', color: T.warn, backgroundColor: T.warnSoft, borderRadius: radius.sm, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
+  hurdle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: T.inkSoft,
+    borderWidth: 1,
+    borderColor: T.line,
+    borderRadius: radius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  review: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: T.warn,
+    backgroundColor: T.warnSoft,
+    borderRadius: radius.sm,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
   why: { fontSize: 12, lineHeight: 17, color: T.inkSoft },
   quickRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  quick: { minHeight: 36, paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: 1, borderColor: T.line, alignItems: 'center', justifyContent: 'center' },
+  quick: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: T.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   quickText: { fontSize: 13, fontWeight: '600', color: T.ink },
   quickPrimary: { backgroundColor: T.accent, borderColor: T.accent },
   quickTextPrimary: { color: T.onAccent },
   pressed: { opacity: 0.7 },
-  simpleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.md, paddingVertical: 12, paddingHorizontal: 14 },
+  simpleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.line,
+    borderRadius: radius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
 });

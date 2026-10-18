@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { COMPANIONS, Playground } from '@/components/pixel-companion';
-import { T, mono, radius } from '@/constants/trajectory';
+import { T, font, mono, monoBold, radius } from '@/constants/trajectory';
 import { clock, minutesLabel, type CompanionKind, type StudyMode } from '@/lib/study-session';
 
 /** A progress bar whose fill glides to its new width. */
@@ -170,9 +170,9 @@ const styles = StyleSheet.create({
 
   readout: { gap: 2, paddingHorizontal: 4 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  status: { fontSize: 13, fontWeight: '600', color: T.onDarkMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  status: { fontFamily: font.semibold, fontSize: 14, color: T.onDarkMuted },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  clock: { fontFamily: mono, fontSize: 56, fontWeight: '800', color: T.ink, letterSpacing: -2 },
+  clock: { fontFamily: monoBold, fontSize: 56, color: T.ink, letterSpacing: -2 },
   clockBreak: { color: BREAK },
   sub: { fontSize: 14, color: T.onDarkMuted },
 
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
 
   dayBlock: { gap: 8, borderTopWidth: 1, borderTopColor: T.line, paddingTop: 12, paddingHorizontal: 4 },
   dayTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  dayBig: { fontSize: 20, fontWeight: '600', color: T.ink },
+  dayBig: { fontFamily: font.bold, fontSize: 22, color: T.ink },
   daySmall: { fontSize: 13, fontWeight: '500', color: T.onDarkMuted },
   muted: { fontSize: 13, color: T.onDarkMuted },
 

@@ -9,6 +9,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
+import { PressScale } from '@/components/press-scale';
 import { T, radius } from '@/constants/trajectory';
 
 export function Field({ label, hint, ...input }: TextInputProps & { label: string; hint?: string }) {
@@ -32,23 +33,18 @@ type ButtonProps = {
 
 export function Button({ title, onPress, variant = 'primary', disabled, loading, flex }: ButtonProps) {
   return (
-    <Pressable
+    <PressScale
       accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        buttonStyles[variant],
-        flex && styles.flex,
-        (disabled || loading) && styles.disabled,
-        pressed && styles.pressed,
-      ]}>
+      style={[styles.button, buttonStyles[variant], flex && styles.flex, (disabled || loading) && styles.disabled]}>
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? T.onAccent : T.ink} />
       ) : (
         <Text style={[styles.buttonText, buttonTextStyles[variant]]}>{title}</Text>
       )}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -99,7 +95,7 @@ export function Segmented<V extends string>({
             <Pressable
               key={o.value}
               accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
+              accessibilityState={{ checked: on }}
               onPress={() => onChange(o.value)}
               style={[styles.segment, on && styles.segmentOn]}>
               <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{o.label}</Text>

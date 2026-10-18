@@ -1,3 +1,5 @@
+import { Geist_600SemiBold, Geist_700Bold, Geist_800ExtraBold, useFonts } from '@expo-google-fonts/geist';
+import { GeistMono_600SemiBold, GeistMono_700Bold } from '@expo-google-fonts/geist-mono';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -5,6 +7,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SyncStatus } from '@/components/sync-status';
 import { T } from '@/constants/trajectory';
 import { StoreProvider, useStore } from '@/lib/store';
+
+import '@/global.css';
 
 export default function RootLayout() {
   return (
@@ -18,11 +22,13 @@ export default function RootLayout() {
 
 function Routes() {
   const { authReady, session, profile } = useStore();
+  // A font that fails to load falls back to the system face rather than blocking the app.
+  const [fontsLoaded, fontError] = useFonts({ Geist_600SemiBold, Geist_700Bold, Geist_800ExtraBold, GeistMono_600SemiBold, GeistMono_700Bold });
   const signedIn = !!session;
   const profileLoaded = !!profile;
 
   // Wait until we know whether you're signed in (and, if so, whether you've finished onboarding).
-  if (!authReady || (signedIn && !profileLoaded)) {
+  if (!authReady || (signedIn && !profileLoaded) || !(fontsLoaded || fontError)) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={T.ink} />

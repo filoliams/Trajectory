@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 
 /** Trajectory's colours: dark-first, with a lime accent. */
 export const T = {
@@ -27,15 +26,23 @@ export const T = {
   onDarkMuted: '#8B909A',
 } as const;
 
-export const mono = Platform.select({ ios: 'Menlo', default: 'monospace' });
+/** Loaded in the root layout; each weight is its own family. */
+export const font = { display: 'Geist_800ExtraBold', bold: 'Geist_700Bold', semibold: 'Geist_600SemiBold' } as const;
+
+/** Numbers: countdowns, clocks, percentages. */
+export const mono = 'GeistMono_600SemiBold';
+export const monoBold = 'GeistMono_700Bold';
 
 /** sm: chips and tags · md: inputs and small buttons · lg: cards · pill: buttons and badges. */
 export const radius = { sm: 8, md: 14, lg: 20, pill: 999 } as const;
 
 /** One type scale for every screen. */
 export const typo = {
-  display: { fontSize: 38, fontWeight: '800', color: T.ink, letterSpacing: -1.2 },
-  title: { fontSize: 22, fontWeight: '700', color: T.ink, letterSpacing: -0.4 },
-  heading: { fontSize: 18, fontWeight: '700', color: T.ink, letterSpacing: -0.2 },
-  eyebrow: { fontSize: 12, fontWeight: '700', color: T.muted, letterSpacing: 0.8, textTransform: 'uppercase' },
+  display: { fontFamily: font.display, fontSize: 40, color: T.ink, letterSpacing: -1.6 },
+  title: { fontFamily: font.bold, fontSize: 22, color: T.ink, letterSpacing: -0.5 },
+  heading: { fontFamily: font.bold, fontSize: 18, color: T.ink, letterSpacing: -0.3 },
+  eyebrow: { fontFamily: font.semibold, fontSize: 13, color: T.muted },
 } as const;
+
+/** Screens at least this wide use two columns. */
+export const WIDE = 1024;
