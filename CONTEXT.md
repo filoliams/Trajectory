@@ -24,8 +24,9 @@ them that their notes on a topic are thin.
 2. **Course import.** The FastAPI backend (`backend/uq_import.py`) parses a UQ course profile (web
    page, PDF, or pasted table) into the course, its assessments (name, type, weight, due date,
    hurdle) and its weekly topics.
-3. **Notes.** The student picks note files. `notes-check` (Supabase Edge Function) hashes them so only
-   new or changed files are uploaded. `notes-ingest` sends each file to Claude, which works out the
+3. **Notes.** The student sends notes from the app they write in (GoodNotes, OneNote: *Share → Save
+   to Files*), then picks them in Trajectory. Trajectory never reads their OneDrive or folders.
+   `notes-check` (Supabase Edge Function) hashes them so only new or changed files are uploaded. `notes-ingest` sends each file to Claude, which works out the
    course and rates every topic `none / weak / okay / strong` with a one-line reason. The original
    file is deleted once read; note text is never stored.
 4. **Levels.** A course's level (Weak / Okay / Strong) comes from its topics' AI levels. If analysis
@@ -54,6 +55,7 @@ The MVP is the smallest version a UQ beta tester can use for a full semester.
 | Sync across devices, works offline | Done |
 | Import notes from `.md` / `.txt` (word-match levels) | Done |
 | AI note analysis: per-topic levels and reasons for `.md`, `.txt`, `.pdf`, images | Built, awaiting deploy |
+| "Add notes": share from notes app → Save to Files → pick in Trajectory, with a status list | Planned (`.scratch/notes-sharing`) |
 | Course level chip and plan driven by the AI levels | Built, awaiting deploy |
 
 **MVP is done when** a beta tester can onboard, import their courses, sync a GoodNotes PDF, see
@@ -62,12 +64,13 @@ iPad and web, with no note text left on the server.
 
 **Not in the MVP (later)**
 
-- Files-app "Sync notes" route (`files-route`)
-- OneDrive / OneNote automatic sync (`graph-connector`)
-- Native iOS folder sync and share extension (needs an Apple Developer membership)
+- "Share → Trajectory" straight from the iOS share sheet (parked until there's an Apple Developer membership)
+- Android (no Android beta testers)
 - Universities other than UQ
 - Paid tier or per-user billing for AI analysis
 - App Store / Play Store release
+
+**Dropped:** automatic OneDrive / OneNote / folder sync. Students share notes themselves instead.
 
 ## Key constraints
 

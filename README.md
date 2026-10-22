@@ -6,7 +6,7 @@ A study tracker app that keeps track of your courses and assessments, reads your
 
 - **Onboarding** – pick your university and courses on first launch
 - **Assessment import** – pull assessments automatically from online course profiles instead of entering them by hand
-- **Notes import** – connect notes from GoodNotes, Obsidian and OneNote
+- **Notes import** – share notes from GoodNotes, OneNote or Obsidian into the app
 - **AI progress analysis** – reads your notes to estimate how far along you are in each subject
 - **Study recommendations** – prioritises tasks and allocates more time to subjects that need it
 
@@ -47,6 +47,6 @@ study-tracker/
 - [x] Course and assessment data model
 - [x] Frontend / onboarding flow
 - [x] Notes import from Markdown and text files (Obsidian vaults, exported notes)
-- [ ] Note ingestion ([SPEC.md](SPEC.md)): server pipeline [`ingest-core`](SPEC-ingest-core.md) built, awaiting deploy; Files-app sync and Microsoft (OneDrive/OneNote) connector next
+- [ ] Note ingestion ([SPEC.md](SPEC.md)): server pipeline [`ingest-core`](SPEC-ingest-core.md) built, awaiting deploy; "Add notes" from Files next, iOS share sheet once there's an Apple Developer membership
 - [x] Study time recommendations (daily plan sized by your study hours; courses with weaker notes get more time)
 - [ ] AI progress analysis: built into note ingestion (per-topic levels and reasons from Claude), awaiting deploy

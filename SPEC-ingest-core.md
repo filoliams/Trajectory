@@ -35,7 +35,7 @@ the daily study plan.
 
 ## Tech stack
 
-- **Supabase:** Postgres, Storage, and Edge Functions on the Deno runtime. pg_cron arrives with the Graph connector.
+- **Supabase:** Postgres, Storage, and Edge Functions on the Deno runtime.
 - **Libraries:** `npm:@supabase/supabase-js@2.118.0` and `npm:@anthropic-ai/sdk@0.135.0`.
 - **Claude:** `claude-opus-5-5`, effort `low`, structured output
   (`output_config.format: json_schema`), server-side `fallbacks: "default"` (beta

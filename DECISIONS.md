@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-22: Notes are shared from the student's app, not synced from their folders
+**Decision:** Drop the OneDrive/OneNote connector (`graph-connector`) and native folder sync. For the MVP, students use *Share → Save to Files* in GoodNotes/OneNote and pick the files in Trajectory. A direct "Share → Trajectory" on iOS is parked until there's an Apple Developer membership. Android is out of scope.
+**Why:** The student decides exactly what Trajectory sees, so there are no stored OneDrive tokens or background folder access. It also removes the dependency on UQ approving a Microsoft app, and the Files picker works in Expo Go today without a membership.
+**Alternatives:** Microsoft Graph delta sync (needs UQ consent, token storage, pg_cron); an iOS share extension now (needs the $99/yr membership and an EAS build).
+
 ## 2026-10-22: Add AGENTS.md, CONTEXT.md and DECISIONS.md
 **Decision:** Repo-level docs for AI agents (map + rules), app context and MVP, and this decision log.
 **Why:** Agents and new contributors need one place for where code lives, what they may touch, and why things are the way they are.
