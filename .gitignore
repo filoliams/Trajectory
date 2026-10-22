@@ -44,3 +44,6 @@ Desktop.ini
 $RECYCLE.BIN/
 
 graphify-out/
+
+# Cloned reference repos (design inspiration, component source), read-only
+reference/
