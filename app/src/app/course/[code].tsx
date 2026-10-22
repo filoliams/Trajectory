@@ -154,7 +154,7 @@ export default function CourseDetailScreen() {
                         <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 8, paddingTop: 8, paddingLeft: 40 }}>
                           <Text className="text-xs leading-[17px] text-[#C9CCD3]">{a.needsReview && a.note ? a.note : (a.why ?? whyLabel(a, now))}</Text>
                           <View className="flex-row flex-wrap gap-2">
-                            <QuickButton label="Start timer" primary onPress={() => router.navigate({ pathname: '/', params: { start: a.id } })} />
+                            <QuickButton label="Start timer" primary onPress={() => router.navigate({ pathname: '/study', params: { start: a.id } })} />
                             <QuickButton label="Mark done" onPress={() => setStatus(a.id, 'done')} />
                             <QuickButton label="Edit" onPress={() => openEdit(a)} />
                           </View>

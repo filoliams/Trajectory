@@ -1,54 +1,35 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CompletedToday } from '@/components/completed-today';
 import { HeroProgress, SectionHead, StatCard, StreakCard, WeekChart, WeekStrip, flow } from '@/components/dashboard';
-import { ProgressBar, StudyTimer } from '@/components/study-timer';
+import { ProgressBar } from '@/components/study-timer';
 import { TrajectoryView } from '@/components/trajectory-view';
 import { Text } from '@/components/ui/text';
 import { T, WIDE } from '@/constants/trajectory';
 import type { Assessment, Course, Status } from '@/data/courses';
-import { useSmartPlan } from '@/lib/ai-plan';
 import { courseColor } from '@/lib/course-colors';
-import { useStudyHistory } from '@/lib/study-history';
-import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
-import { useDailyHours } from '@/lib/daily-hours';
+import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
 import { dayKey } from '@/lib/day';
-import { useHolidays } from '@/lib/holidays';
 import { useStore } from '@/lib/store';
-import { minutesLabel, useStudySession } from '@/lib/study-session';
+import { useStudyHistory } from '@/lib/study-history';
+import { clock, minutesLabel } from '@/lib/study-session';
+import { useToday } from '@/lib/today';
 import { cn } from '@/lib/utils';
 
-const HOUR_MS = 3_600_000;
-
 export default function TodayScreen() {
-  const study = useStudySession();
-  const { now } = study;
-  const { courses, setStatus, online } = useStore();
-  const [hoursAvailable] = useDailyHours();
-  const holidays = useHolidays(now);
-  const holidayToday = holidays.get(dayKey(now));
+  const { study, now, holidays, holidayToday, smart, smartFor, plan, hoursToday, plannedMs, todo, completed, active, next, startOn } = useToday();
+  const { courses, online } = useStore();
   const width = useWindowDimensions().width;
   const wide = width >= WIDE;
   // Big desktop windows get a third column for the week ahead.
   const threeCols = width >= 1360;
   const codes = courses.map((c) => c.code);
   const colorOf = (code: string) => courseColor(code, codes);
-  // A course page's "Start timer" lands here with the assessment to start.
-  const { start } = useLocalSearchParams<{ start?: string }>();
-  // Sonnet's plan when there is one; the on-device plan otherwise.
-  const smart = useSmartPlan(courses, hoursAvailable, holidayToday ?? null, online, dayKey(now));
   const smartItems = smart.items?.length ? smart.items : null;
-  const smartFor = new Map(smartItems?.map((s) => [s.assessment.id, s]));
-  const plan = smartItems ?? todaysPlan(courses, now, hoursAvailable);
-  const hoursToday = (a: Assessment, course: Course) => {
-    const block = smartFor.get(a.id);
-    return block ? block.minutes / 60 : todayHours(a, course);
-  };
-  const plannedHours = plan.reduce((sum, p) => sum + hoursToday(p.assessment, p.course), 0);
   const dateLabel = new Date(now).toLocaleDateString('en-AU', {
     weekday: 'long',
     day: 'numeric',
@@ -61,80 +42,39 @@ export default function TodayScreen() {
     .map((a) => daysUntil(a.due, now));
   const examDays = examDates.length ? Math.ceil(Math.min(...examDates)) : null;
 
-  // An item is finished for today once its timer reaches today's slot.
-  const all = courses.flatMap((course) =>
-    course.assessments.map((assessment) => {
-      const studied = study.studiedMs(assessment.id);
-      const target = hoursToday(assessment, course) * HOUR_MS;
-      return {
-        course,
-        assessment,
-        studied,
-        target,
-        finished: studied > 0 && studied >= target,
-      };
-    }),
-  );
-  const todo = plan.flatMap((p) => all.filter((x) => x.assessment.id === p.assessment.id && !x.finished));
-  const completed = all.filter((x) => x.finished);
-  // Look the active item up across all courses: it may have dropped off today's plan.
-  const active = all.find((x) => x.assessment.id === study.activeId && x.assessment.status !== 'done');
-
-  // Hitting the goal stops the clock and moves the item to "Completed today".
-  const activeFinished = !!active?.finished && study.mode === 'study';
-  const { finish } = study;
-  useEffect(() => {
-    if (activeFinished) finish();
-  }, [activeFinished, finish]);
-
-  const startOn = (id: string, status: Status) => {
-    study.focus(id);
-    if (status === 'not_started') setStatus(id, 'in_progress');
-  };
-  const next = todo[0];
   const empty = emptyState(courses);
-
-  const startTarget = start ? all.find((x) => x.assessment.id === start) : undefined;
-  useEffect(() => {
-    if (!start) return;
-    if (startTarget) startOn(startTarget.assessment.id, startTarget.assessment.status);
-    router.replace('/'); // drop the param so a reload doesn't start it again
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per request
-  }, [start]);
-
-  const plannedMs = plannedHours * HOUR_MS;
   const history = useStudyHistory(dayKey(now), study.totalStudiedMs);
   const soonest = upcoming(courses, now)[0];
   const doneCount = plan.length - todo.length;
+  /** Start the clock on an item and go to the Study tab, where the timer lives. */
+  const studyOn = (id: string, status: Status) => {
+    startOn(id, status);
+    router.navigate('/study');
+  };
 
-  const timer = (
-    <Animated.View entering={FadeInDown.duration(400)}>
-      <StudyTimer
-        mode={active ? study.mode : 'idle'}
-        current={
-          active
-            ? {
-                label: `${active.course.code} · ${active.assessment.name}`,
-                studiedMs: active.studied,
-                targetMs: active.target,
-              }
-            : null
-        }
-        breakMs={study.breakMs}
-        totalStudiedMs={study.totalStudiedMs}
-        plannedMs={plannedMs}
-        doneCount={doneCount}
-        planCount={plan.length}
-        celebrating={study.cheering}
-        companion={study.companion}
-        onCompanion={study.setCompanion}
-        onStart={next ? () => startOn(next.assessment.id, next.assessment.status) : undefined}
-        onBreak={study.takeBreak}
-        onResume={study.resume}
-        onStop={study.stop}
-      />
-    </Animated.View>
-  );
+  // While the clock runs, a slim live bar links back to the timer.
+  const nowStudying =
+    active && study.mode !== 'idle' ? (
+      <Animated.View entering={FadeInDown.duration(300)} exiting={FadeOut.duration(200)}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open the study timer"
+          onPress={() => router.navigate('/study')}
+          className="bg-card flex-row items-center gap-3 rounded-2xl border border-primary px-4 py-3 active:opacity-80">
+          <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: study.mode === 'break' ? T.warn : T.accent }} />
+          <View className="flex-1">
+            <Text className="text-muted-foreground text-xs">{study.mode === 'break' ? 'On a break' : 'Studying now'}</Text>
+            <Text className="font-semibold text-[15px]" numberOfLines={1}>
+              {active.course.code} · {active.assessment.name}
+            </Text>
+          </View>
+          <Text className="font-mono text-xl" style={{ color: study.mode === 'break' ? T.warn : T.accent }}>
+            {clock(study.mode === 'break' ? study.breakMs : active.studied)}
+          </Text>
+          <Text className="text-muted-foreground text-lg">›</Text>
+        </Pressable>
+      </Animated.View>
+    ) : null;
 
   const planList = (
     <View className="gap-3">
@@ -191,7 +131,7 @@ export default function TodayScreen() {
               mode={isActive ? study.mode : 'idle'}
               reason={block ? block.reason || whyLabel(assessment, now) : i === 0 ? (assessment.why ?? whyLabel(assessment, now)) : null}
               topics={block?.topics ?? []}
-              onTimer={() => (!isActive ? startOn(assessment.id, assessment.status) : study.mode === 'break' ? study.resume() : study.takeBreak())}
+              onTimer={() => (!isActive ? studyOn(assessment.id, assessment.status) : study.mode === 'break' ? study.resume() : study.takeBreak())}
             />
           </Animated.View>
         );
@@ -236,10 +176,10 @@ export default function TodayScreen() {
             <Pressable
               accessibilityRole="button"
               disabled={!next && !active}
-              onPress={() => (active ? (study.mode === 'break' ? study.resume() : study.takeBreak()) : next && startOn(next.assessment.id, next.assessment.status))}
+              onPress={() => (active ? router.navigate('/study') : next && studyOn(next.assessment.id, next.assessment.status))}
               className={cn('h-12 flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary active:opacity-80', !next && !active && 'opacity-40')}>
               <Text className="text-primary-foreground text-base">▶</Text>
-              <Text className="text-primary-foreground text-[15px] font-semibold">{active ? (study.mode === 'break' ? 'Back to it' : 'Take a break') : 'Study now'}</Text>
+              <Text className="text-primary-foreground text-[15px] font-semibold">{active ? 'Open timer' : 'Study now'}</Text>
             </Pressable>
             {online && smart.replansLeft > 0 && plan.length > 0 ? (
               <Pressable
@@ -271,29 +211,26 @@ export default function TodayScreen() {
           </View>
         </View>
 
+        {nowStudying}
+
         {threeCols ? (
           <View className="flex-row items-start gap-5">
-            <View className="min-w-0 flex-1 gap-5">{timer}</View>
+            <View className="min-w-0 flex-[1.2] gap-5">{planList}</View>
+            <View className="min-w-0 flex-1 gap-5">
+              <ComingUp courses={courses} now={now} holidays={holidays} colorOf={colorOf} />
+            </View>
+            <View className="min-w-0 flex-1 gap-5">{trajectory}</View>
+          </View>
+        ) : wide ? (
+          <View className="flex-row items-start gap-5">
             <View className="min-w-0 flex-[1.2] gap-5">{planList}</View>
             <View className="min-w-0 flex-1 gap-5">
               <ComingUp courses={courses} now={now} holidays={holidays} colorOf={colorOf} />
               {trajectory}
             </View>
           </View>
-        ) : wide ? (
-          <View className="flex-row items-start gap-5">
-            <View className="min-w-0 flex-1 gap-5">
-              {timer}
-              <ComingUp courses={courses} now={now} holidays={holidays} colorOf={colorOf} />
-            </View>
-            <View className="min-w-0 flex-[1.2] gap-5">
-              {planList}
-              {trajectory}
-            </View>
-          </View>
         ) : (
           <View className="gap-5">
-            {timer}
             {planList}
             <ComingUp courses={courses} now={now} holidays={holidays} colorOf={colorOf} />
             {trajectory}
