@@ -6,6 +6,8 @@ import { ErrorText } from '@/components/form';
 import { T, radius, typo } from '@/constants/trajectory';
 import type { Course, Topic } from '@/data/courses';
 import type { Understanding } from '@/lib/levels';
+import { summariseNotes } from '@/lib/note-files';
+import { analyseNotes } from '@/lib/note-sync';
 import { coveredTopics } from '@/lib/notes-match';
 import { useStore } from '@/lib/store';
 
@@ -13,7 +15,7 @@ const NOTE_EXT = /\.(md|markdown|txt)$/i;
 
 /** Every topic in a course, each marked with whether the student has notes for it. */
 export function TopicList({ course }: { course: Course }) {
-  const { addTopic, setTopicNotes, deleteTopic } = useStore();
+  const { addTopic, setTopicNotes, deleteTopic, reload } = useStore();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -25,25 +27,34 @@ export function TopicList({ course }: { course: Course }) {
   const topics = course.topics;
   const withNotes = topics.filter((t) => t.hasNotes).length;
 
-  /** Read Markdown/text notes (an Obsidian vault, exported notes) and tick off the topics they cover. */
-  async function importNotes() {
+  /** Add notes saved to Files (GoodNotes/OneNote: Share → Save to Files): AI levels per topic, word matching as the fallback. */
+  async function addNotes() {
     setError(null);
     setImportResult(null);
     const picked = await DocumentPicker.getDocumentAsync({ multiple: true, type: '*/*', copyToCacheDirectory: true });
     if (picked.canceled) return;
-    const files = picked.assets.filter((f) => NOTE_EXT.test(f.name));
-    if (files.length === 0) return setError('Choose Markdown (.md) or text (.txt) notes, for example from your Obsidian vault.');
     setBusy(true);
     try {
-      const texts = await Promise.all(files.map((f) => (f.file ? f.file.text() : fetch(f.uri).then((r) => r.text()))));
-      // File names often are the topic, e.g. "Hypothesis testing.md".
-      const found = coveredTopics(
-        topics.filter((t) => !t.hasNotes),
-        [...texts, ...files.map((f) => f.name.replace(NOTE_EXT, ''))],
-      );
-      await Promise.all(found.map((t) => setTopicNotes(t.id, true)));
-      const from = `${files.length} file${files.length === 1 ? '' : 's'}`;
-      setImportResult(found.length ? `Ticked ${found.length} topic${found.length === 1 ? '' : 's'} from ${from}.` : `No new topics found in ${from}.`);
+      const lines: string[] = [];
+      // Word matching first: it works offline, so Markdown/text notes count even if the analysis can't run.
+      const files = picked.assets.filter((f) => NOTE_EXT.test(f.name));
+      if (files.length) {
+        const texts = await Promise.all(files.map((f) => (f.file ? f.file.text() : fetch(f.uri).then((r) => r.text()))));
+        // File names often are the topic, e.g. "Hypothesis testing.md".
+        const found = coveredTopics(
+          topics.filter((t) => !t.hasNotes),
+          [...texts, ...files.map((f) => f.name.replace(NOTE_EXT, ''))],
+        );
+        await Promise.all(found.map((t) => setTopicNotes(t.id, true)));
+        if (found.length) lines.push(`Ticked ${found.length} topic${found.length === 1 ? '' : 's'} from your text notes.`);
+      }
+      try {
+        lines.push(...summariseNotes(await analyseNotes(course.code, picked.assets)));
+        await reload();
+      } catch (e) {
+        lines.push(`Deeper analysis didn’t run: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      setImportResult(lines.join('\n'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -89,8 +100,8 @@ export function TopicList({ course }: { course: Course }) {
         </View>
         <View style={styles.headActions}>
           {topics.length > 0 && !editing ? (
-            <Pressable accessibilityRole="button" disabled={busy} style={styles.textBtn} onPress={importNotes}>
-              <Text style={styles.textBtnLabel}>{busy ? 'Reading…' : 'Import notes'}</Text>
+            <Pressable accessibilityRole="button" disabled={busy} style={styles.textBtn} onPress={addNotes}>
+              <Text style={styles.textBtnLabel}>{busy ? 'Analysing…' : 'Add notes'}</Text>
             </Pressable>
           ) : null}
           <Pressable accessibilityRole="button" style={styles.textBtn} onPress={() => setEditing((e) => !e)}>
@@ -165,7 +176,10 @@ export function TopicList({ course }: { course: Course }) {
       ) : null}
       <ErrorText>{error}</ErrorText>
       {topics.length > 0 && !editing ? (
-        <Text style={styles.hint}>Tap a notes marker to change it, or use Import notes to tick off topics from your Markdown or text notes.</Text>
+        <Text style={styles.hint}>
+          Add notes reads PDFs, images, Markdown and text. In GoodNotes or OneNote, use Share → Save to Files first. Tap a
+          notes marker to change it by hand.
+        </Text>
       ) : null}
     </View>
   );

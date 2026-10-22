@@ -37,7 +37,7 @@ Postgres tables, all under row-level security: `profiles`, `courses`, `assessmen
 A task is done when every check for the area you touched is green:
 
 ```
-App:       cd app; npx tsc --noEmit; npx expo lint; node src/lib/levels.check.ts; node src/lib/notes-match.check.ts; node src/lib/qld-holidays.check.ts
+App:       cd app; npx tsc --noEmit; npx expo lint; node src/lib/levels.check.ts; node src/lib/notes-match.check.ts; node src/lib/qld-holidays.check.ts; node src/lib/note-files.check.ts
 Backend:   cd backend; .venv\Scripts\python -m pytest
 Functions: node supabase/functions/_shared/check.ts; npx deno@2 check supabase/functions/notes-*/index.ts; npx deno@2 lint supabase/functions/
 ```
