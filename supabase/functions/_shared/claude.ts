@@ -3,13 +3,14 @@ import Anthropic from 'npm:@anthropic-ai/sdk@0.135.0';
 import { SYSTEM_PROMPT, resultSchema } from './analysis.ts';
 import { Friendly } from './http.ts';
 
-export const MODEL = 'claude-opus-5-5';
+export const MODEL = 'claude-haiku-5-5';
 
 type Block = Anthropic.Beta.Messages.BetaContentBlockParam;
 
 /**
  * The one Claude call: which course a file belongs to and how well it covers each topic.
- * Streams so a long handwritten PDF can't hit an HTTP timeout; falls back server-side on a policy decline.
+ * Streams so a long handwritten PDF can't hit an HTTP timeout. Haiku has no server-side refusal
+ * fallback, so a decline surfaces as a failed document.
  */
 export async function askClaude(content: Block[], codes: string[]) {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
@@ -19,8 +20,6 @@ export async function askClaude(content: Block[], codes: string[]) {
   const stream = client.beta.messages.stream({
     model: MODEL,
     max_tokens: 16000,
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
     system: SYSTEM_PROMPT,
     output_config: { effort: 'low', format: { type: 'json_schema', schema: resultSchema(codes) } },
     messages: [{ role: 'user', content }],

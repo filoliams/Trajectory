@@ -37,9 +37,9 @@ the daily study plan.
 
 - **Supabase:** Postgres, Storage, and Edge Functions on the Deno runtime.
 - **Libraries:** `npm:@supabase/supabase-js@2.118.0` and `npm:@anthropic-ai/sdk@0.135.0`.
-- **Claude:** `claude-opus-5-5`, effort `low`, structured output
-  (`output_config.format: json_schema`), server-side `fallbacks: "default"` (beta
-  `server-side-fallback-2026-07-01`), streaming with `finalMessage()`.
+- **Claude:** `claude-haiku-5-5`, effort `low`, structured output
+  (`output_config.format: json_schema`), streaming with `finalMessage()`. Haiku has no server-side
+  refusal fallback; a refusal marks the document `failed`.
 - **App:** Expo SDK 57 and TypeScript. Phase 1 only displays results.
 
 ## Commands
@@ -126,6 +126,6 @@ The plan's phase 1 verification passes:
 
 ## Open questions (defaults in use)
 
-1. **Model:** Opus 5.5 at effort `low`, versus Sonnet 5.5, which costs about half. Revisit after the cost measurement.
+1. **Model:** settled 2026-10-22: Haiku 5.5 at effort `low`. Check handwriting quality on the real GoodNotes PDF.
 2. **Daily cap:** 25 analyses per user per day.
 3. **Deployment:** the CLI and the SQL editor (not the GitHub integration).

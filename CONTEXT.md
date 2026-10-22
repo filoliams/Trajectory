@@ -37,7 +37,7 @@ them that their notes on a topic are thin.
    and an outbox queue, then syncs and listens for realtime changes across devices.
 
 **Stack:** Expo SDK 57 / React Native / TypeScript app · Supabase (Postgres, Auth, Storage, Edge
-Functions on Deno) · FastAPI backend (local, for course import) · Claude `claude-opus-5-5` for note analysis.
+Functions on Deno) · FastAPI backend (local, for course import) · Claude `claude-haiku-5-5` for note analysis, `claude-sonnet-5-5` for the AI daily planner (planned).
 
 ## MVP
 

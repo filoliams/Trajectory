@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-22: Haiku 5.5 reads notes, Sonnet 5.5 plans the day
+**Decision:** Note ingestion (reading notes, mapping to a course, levelling topics) moves from Opus 5.5 to `claude-haiku-5-5` at effort `low`. The planned AI daily study planner will use `claude-sonnet-5-5`. Supersedes the 2026-10-18 Opus decision.
+**Why:** Ingestion runs on every note, so cost matters most there; Haiku is $0.10 / $0.50 per million tokens (about 40x cheaper than Opus). Planning is one call per day and needs more judgement, so it gets Sonnet.
+**Trade-off:** Haiku has no server-side refusal fallback, so a declined file is marked failed instead of retried on another model. Handwriting accuracy still needs checking on a real GoodNotes PDF.
+
 ## 2026-10-22: Notes are shared from the student's app, not synced from their folders
 **Decision:** Drop the OneDrive/OneNote connector (`graph-connector`) and native folder sync. For the MVP, students use *Share → Save to Files* in GoodNotes/OneNote and pick the files in Trajectory. A direct "Share → Trajectory" on iOS is parked until there's an Apple Developer membership. Android is out of scope.
 **Why:** The student decides exactly what Trajectory sees, so there are no stored OneDrive tokens or background folder access. It also removes the dependency on UQ approving a Microsoft app, and the Files picker works in Expo Go today without a membership.

@@ -13,8 +13,9 @@ import { extensionOf } from '../functions/_shared/diff.ts';
 import { encodeBase64 } from 'jsr:@std/encoding@1/base64';
 
 const MAX_BYTES = 20 * 1024 * 1024;
-// claude-opus-5-5 list prices, US$ per million tokens.
-const PRICE = { input: 4, output: 20 };
+// claude-haiku-5-5 list prices, US$ per million tokens; prompts over 100K tokens bill at the higher tier.
+const PRICE = { input: 0.1, output: 0.5 };
+const LONG_PRICE = { input: 0.5, output: 2.5 };
 
 const [topicsFile, ...files] = Deno.args;
 if (!topicsFile || files.length === 0) {
@@ -75,7 +76,8 @@ for (const path of files) {
     const reply = await askClaude(content, courses.map((c) => c.code));
     const seconds = (Date.now() - started) / 1000;
     const result = validateResult(reply.raw, courses, fromPath?.code ?? null);
-    const cost = (reply.inputTokens * PRICE.input + reply.outputTokens * PRICE.output) / 1e6;
+    const price = reply.inputTokens > 100_000 ? LONG_PRICE : PRICE;
+    const cost = (reply.inputTokens * price.input + reply.outputTokens * price.output) / 1e6;
     totalCost += cost;
 
     const how = fromPath ? 'from the folder/file name' : `Claude's guess, ${Math.round(result.confidence * 100)}% sure`;
