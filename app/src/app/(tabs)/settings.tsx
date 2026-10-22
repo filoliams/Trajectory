@@ -19,7 +19,9 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView className="bg-background flex-1" edges={['top']}>
       <ScrollView contentContainerClassName={cn('w-full self-center gap-5 px-4 pb-10 pt-3', wide ? 'max-w-[1100px] px-10 pt-7' : 'max-w-[720px]')}>
-        <Text className="font-display px-1 text-4xl tracking-tighter">Settings</Text>
+        <Text className="font-display px-1 text-[44px] leading-[48px] tracking-tighter">
+          Your <Text className="font-serif text-[48px] text-primary">settings</Text>
+        </Text>
 
         <View className="flex-row flex-wrap gap-4">
           <Section index={0} title="Study plan" hint="Today's plan fits into this. Courses with fewer topics covered in your notes get more of it.">

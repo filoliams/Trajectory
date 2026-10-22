@@ -5,14 +5,16 @@ import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CompletedToday } from '@/components/completed-today';
-import { Ring, SectionHead, StatCard, WeekStrip, flow } from '@/components/dashboard';
+import { HeroProgress, SectionHead, StatCard, StreakCard, WeekChart, WeekStrip, flow } from '@/components/dashboard';
 import { ProgressBar, StudyTimer } from '@/components/study-timer';
 import { TrajectoryView } from '@/components/trajectory-view';
 import { Text } from '@/components/ui/text';
 import { T, WIDE } from '@/constants/trajectory';
 import type { Assessment, Course, Status } from '@/data/courses';
 import { useSmartPlan } from '@/lib/ai-plan';
-import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyBarColor, urgencyColor, whyLabel } from '@/lib/planning';
+import { courseColor } from '@/lib/course-colors';
+import { useStudyHistory } from '@/lib/study-history';
+import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
 import { useDailyHours } from '@/lib/daily-hours';
 import { dayKey } from '@/lib/day';
 import { useHolidays } from '@/lib/holidays';
@@ -29,7 +31,12 @@ export default function TodayScreen() {
   const [hoursAvailable] = useDailyHours();
   const holidays = useHolidays(now);
   const holidayToday = holidays.get(dayKey(now));
-  const wide = useWindowDimensions().width >= WIDE;
+  const width = useWindowDimensions().width;
+  const wide = width >= WIDE;
+  // Big desktop windows get a third column for the week ahead.
+  const threeCols = width >= 1360;
+  const codes = courses.map((c) => c.code);
+  const colorOf = (code: string) => courseColor(code, codes);
   // A course page's "Start timer" lands here with the assessment to start.
   const { start } = useLocalSearchParams<{ start?: string }>();
   // Sonnet's plan when there is one; the on-device plan otherwise.
@@ -96,7 +103,7 @@ export default function TodayScreen() {
   }, [start]);
 
   const plannedMs = plannedHours * HOUR_MS;
-  const dayProgress = plannedMs > 0 ? study.totalStudiedMs / plannedMs : 0;
+  const history = useStudyHistory(dayKey(now), study.totalStudiedMs);
   const soonest = upcoming(courses, now)[0];
   const doneCount = plan.length - todo.length;
 
@@ -132,7 +139,7 @@ export default function TodayScreen() {
   const planList = (
     <View className="gap-3">
       <SectionHead title="Today's plan">
-        {online && smart.replansLeft > 0 && (plan.length > 0 || smart.message) ? (
+        {wide && online && smart.replansLeft > 0 && (plan.length > 0 || smart.message) ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Re-plan today, ${smart.replansLeft} left`}
@@ -180,6 +187,7 @@ export default function TodayScreen() {
               hours={hoursToday(assessment, course)}
               now={now}
               first={i === 0}
+              color={colorOf(course.code)}
               mode={isActive ? study.mode : 'idle'}
               reason={block ? block.reason || whyLabel(assessment, now) : i === 0 ? (assessment.why ?? whyLabel(assessment, now)) : null}
               topics={block?.topics ?? []}
@@ -212,44 +220,71 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={['top']}>
-      <ScrollView contentContainerClassName={cn('w-full self-center gap-5 px-4 pb-10 pt-3', wide ? 'max-w-[1400px] px-10 pt-7' : 'max-w-[720px]')}>
-        <View className="flex-row items-end justify-between gap-3 px-1">
-          <View className="flex-1 gap-0.5">
-            <Text className="text-muted-foreground text-sm">
-              {dateLabel}
-              {holidayToday ? <Text className="text-primary text-sm font-semibold"> · Public holiday: {holidayToday}</Text> : null}
-            </Text>
-            <Text className="font-display text-4xl tracking-tighter">{greeting(now)}</Text>
-          </View>
-          {examDays !== null ? (
-            <View className="bg-card border-border rounded-full border px-3 py-1.5">
-              <Text className="text-muted-foreground font-mono text-xs">exams in {examDays}d</Text>
-            </View>
-          ) : null}
+      <ScrollView contentContainerClassName={cn('w-full self-center gap-5 px-4 pb-10 pt-3', wide ? 'max-w-[1600px] px-10 pt-7' : 'max-w-[720px]')}>
+        <View className="gap-1 px-1">
+          <Text className="text-muted-foreground text-sm">
+            {dateLabel}
+            {holidayToday ? <Text className="text-primary text-sm font-semibold"> · Public holiday: {holidayToday}</Text> : null}
+          </Text>
+          <Text className="font-display text-[44px] leading-[48px] tracking-tighter">
+            {greeting(now)[0]} <Text className="font-serif text-[48px] text-primary">{greeting(now)[1]}</Text>
+          </Text>
         </View>
+
+        {!wide ? (
+          <View className="flex-row gap-2">
+            <Pressable
+              accessibilityRole="button"
+              disabled={!next && !active}
+              onPress={() => (active ? (study.mode === 'break' ? study.resume() : study.takeBreak()) : next && startOn(next.assessment.id, next.assessment.status))}
+              className={cn('h-12 flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary active:opacity-80', !next && !active && 'opacity-40')}>
+              <Text className="text-primary-foreground text-base">▶</Text>
+              <Text className="text-primary-foreground text-[15px] font-semibold">{active ? (study.mode === 'break' ? 'Back to it' : 'Take a break') : 'Study now'}</Text>
+            </Pressable>
+            {online && smart.replansLeft > 0 && plan.length > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Re-plan today, ${smart.replansLeft} left`}
+                disabled={smart.busy}
+                onPress={smart.replan}
+                className={cn('bg-card border-border h-12 flex-1 flex-row items-center justify-center gap-2 rounded-full border active:bg-accent', smart.busy && 'opacity-60')}>
+                <Text className="text-primary text-base">↻</Text>
+                <Text className="text-[15px] font-semibold">{smart.busy ? 'Planning…' : 'Re-plan'}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
 
         <View className="flex-row flex-wrap gap-3">
-          <StatCard index={0} label="Studied today" value={minutesLabel(study.totalStudiedMs)} hint={`of ${minutesLabel(plannedMs)} planned`}>
-            <Ring value={dayProgress} size={52}>
-              <Text className="font-mono text-[11px]">{Math.min(100, Math.round(dayProgress * 100))}%</Text>
-            </Ring>
-          </StatCard>
-          <StatCard index={1} label="Plan" value={`${doneCount}/${plan.length}`} hint={plan.length ? 'blocks done' : 'nothing planned'} />
-          <StatCard
-            index={2}
-            label="Next deadline"
-            value={soonest ? shortCountdown(soonest.assessment.due, now) : '—'}
-            tone={soonest ? urgencyColor(daysUntil(soonest.assessment.due, now)) : T.muted}
-            hint={soonest ? `${soonest.course.code} · ${soonest.assessment.name}` : 'all clear'}
-          />
-          <StatCard index={3} label="Exams" value={examDays !== null ? `${examDays}d` : '—'} hint={examDays !== null ? 'until the first one' : 'none scheduled'} />
+          <HeroProgress studiedMs={study.totalStudiedMs} plannedMs={plannedMs} done={doneCount} total={plan.length} />
+          <WeekChart days={history.days} msByDay={history.msByDay} />
+          <StreakCard days={history.days} msByDay={history.msByDay} />
+          <View className="gap-3" style={{ flexGrow: 1, flexBasis: 200 }}>
+            <StatCard
+              index={3}
+              label="Next deadline"
+              value={soonest ? shortCountdown(soonest.assessment.due, now) : '—'}
+              tone={soonest ? urgencyColor(daysUntil(soonest.assessment.due, now)) : T.muted}
+              hint={soonest ? `${soonest.course.code} · ${soonest.assessment.name}` : 'all clear'}
+            />
+            <StatCard index={4} label="Exams" value={examDays !== null ? `${examDays}d` : '—'} hint={examDays !== null ? 'until the first one' : 'none scheduled'} />
+          </View>
         </View>
 
-        {wide ? (
+        {threeCols ? (
+          <View className="flex-row items-start gap-5">
+            <View className="min-w-0 flex-1 gap-5">{timer}</View>
+            <View className="min-w-0 flex-[1.2] gap-5">{planList}</View>
+            <View className="min-w-0 flex-1 gap-5">
+              <ComingUp courses={courses} now={now} holidays={holidays} colorOf={colorOf} />
+              {trajectory}
+            </View>
+          </View>
+        ) : wide ? (
           <View className="flex-row items-start gap-5">
             <View className="min-w-0 flex-1 gap-5">
               {timer}
-              <ComingUp courses={courses} now={now} holidays={holidays} />
+              <ComingUp courses={courses} now={now} holidays={holidays} colorOf={colorOf} />
             </View>
             <View className="min-w-0 flex-[1.2] gap-5">
               {planList}
@@ -260,7 +295,7 @@ export default function TodayScreen() {
           <View className="gap-5">
             {timer}
             {planList}
-            <ComingUp courses={courses} now={now} holidays={holidays} />
+            <ComingUp courses={courses} now={now} holidays={holidays} colorOf={colorOf} />
             {trajectory}
           </View>
         )}
@@ -279,6 +314,8 @@ function PlanCard(p: {
   hours: number;
   now: number;
   first: boolean;
+  /** The course's colour, on the card's edge and its code tag. */
+  color: string;
   mode: 'idle' | 'study' | 'break';
   reason: string | null;
   topics: string[];
@@ -291,7 +328,7 @@ function PlanCard(p: {
   const primary = p.first || isActive;
   return (
     <View className={cn('bg-card flex-row overflow-hidden rounded-2xl border', isActive ? 'border-primary border-2' : p.first ? 'border-input' : 'border-border')}>
-      <View style={{ width: 4, backgroundColor: urgencyBarColor(days) }} />
+      <View style={{ width: 4, backgroundColor: p.color }} />
       <View className="flex-1 gap-2 p-4">
         <View className="flex-row items-center justify-between gap-2">
           <Text className="font-semibold text-[13px]" style={{ color: status.color }}>
@@ -301,9 +338,14 @@ function PlanCard(p: {
             {countdown(p.assessment.due, p.now)}
           </Text>
         </View>
-        <Text className="font-bold text-lg leading-6 tracking-tight">{p.assessment.name}</Text>
+        <Text className="font-heading text-xl leading-6 tracking-tight">{p.assessment.name}</Text>
         <View className="flex-row flex-wrap gap-1.5">
-          <Tag>{p.course.code}</Tag>
+          <View className="flex-row items-center gap-1.5 rounded-md px-2 py-0.5" style={{ backgroundColor: `${p.color}22` }}>
+            <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+            <Text className="text-xs font-semibold" style={{ color: p.color }}>
+              {p.course.code}
+            </Text>
+          </View>
           <Tag>{hoursLabel(p.hours).replace('~', '')} today</Tag>
           <Tag>{p.assessment.weight}% of grade</Tag>
         </View>
@@ -370,14 +412,24 @@ function Tag({ children }: { children: React.ReactNode }) {
 }
 
 /** The week ahead with every upcoming deadline; tap a day to see only what's due then. */
-function ComingUp({ courses, now, holidays }: { courses: Course[]; now: number; holidays: Map<string, string> }) {
+function ComingUp({
+  courses,
+  now,
+  holidays,
+  colorOf,
+}: {
+  courses: Course[];
+  now: number;
+  holidays: Map<string, string>;
+  colorOf: (code: string) => string;
+}) {
   const [day, setDay] = useState<string | null>(null);
   const all = upcoming(courses, now);
   if (all.length === 0) return null;
-  const counts = new Map<string, number>();
-  for (const { assessment } of all) {
+  const dots = new Map<string, string[]>();
+  for (const { course, assessment } of all) {
     const key = dayKey(new Date(assessment.due!).getTime());
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    dots.set(key, [...(dots.get(key) ?? []), colorOf(course.code)]);
   }
   const shown = day ? all.filter((x) => dayKey(new Date(x.assessment.due!).getTime()) === day) : all.slice(0, 5);
   return (
@@ -390,7 +442,7 @@ function ComingUp({ courses, now, holidays }: { courses: Course[]; now: number; 
             </Pressable>
           ) : null}
         </SectionHead>
-        <WeekStrip now={now} counts={counts} selected={day} onSelect={setDay} />
+        <WeekStrip now={now} dots={dots} selected={day} onSelect={setDay} />
         <Animated.View layout={flow} style={{ gap: 4 }}>
           {shown.length === 0 ? <Text className="text-muted-foreground px-1 py-3 text-sm">Nothing due that day.</Text> : null}
           {shown.map(({ course, assessment }) => (
@@ -399,7 +451,7 @@ function ComingUp({ courses, now, holidays }: { courses: Course[]; now: number; 
                 accessibilityRole="button"
                 onPress={() => router.push({ pathname: '/course/[code]', params: { code: course.code } })}
                 className="min-h-[52px] flex-row items-center gap-3 rounded-xl px-2 py-2 active:bg-accent">
-                <View className="h-9 w-1 rounded-full" style={{ backgroundColor: urgencyBarColor(daysUntil(assessment.due, now)) }} />
+                <View className="h-9 w-1 rounded-full" style={{ backgroundColor: colorOf(course.code) }} />
                 <View className="flex-1 gap-0.5">
                   <Text className="font-semibold text-[15px]" numberOfLines={1}>
                     {assessment.name}
@@ -421,13 +473,13 @@ function ComingUp({ courses, now, holidays }: { courses: Course[]; now: number; 
   );
 }
 
-/** "Good morning" and friends, by the hour in Brisbane. */
-function greeting(now: number): string {
+/** "Good" + "morning" and friends, by the hour in Brisbane; the second word is set in the serif. */
+function greeting(now: number): [string, string] {
   const hour = Number(new Date(now).toLocaleString('en-AU', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Australia/Brisbane' }));
-  if (hour < 5) return 'Late night';
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 5) return ['Late', 'night'];
+  if (hour < 12) return ['Good', 'morning'];
+  if (hour < 18) return ['Good', 'afternoon'];
+  return ['Good', 'evening'];
 }
 
 /** What Today says when there's nothing to plan, depending on why. */

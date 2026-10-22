@@ -27,7 +27,16 @@ export const T = {
 } as const;
 
 /** Loaded in the root layout; each weight is its own family. */
-export const font = { display: 'Geist_800ExtraBold', bold: 'Geist_700Bold', semibold: 'Geist_600SemiBold' } as const;
+export const font = {
+  /** Bricolage Grotesque: titles and headings, where the app's character shows. */
+  display: 'BricolageGrotesque_800ExtraBold',
+  heading: 'BricolageGrotesque_700Bold',
+  /** Instrument Serif italic: one accent word at a time, never body text. */
+  serif: 'InstrumentSerif_400Regular_Italic',
+  /** Geist: everything you read. */
+  bold: 'Geist_700Bold',
+  semibold: 'Geist_600SemiBold',
+} as const;
 
 /** Numbers: countdowns, clocks, percentages. */
 export const mono = 'GeistMono_600SemiBold';
@@ -39,8 +48,8 @@ export const radius = { sm: 8, md: 14, lg: 20, pill: 999 } as const;
 /** One type scale for every screen. */
 export const typo = {
   display: { fontFamily: font.display, fontSize: 40, color: T.ink, letterSpacing: -1.6 },
-  title: { fontFamily: font.bold, fontSize: 22, color: T.ink, letterSpacing: -0.5 },
-  heading: { fontFamily: font.bold, fontSize: 18, color: T.ink, letterSpacing: -0.3 },
+  title: { fontFamily: font.heading, fontSize: 22, color: T.ink, letterSpacing: -0.5 },
+  heading: { fontFamily: font.heading, fontSize: 18, color: T.ink, letterSpacing: -0.3 },
   eyebrow: { fontFamily: font.semibold, fontSize: 13, color: T.muted },
 } as const;
 

@@ -1,4 +1,6 @@
-import { Geist_600SemiBold, Geist_700Bold, Geist_800ExtraBold, useFonts } from '@expo-google-fonts/geist';
+import { BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
+import { Geist_600SemiBold, Geist_700Bold, useFonts } from '@expo-google-fonts/geist';
+import { InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { GeistMono_600SemiBold, GeistMono_700Bold } from '@expo-google-fonts/geist-mono';
 import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
@@ -9,7 +11,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { SyncStatus } from '@/components/sync-status';
-import { T } from '@/constants/trajectory';
+import { T, font } from '@/constants/trajectory';
 import { StoreProvider, useStore } from '@/lib/store';
 
 import '@/global.css';
@@ -35,9 +37,11 @@ function Routes() {
   const [fontsLoaded, fontError] = useFonts({
     Geist_600SemiBold,
     Geist_700Bold,
-    Geist_800ExtraBold,
     GeistMono_600SemiBold,
     GeistMono_700Bold,
+    BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
+    InstrumentSerif_400Regular_Italic,
   });
   const signedIn = !!session;
   const profileLoaded = !!profile;
@@ -92,6 +96,6 @@ function LoadingDot() {
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, backgroundColor: T.ground },
-  wordmark: { fontSize: 28, fontWeight: '800', color: T.ink, letterSpacing: -1 },
+  wordmark: { fontSize: 30, fontFamily: font.serif, color: T.ink, letterSpacing: -0.5 },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: T.accent },
 });

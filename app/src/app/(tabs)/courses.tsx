@@ -11,6 +11,7 @@ import { PressScale } from '@/components/press-scale';
 import { Text } from '@/components/ui/text';
 import { T, WIDE } from '@/constants/trajectory';
 import type { Course } from '@/data/courses';
+import { courseColor } from '@/lib/course-colors';
 import { byPriority, countdown, daysUntil, notesLevel, percentToGo, shareDone, urgencyColor, useNow } from '@/lib/planning';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -51,7 +52,9 @@ export default function CoursesScreen() {
         <View className="flex-row items-end justify-between gap-3 px-1">
           <View className="flex-1 gap-0.5">
             <Text className="text-muted-foreground text-sm">{profile?.semester.replace(' S', ', Semester ')}</Text>
-            <Text className="font-display text-4xl tracking-tighter">Courses</Text>
+            <Text className="font-display text-[44px] leading-[48px] tracking-tighter">
+              Your <Text className="font-serif text-[48px] text-primary">courses</Text>
+            </Text>
           </View>
           <PressScale accessibilityRole="button" accessibilityLabel="Add course" onPress={() => router.push('/course/add')}>
             <View className="bg-primary h-11 flex-row items-center gap-1.5 rounded-full px-4">
@@ -103,7 +106,7 @@ export default function CoursesScreen() {
                 .damping(18)}
               layout={flow}
               style={{ width: cellWidth }}>
-              <CourseCard course={course} now={now} />
+              <CourseCard course={course} now={now} color={courseColor(course.code, courses.map((c) => c.code))} />
             </Animated.View>
           ))}
         </View>
@@ -112,19 +115,21 @@ export default function CoursesScreen() {
   );
 }
 
-function CourseCard({ course, now }: { course: Course; now: number }) {
+function CourseCard({ course, now, color }: { course: Course; now: number; color: string }) {
   const done = shareDone(course);
   const next = byPriority(course.assessments, now)[0];
   const totalWeight = course.assessments.reduce((sum, a) => sum + a.weight, 0);
   return (
     <PressScale accessibilityRole="button" onPress={() => router.push({ pathname: '/course/[code]', params: { code: course.code } })}>
-      <View className="bg-card border-border gap-4 rounded-2xl border p-4">
+      <View className="bg-card border-border gap-4 overflow-hidden rounded-3xl border p-4">
+        {/* A wash of the course colour across the top edge. */}
+        <View className="absolute left-0 right-0 top-0 h-1" style={{ backgroundColor: color }} />
         <View className="flex-row items-center gap-3">
-          <Ring value={done} size={54}>
+          <Ring value={done} size={54} color={color}>
             <Text className="font-mono text-[11px]">{Math.round(done * 100)}%</Text>
           </Ring>
           <View className="flex-1 gap-0.5">
-            <Text className="font-bold text-xl tracking-tight">{course.code}</Text>
+            <Text className="font-heading text-2xl tracking-tight">{course.code}</Text>
             {course.name ? (
               <Text className="text-muted-foreground text-[13px]" numberOfLines={1}>
                 {course.name}
@@ -150,7 +155,7 @@ function CourseCard({ course, now }: { course: Course; now: number }) {
           </View>
         )}
 
-        {/* Each assessment as a slice of the grade: lime when done, amber in progress. */}
+        {/* Each assessment as a slice of the grade: course colour when done, half-strength in progress. */}
         <View className="gap-1.5">
           <View className="h-2 flex-row gap-0.5 overflow-hidden rounded-full">
             {totalWeight > 0 ? (
@@ -159,7 +164,7 @@ function CourseCard({ course, now }: { course: Course; now: number }) {
                   key={a.id}
                   style={{
                     flex: Math.max(a.weight, 1),
-                    backgroundColor: a.status === 'done' ? T.accent : a.status === 'in_progress' ? T.warnBar : T.track,
+                    backgroundColor: a.status === 'done' ? color : a.status === 'in_progress' ? `${color}80` : T.track,
                   }}
                 />
               ))

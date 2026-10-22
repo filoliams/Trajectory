@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-23: Course colours, weekly chart, streak, and new display fonts
+**Decision:** Each course gets a fixed colour (its place among the semester's codes, A–Z) used on its rings, bars, plan cards and deadline dots. Today adds a big progress ring, a tappable seven-day study chart, a streak card, phone quick actions, and three columns on large desktops. Past study days are read from `study_time` (last 28 days) on the client, under row-level security. Titles use Bricolage Grotesque, with one word in Instrument Serif italic; body stays Geist, numbers Geist Mono. Added `@expo-google-fonts/bricolage-grotesque` and `@expo-google-fonts/instrument-serif` at the owner's request.
+**Why:** The Dribbble e-learning dashboards all tell courses apart by colour and show weekly activity and streaks; the owner asked for distinct, premium fonts.
+**Known limit:** offline, past days in the chart read as zero (today is always live).
+
 ## 2026-10-23: Dashboard-style redesign of Today, Courses, course page and Settings
 **Decision:** Restyle these screens with NativeWind classes in the shape of e-learning student dashboards (Dribbble reference): a row of stat cards with tick-ring progress, a tappable seven-day strip that filters "Coming up", filter pills and a 1/2/3-column grid on Courses, per-assessment weight bars, and collapsible "Why this?" and assessment actions. The shared pieces live in `components/dashboard.tsx`. No new dependencies; the rings are plain Views animated with Reanimated, because the app has no SVG library.
 **Why:** The old screens were a single column with spare space on iPad and desktop, and every card showed all its detail at once.

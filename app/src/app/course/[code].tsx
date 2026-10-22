@@ -26,6 +26,7 @@ import {
   useNow,
   whyLabel,
 } from '@/lib/planning';
+import { courseColor } from '@/lib/course-colors';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +57,7 @@ export default function CourseDetailScreen() {
   const dueThisWeek = ranked.filter((a) => daysUntil(a.due, now) < 7).length;
   const openEdit = (a: Assessment) => router.push({ pathname: '/assessment/[id]', params: { id: a.id } });
   const expanded = openId === undefined ? ranked[0]?.id : openId;
+  const color = courseColor(course.code, courses.map((c) => c.code));
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={['top']}>
@@ -74,7 +76,10 @@ export default function CourseDetailScreen() {
 
         <View className="gap-1 px-1">
           <View className="flex-row items-center justify-between gap-3">
-            <Text className="font-display text-4xl tracking-tighter">{course.code}</Text>
+            <View className="flex-row items-center gap-3">
+              <View className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: color }} />
+              <Text className="font-display text-[44px] leading-[48px] tracking-tighter">{course.code}</Text>
+            </View>
             <LevelChip level={notesLevel(course)} />
           </View>
           {course.name ? <Text className="text-muted-foreground text-sm">{course.name}</Text> : null}
@@ -82,7 +87,7 @@ export default function CourseDetailScreen() {
 
         <View className="flex-row flex-wrap gap-3">
           <StatCard index={0} label="Done" value={`${Math.round(shareDone(course) * 100)}%`} hint={`${percentToGo(course)}% of the grade to go`}>
-            <Ring value={shareDone(course)} size={52} />
+            <Ring value={shareDone(course)} size={52} color={color} />
           </StatCard>
           <StatCard index={1} label="Work left" value={hoursLabel(workLeft)} hint="estimated" />
           <StatCard index={2} label="Due this week" value={String(dueThisWeek)} tone={dueThisWeek ? T.warn : T.ink} />
@@ -109,50 +114,53 @@ export default function CourseDetailScreen() {
                 const open = expanded === a.id;
                 return (
                   <Animated.View key={a.id} entering={FadeInDown.delay(i * 50).springify().damping(18)} layout={flow}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityState={{ expanded: open }}
-                      accessibilityHint="Shows actions for this assessment"
-                      onPress={() => setOpenId(open ? null : a.id)}
-                      className={cn('bg-card flex-row gap-3 rounded-2xl border p-3.5 active:opacity-90', i === 0 ? 'border-primary' : 'border-border')}>
-                      <View className={cn('h-7 w-7 items-center justify-center rounded-lg', i === 0 ? 'bg-primary' : 'bg-secondary')}>
-                        <Text className={cn('font-mono text-[13px]', i === 0 ? 'text-primary-foreground' : 'text-[#C9CCD3]')}>{i + 1}</Text>
-                      </View>
-                      <View className="flex-1 gap-1.5">
-                        <View className="flex-row items-baseline justify-between gap-2">
-                          <Text className="flex-1 font-semibold text-base">{a.name}</Text>
-                          <Text className="font-mono text-sm" style={{ color: urgencyColor(days) }}>
-                            {countdown(a.due, now)}
-                          </Text>
+                    {/* Only the summary toggles, so the action buttons below aren't nested inside another button. */}
+                    <View className={cn('bg-card rounded-2xl border p-3.5', i === 0 ? 'border-primary' : 'border-border')}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: open }}
+                        accessibilityHint="Shows actions for this assessment"
+                        onPress={() => setOpenId(open ? null : a.id)}
+                        className="flex-row gap-3 active:opacity-80">
+                        <View className={cn('h-7 w-7 items-center justify-center rounded-lg', i === 0 ? 'bg-primary' : 'bg-secondary')}>
+                          <Text className={cn('font-mono text-[13px]', i === 0 ? 'text-primary-foreground' : 'text-[#C9CCD3]')}>{i + 1}</Text>
                         </View>
-                        <View className="flex-row justify-between gap-2">
-                          <Text className="text-muted-foreground text-xs">{dueLabel(a.due)}</Text>
-                          <Text className="font-mono text-xs">{a.weight}%</Text>
+                        <View className="flex-1 gap-1.5">
+                          <View className="flex-row items-baseline justify-between gap-2">
+                            <Text className="flex-1 font-semibold text-base">{a.name}</Text>
+                            <Text className="font-mono text-sm" style={{ color: urgencyColor(days) }}>
+                              {countdown(a.due, now)}
+                            </Text>
+                          </View>
+                          <View className="flex-row justify-between gap-2">
+                            <Text className="text-muted-foreground text-xs">{dueLabel(a.due)}</Text>
+                            <Text className="font-mono text-xs">{a.weight}%</Text>
+                          </View>
+                          <View className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: T.lineSoft }}>
+                            <View
+                              className="h-full rounded-full"
+                              style={{ width: `${Math.min(Math.max(a.weight, 2), 100)}%`, backgroundColor: urgencyBarColor(days) }}
+                            />
+                          </View>
+                          <View className="flex-row flex-wrap items-center gap-1.5">
+                            <StatusChip status={a.status} />
+                            <Text className="text-muted-foreground text-xs">{hoursLabel(a.hoursLeft)} left</Text>
+                            {a.isHurdle ? <Badge>Hurdle</Badge> : null}
+                            {a.needsReview ? <Badge warn>Check date</Badge> : null}
+                          </View>
                         </View>
-                        <View className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: T.lineSoft }}>
-                          <View
-                            className="h-full rounded-full"
-                            style={{ width: `${Math.min(Math.max(a.weight, 2), 100)}%`, backgroundColor: urgencyBarColor(days) }}
-                          />
-                        </View>
-                        <View className="flex-row flex-wrap items-center gap-1.5">
-                          <StatusChip status={a.status} />
-                          <Text className="text-muted-foreground text-xs">{hoursLabel(a.hoursLeft)} left</Text>
-                          {a.isHurdle ? <Badge>Hurdle</Badge> : null}
-                          {a.needsReview ? <Badge warn>Check date</Badge> : null}
-                        </View>
-                        {open ? (
-                          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 8, paddingTop: 2 }}>
-                            <Text className="text-xs leading-[17px] text-[#C9CCD3]">{a.needsReview && a.note ? a.note : (a.why ?? whyLabel(a, now))}</Text>
-                            <View className="flex-row flex-wrap gap-2">
-                              <QuickButton label="Start timer" primary onPress={() => router.navigate({ pathname: '/', params: { start: a.id } })} />
-                              <QuickButton label="Mark done" onPress={() => setStatus(a.id, 'done')} />
-                              <QuickButton label="Edit" onPress={() => openEdit(a)} />
-                            </View>
-                          </Animated.View>
-                        ) : null}
-                      </View>
-                    </Pressable>
+                      </Pressable>
+                      {open ? (
+                        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 8, paddingTop: 8, paddingLeft: 40 }}>
+                          <Text className="text-xs leading-[17px] text-[#C9CCD3]">{a.needsReview && a.note ? a.note : (a.why ?? whyLabel(a, now))}</Text>
+                          <View className="flex-row flex-wrap gap-2">
+                            <QuickButton label="Start timer" primary onPress={() => router.navigate({ pathname: '/', params: { start: a.id } })} />
+                            <QuickButton label="Mark done" onPress={() => setStatus(a.id, 'done')} />
+                            <QuickButton label="Edit" onPress={() => openEdit(a)} />
+                          </View>
+                        </Animated.View>
+                      ) : null}
+                    </View>
                   </Animated.View>
                 );
               })}

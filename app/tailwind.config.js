@@ -23,7 +23,9 @@ module.exports = {
         card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
       },
       fontFamily: {
-        display: ['Geist_800ExtraBold'],
+        display: ['BricolageGrotesque_800ExtraBold'],
+        heading: ['BricolageGrotesque_700Bold'],
+        serif: ['InstrumentSerif_400Regular_Italic'],
         bold: ['Geist_700Bold'],
         semibold: ['Geist_600SemiBold'],
         mono: ['GeistMono_600SemiBold'],
