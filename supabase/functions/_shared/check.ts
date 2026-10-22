@@ -5,6 +5,7 @@ import { bestByTopic } from './aggregate.ts';
 import { buildUserText, fileKind, resultSchema, validateResult, type CourseTopics } from './analysis.ts';
 import { codesIn, courseFromPath } from './course-code.ts';
 import { extensionOf, filesNeeded } from './diff.ts';
+import { brisbaneDay, buildPlanText, planSchema, validatePlan, type PlanContext } from './plan.ts';
 
 // --- hash check
 const known = [
@@ -104,5 +105,47 @@ assert.equal(forced.course?.code, 'CSSE2310');
 assert.equal(forced.confidence, 1);
 assert.deepEqual(forced.readings, [{ topicId: 200, level: 'okay', reason: 'Fine.' }]);
 assert.throws(() => validateResult(null, courses, null));
+
+// --- daily plan
+const planCtx: PlanContext = {
+  today: '2026-10-22',
+  hours: 2,
+  holiday: null,
+  courses: [{ code: 'MATH1051', name: 'Calculus', topics: [{ name: 'Limits', level: 'weak', reason: 'Definition only.', hasNotes: true }, { name: 'Derivatives', level: null, reason: null, hasNotes: false }] }],
+  assessments: [
+    { id: 10, courseCode: 'MATH1051', name: 'Quiz 2', type: 'quiz', weight: 10, due: '2026-10-25T06:00:00Z', isHurdle: false, hoursLeft: 3, status: 'not_started', studiedMinutesToday: 0 },
+    { id: 11, courseCode: 'MATH1051', name: 'Assignment 1', type: 'assignment', weight: 20, due: '2026-11-02T06:00:00Z', isHurdle: false, hoursLeft: 8, status: 'in_progress', studiedMinutesToday: 30 },
+  ],
+};
+const block = (assessment_id: unknown, minutes: unknown, topics: unknown = [], reason: unknown = 'Due soon.') => ({ assessment_id, minutes, topics, reason });
+
+// Only the student's own open assessments, each once, in the model's order.
+assert.deepEqual(
+  validatePlan({ blocks: [block(10, 45), block(999, 30), block(10, 30), block(11, 30)] }, planCtx).map((b) => b.assessmentId),
+  [10, 11],
+);
+// Never more than the daily hours: the last block shrinks to fit, and a sliver under 15 minutes is dropped.
+assert.deepEqual(
+  validatePlan({ blocks: [block(10, 90), block(11, 60)] }, planCtx).map((b) => b.minutes),
+  [90, 30],
+);
+assert.deepEqual(validatePlan({ blocks: [block(10, 110), block(11, 60)] }, planCtx).map((b) => b.minutes), [110]);
+// Minutes are whole 5-minute steps of at least 15; nonsense minutes drop the block.
+assert.deepEqual(validatePlan({ blocks: [block(10, 22)] }, planCtx)[0].minutes, 20);
+assert.deepEqual(validatePlan({ blocks: [block(10, 5), block(11, 'lots')] }, planCtx), []);
+// Focus topics must be the course's own topics (matched case-insensitively, at most 3).
+assert.deepEqual(validatePlan({ blocks: [block(10, 30, ['limits', 'Black holes', 'Derivatives'])] }, planCtx)[0].topics, ['Limits', 'Derivatives']);
+// A reply in the wrong shape gives no plan, so the app falls back to its own.
+assert.deepEqual(validatePlan(null, planCtx), []);
+assert.deepEqual(validatePlan({ blocks: 'x' }, planCtx), []);
+// The schema only allows the open assessments' ids.
+assert.deepEqual(planSchema([10, 11]).properties.blocks.items.properties.assessment_id.enum, [10, 11]);
+// Student-written names travel as data inside a fenced JSON block.
+const planText = buildPlanText(planCtx);
+assert.match(planText, /2 hours/);
+assert.match(planText, /<plan_data>\n\{[\s\S]*"Quiz 2"[\s\S]*\}\n<\/plan_data>/);
+// Brisbane is UTC+10 all year: 3pm UTC is already tomorrow there.
+assert.equal(brisbaneDay(Date.parse('2026-10-22T15:00:00Z')), '2026-10-23');
+assert.equal(brisbaneDay(Date.parse('2026-10-22T13:59:00Z')), '2026-10-22');
 
 console.log('ingest-core checks: ok');

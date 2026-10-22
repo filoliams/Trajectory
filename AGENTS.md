@@ -26,11 +26,12 @@ backend/                FastAPI, runs locally; course-profile import only (uq_im
 supabase/
   migrations/           SQL, run by hand in the Supabase SQL editor
   functions/notes-check, notes-ingest   note pipeline (Haiku 5.5)
+  functions/plan-day    Today's AI study plan (Sonnet 5.5), one saved per day; rules in _shared/plan.ts
   functions/_shared/    pure import-free modules + check.ts; claude.ts is the one Claude call
   tests/                live ingest script, local preview script (spends API money)
 ```
 
-Postgres tables, all under row-level security: `profiles`, `courses`, `assessments`, `topics`, `study_time`, `connections`, `documents`, `document_topics`, `sync_jobs`.
+Postgres tables, all under row-level security: `profiles`, `courses`, `assessments`, `topics`, `study_time`, `connections`, `documents`, `document_topics`, `sync_jobs`, `daily_plans`.
 
 ## Done means green
 
@@ -39,7 +40,7 @@ A task is done when every check for the area you touched is green:
 ```
 App:       cd app; npx tsc --noEmit; npx expo lint; node src/lib/levels.check.ts; node src/lib/notes-match.check.ts; node src/lib/qld-holidays.check.ts; node src/lib/note-files.check.ts
 Backend:   cd backend; .venv\Scripts\python -m pytest
-Functions: node supabase/functions/_shared/check.ts; npx deno@2 check supabase/functions/notes-*/index.ts; npx deno@2 lint supabase/functions/
+Functions: node supabase/functions/_shared/check.ts; npx deno@2 check supabase/functions/*/index.ts; npx deno@2 lint supabase/functions/
 ```
 
 ## Agents are allowed to

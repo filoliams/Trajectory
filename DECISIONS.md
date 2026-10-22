@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-22: AI daily plan: assessment blocks, one saved plan a day
+**Decision:** The `plan-day` function asks `claude-sonnet-5-5` (effort `medium`, structured output, server-side refusal fallback) for an ordered list of blocks, each tied to one of the student's open assessments, with minutes, up to 3 focus topics and a one-line reason. One plan is saved per student per Brisbane day; it's reused until the student re-plans or changes their study hours, with at most 3 Sonnet calls a day (the plan plus two re-plans). The server picks the day. Plans are validated on the server (own open assessments only, total within the daily hours, blocks of at least 15 minutes) and the app falls back to its on-device plan whenever there's no AI plan.
+**Why:** Tying blocks to assessments lets the existing timer, progress and "Completed today" work unchanged. Saving per day keeps cost to a few calls per student per day. Only topic names, levels and one-line reasons are sent, never note text.
+**Known limit:** like the note-analysis cap, the re-plan counter lives in a table the student can write to, so a determined user could reset it. Move it behind a security-definer function before a public launch.
+
 ## 2026-10-22: Haiku 5.5 reads notes, Sonnet 5.5 plans the day
 **Decision:** Note ingestion (reading notes, mapping to a course, levelling topics) moves from Opus 5.5 to `claude-haiku-5-5` at effort `low`. The planned AI daily study planner will use `claude-sonnet-5-5`. Supersedes the 2026-10-18 Opus decision.
 **Why:** Ingestion runs on every note, so cost matters most there; Haiku is $0.10 / $0.50 per million tokens (about 40x cheaper than Opus). Planning is one call per day and needs more judgement, so it gets Sonnet.

@@ -8,7 +8,8 @@ import { CompletedToday } from '@/components/completed-today';
 import { ProgressBar, StudyTimer } from '@/components/study-timer';
 import { TrajectoryView } from '@/components/trajectory-view';
 import { T, WIDE, font, mono, monoBold, radius, typo } from '@/constants/trajectory';
-import type { Course, Status } from '@/data/courses';
+import type { Assessment, Course, Status } from '@/data/courses';
+import { useSmartPlan } from '@/lib/ai-plan';
 import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
 import { useDailyHours } from '@/lib/daily-hours';
 import { dayKey } from '@/lib/day';
@@ -21,15 +22,23 @@ const HOUR_MS = 3_600_000;
 export default function TodayScreen() {
   const study = useStudySession();
   const { now } = study;
-  const { courses, setStatus } = useStore();
+  const { courses, setStatus, online } = useStore();
   const [hoursAvailable] = useDailyHours();
   const holidays = useHolidays(now);
   const holidayToday = holidays.get(dayKey(now));
   const wide = useWindowDimensions().width >= WIDE;
   // A course page's "Start timer" lands here with the assessment to start.
   const { start } = useLocalSearchParams<{ start?: string }>();
-  const plan = todaysPlan(courses, now, hoursAvailable);
-  const plannedHours = plan.reduce((sum, p) => sum + todayHours(p.assessment, p.course), 0);
+  // Sonnet's plan when there is one; the on-device plan otherwise.
+  const smart = useSmartPlan(courses, hoursAvailable, holidayToday ?? null, online, dayKey(now));
+  const smartItems = smart.items?.length ? smart.items : null;
+  const smartFor = new Map(smartItems?.map((s) => [s.assessment.id, s]));
+  const plan = smartItems ?? todaysPlan(courses, now, hoursAvailable);
+  const hoursToday = (a: Assessment, course: Course) => {
+    const block = smartFor.get(a.id);
+    return block ? block.minutes / 60 : todayHours(a, course);
+  };
+  const plannedHours = plan.reduce((sum, p) => sum + hoursToday(p.assessment, p.course), 0);
   const dateLabel = new Date(now).toLocaleDateString('en-AU', {
     weekday: 'long',
     day: 'numeric',
@@ -46,7 +55,7 @@ export default function TodayScreen() {
   const all = courses.flatMap((course) =>
     course.assessments.map((assessment) => {
       const studied = study.studiedMs(assessment.id);
-      const target = todayHours(assessment, course) * HOUR_MS;
+      const target = hoursToday(assessment, course) * HOUR_MS;
       return {
         course,
         assessment,
@@ -136,6 +145,28 @@ export default function TodayScreen() {
 
           <View style={wide ? styles.colWide : styles.stack}>
             {wide ? trajectory : null}
+            {plan.length > 0 || smart.message ? (
+              <View style={styles.planBar}>
+                <Text style={styles.planBarText}>
+                  {smartItems
+                    ? 'Smart plan from your deadlines and notes.'
+                    : smart.loading
+                      ? 'Making your smart plan…'
+                      : (smart.message ?? 'Showing your usual plan.')}
+                </Text>
+                {online && smart.replansLeft > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Re-plan today, ${smart.replansLeft} left`}
+                    disabled={smart.busy}
+                    onPress={smart.replan}
+                    style={({ pressed }) => [styles.replanBtn, (pressed || smart.busy) && styles.pressed]}>
+                    <Text style={styles.replanText}>{smart.busy ? 'Planning…' : `Re-plan (${smart.replansLeft})`}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+
             {todo.length === 0 && completed.length === 0 ? (
               <Animated.View entering={FadeInDown.delay(80)} style={styles.task}>
                 <Text style={styles.taskName}>{empty.title}</Text>
@@ -163,7 +194,7 @@ export default function TodayScreen() {
                   </View>
                   <Text style={styles.taskName}>{assessment.name}</Text>
                   <Text style={styles.taskMeta}>
-                    {course.code} · {hoursLabel(todayHours(assessment, course)).replace('~', '')} today · {assessment.weight}% of grade
+                    {course.code} · {hoursLabel(hoursToday(assessment, course)).replace('~', '')} today · {assessment.weight}% of grade
                   </Text>
                   <View style={styles.taskProgress}>
                     <ProgressBar value={target ? studied / target : 0} color={T.accent} track={T.neutralSoft} height={6} />
@@ -171,14 +202,27 @@ export default function TodayScreen() {
                       {minutesLabel(studied)} of {minutesLabel(target)}
                     </Text>
                   </View>
-                  {first && (
+                  {smartFor.has(assessment.id) ? (
+                    <View style={styles.why}>
+                      <Text style={styles.whyText}>
+                        <Text style={styles.whyLabel}>Why this? </Text>
+                        {smartFor.get(assessment.id)!.reason || whyLabel(assessment, now)}
+                      </Text>
+                      {smartFor.get(assessment.id)!.topics.length ? (
+                        <Text style={styles.whyText}>
+                          <Text style={styles.whyLabel}>Focus: </Text>
+                          {smartFor.get(assessment.id)!.topics.join(', ')}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : first ? (
                     <View style={styles.why}>
                       <Text style={styles.whyText}>
                         <Text style={styles.whyLabel}>Why this? </Text>
                         {assessment.why ?? whyLabel(assessment, now)}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
                   <View style={styles.actions}>
                     <Pressable
                       accessibilityRole="button"
@@ -378,6 +422,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressed: { opacity: 0.7 },
+
+  planBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 },
+  planBarText: { flex: 1, fontSize: 13, color: T.muted },
+  replanBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  replanText: { fontSize: 15, fontWeight: '600', color: T.accent },
 
   footnote: { fontSize: 13, color: T.muted, textAlign: 'center', marginTop: 4 },
   coming: { backgroundColor: T.surface, borderRadius: radius.lg, padding: 18, gap: 4 },

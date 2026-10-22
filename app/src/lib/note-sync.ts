@@ -1,6 +1,6 @@
-import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { DocumentPickerAsset } from 'expo-document-picker';
 
+import { callFunction } from '@/lib/functions';
 import { MAX_NOTE_BYTES, checkNoteFile, notePath, sha256Hex, type NoteOutcome } from '@/lib/note-files';
 import { supabase } from '@/lib/supabase';
 import { readJson, writeJson } from '@/lib/sync/storage';
@@ -95,15 +95,8 @@ async function bytesOf(asset: DocumentPickerAsset): Promise<Uint8Array> {
   return new Uint8Array(buffer);
 }
 
-/** Calls an Edge Function and turns its error body into the sentence the function wrote. */
-async function call<T = unknown>(name: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke(name, { body });
-  if (error) {
-    const reply = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
-    throw new Error(reply?.error ?? 'Note analysis isn’t available right now.');
-  }
-  return data as T;
-}
+const call = <T = unknown>(name: string, body: Record<string, unknown>) =>
+  callFunction<T>(name, body, 'Note analysis isn’t available right now.');
 
 /** A stable id for this install, so the server can tell this device's files apart from another's. */
 function deviceId(): string {
