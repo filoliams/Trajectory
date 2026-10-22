@@ -1,103 +1,68 @@
 # AGENTS.md
 
-Rules and a map for any AI coding agent (Claude Code, Codex, Cursor, etc.) working in this repo.
-Read [CONTEXT.md](CONTEXT.md) for what the app is, and [DECISIONS.md](DECISIONS.md) for why it is built this way.
-Work inside `app/` also follows [app/AGENTS.md](app/AGENTS.md) (Expo rules).
+Map and rules for AI coding agents in this repo. Work under `app/` also follows [app/AGENTS.md](app/AGENTS.md) (Expo).
+
+- **[CONTEXT.md](CONTEXT.md):** read when a change touches what the app does, who it's for, or MVP scope.
+- **[DECISIONS.md](DECISIONS.md):** read before reversing an earlier choice; append a dated entry when you make a choice someone would later ask "why?" about.
+- **Tickets:** `.scratch/notes-sharing/issues/`. Work the frontier (tickets whose blockers are done); tick acceptance criteria and set **Status** as you go.
+- **Specs:** [SPEC.md](SPEC.md) (note-ingestion map) and [SPEC-ingest-core.md](SPEC-ingest-core.md) (models, caps, privacy boundaries). The caps live there; quote them from there.
 
 ## Where everything lives
 
 ```
-Trajectory/
-├── app/                         Expo (SDK 57) + React Native 0.86 + TypeScript app: iOS, Android, web
-│   ├── app.json                 Expo config (native behaviour goes here, never in ios/ or android/)
-│   ├── scripts/                 make-icons.mjs, reset-project.js
-│   └── src/
-│       ├── app/                 Expo Router screens (every file is a route)
-│       │   ├── _layout.tsx      root layout: auth gate, store provider
-│       │   ├── sign-in.tsx      Supabase email sign-in
-│       │   ├── onboarding.tsx   pick university, upload course profiles
-│       │   ├── (tabs)/          index.tsx = Today, courses.tsx, settings.tsx
-│       │   ├── course/          [code].tsx detail, add.tsx, manage.tsx
-│       │   └── assessment/      [id].tsx edit, new.tsx
-│       ├── components/          UI pieces (topic-list, trajectory-view, study-timer, sheet, chips, ...)
-│       ├── constants/           trajectory.ts (theme tokens T, fonts), universities.ts
-│       ├── data/courses.ts      Course / Assessment / Topic types and row mapping
-│       ├── lib/                 logic, no UI
-│       │   ├── store.tsx        app state + Supabase reads/writes
-│       │   ├── planning.ts      daily plan, countdowns, notesLevel
-│       │   ├── levels.ts        course level from analysed topics
-│       │   ├── notes-match.ts   offline word-match fallback for notes
-│       │   ├── holidays.ts, qld-holidays.ts   QLD public holidays (Nager.Date)
-│       │   ├── api.ts           calls to the FastAPI backend
-│       │   ├── supabase.ts      Supabase client
-│       │   ├── sync/            offline cache, outbox queue, realtime, network status
-│       │   └── *.check.ts       self-checks, run with plain `node`
-│       └── config.ts            SUPABASE_URL, publishable key, API_URL
-├── backend/                     FastAPI (Python), runs locally, course-profile import only
-│   ├── main.py                  routes: GET /, GET /health/db, POST /import-file
-│   ├── uq_import.py             UQ course-profile parser (HTML, PDF, pasted table)
-│   └── tests/                   pytest
-├── supabase/
-│   ├── migrations/              SQL, run by hand in the Supabase SQL editor
-│   ├── functions/
-│   │   ├── notes-check/         which note files are new or changed (hash check)
-│   │   ├── notes-ingest/        read a note with Claude, map to course, level each topic
-│   │   └── _shared/             pure, import-free modules + check.ts self-check; claude.ts, http.ts
-│   └── tests/                   live ingest script, local preview script
-├── docs/                        setup guides, superseded specs
-├── tasks/                       plan.md and todo.md for the current phase
-├── SPEC.md                      note-ingestion capability map
-├── SPEC-ingest-core.md          spec for the current module
-├── CONTEXT.md                   what the app is, who it is for, MVP
-└── DECISIONS.md                 dated log of changes and decisions
+app/                    Expo + React Native + TypeScript app (iOS, Android, web)
+  app.json              native config; ios/ and android/ are generated
+  src/app/              Expo Router screens: sign-in, onboarding, (tabs)/ Today·Courses·Settings, course/, assessment/
+  src/components/       UI (topic-list, trajectory-view, study-timer, sheet, ...)
+  src/lib/              logic, no UI
+    store.tsx           app state + Supabase reads/writes
+    planning.ts         on-device daily plan, countdowns, notesLevel
+    levels.ts           course level from analysed topics
+    notes-match.ts      offline word-match fallback for notes
+    sync/               offline cache, outbox queue, realtime
+    *.check.ts          self-checks, run with plain node
+  src/constants/trajectory.ts   theme tokens T, fonts
+backend/                FastAPI, runs locally; course-profile import only (uq_import.py)
+supabase/
+  migrations/           SQL, run by hand in the Supabase SQL editor
+  functions/notes-check, notes-ingest   note pipeline (Haiku 5.5)
+  functions/_shared/    pure import-free modules + check.ts; claude.ts is the one Claude call
+  tests/                live ingest script, local preview script (spends API money)
 ```
 
-Data lives in Supabase Postgres: `profiles`, `courses`, `assessments`, `topics`, `study_time`,
-`connections`, `documents`, `document_topics`, `sync_jobs`, all under row-level security.
+Postgres tables, all under row-level security: `profiles`, `courses`, `assessments`, `topics`, `study_time`, `connections`, `documents`, `document_topics`, `sync_jobs`.
 
-## Checks to run before calling a task done
+## Done means green
+
+A task is done when every check for the area you touched is green:
 
 ```
 App:       cd app; npx tsc --noEmit; npx expo lint; node src/lib/levels.check.ts; node src/lib/notes-match.check.ts; node src/lib/qld-holidays.check.ts
 Backend:   cd backend; .venv\Scripts\python -m pytest
-Functions: node supabase/functions/_shared/check.ts; npx deno@2 check supabase/functions/notes-*/index.ts
+Functions: node supabase/functions/_shared/check.ts; npx deno@2 check supabase/functions/notes-*/index.ts; npx deno@2 lint supabase/functions/
 ```
 
-## Agents ARE allowed to
+## Agents are allowed to
 
-- Read anything in the repo.
-- Edit code in `app/src/`, `backend/`, `supabase/functions/` and `supabase/tests/`.
-- Write new migration files in `supabase/migrations/` (not run them).
-- Add or update tests and `*.check.ts` self-checks.
-- Run the local checks above, the Expo dev server, and the local backend.
-- Install app packages with `npx expo install <pkg>` (never `npm install <pkg>`).
-- Update docs: README, specs, `tasks/`, and add an entry to DECISIONS.md for any decision or notable change.
-- Make commits on a feature branch.
+- Write new migration files (running them is the owner's call, below).
+- Add self-checks: new pure logic gets a `*.check.ts` beside it.
+- Commit on the current feature branch, staging only the files you changed.
 
-## Agents must ASK FIRST before
+## Ask the owner first
 
 - Running a migration or changing the live database.
-- Deploying Edge Functions or setting Supabase secrets.
-- Anything that spends API money (live ingest script, Claude evals).
-- Changing the Claude model, effort level, or the caps (20 MB per file, 25 analyses per user per day, 200 files per check).
-- Adding a new dependency (Python or JS).
-- Pushing, merging into `main`, or opening a PR.
-- Deleting files, or rewriting git history.
+- Deploying functions or setting Supabase secrets.
+- Anything that spends API money: the live ingest script, the preview script, evals.
+- Changing a Claude model, effort level, or cap.
+- Adding a dependency.
+- Pushing, merging into `main`, opening a PR, deleting files, rewriting history.
 
-## Agents are NOT allowed to
+## Agents are not allowed to (guardrails)
 
-- Commit `.env` or any real key. Only `.env.example` is tracked.
-- Put the Anthropic key, or the Supabase secret / service-role key, in the app.
-- Use the service role on a user request path. Use the caller's JWT so row-level security applies.
-- Store or log note text. Only metadata and analysis results are kept; originals are deleted after reading.
-- Silently truncate a document or notes.
-- Create or edit `app/ios/` or `app/android/` by hand.
-- Skip git hooks (`--no-verify`) or force-push.
-- Show stack traces to users. User-facing errors are plain sentences.
-
-## Code style
-
-- Pure logic in import-free modules that plain Node can test; I/O at the edges.
-- Comments explain why, not what.
-- App UI uses the `T` tokens from `constants/trajectory.ts`, sentence-case labels and `PressScale` buttons.
-- Match the surrounding code before adding a new pattern.
+- **Keys stay on the server.** The Anthropic key and the Supabase secret key live only in Supabase secrets and the git-ignored `.env`; the app holds only the publishable key. Never commit `.env`.
+- **Every user request runs as the caller.** Use the caller's JWT client so row-level security authorises it; the service role stays off user request paths.
+- **Notes are read, then discarded.** Keep document metadata and per-topic results only; delete the original after processing, and log token counts, never content.
+- **Inputs are whole or refused.** A file over a limit is skipped with a reason, never truncated.
+- **Native config goes through `app.json` and config plugins**, never hand-edited `ios/` or `android/`.
+- **Git history is append-only:** hooks always run, and pushes are never forced.
+- **Errors a student sees are plain sentences.**
