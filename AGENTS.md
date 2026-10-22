@@ -13,7 +13,7 @@ Map and rules for AI coding agents in this repo. Work under `app/` also follows 
 app/                    Expo + React Native + TypeScript app (iOS, Android, web)
   app.json              native config; ios/ and android/ are generated
   src/app/              Expo Router screens: sign-in, onboarding, (tabs)/ Today·Courses·Settings, course/, assessment/
-  src/components/       UI (topic-list, trajectory-view, study-timer, sheet, ...)
+  src/components/       UI (topic-list, trajectory-view, study-timer, sheet, ...); dashboard.tsx: StatCard, Ring, WeekStrip, Pills
   src/components/ui/    React Native Reusables (shadcn/ui for RN); add with `npx @react-native-reusables/cli@latest add <name>`
   src/global.css        Tailwind (NativeWind) theme variables, mirroring the T tokens; style new UI with className
   src/lib/              logic, no UI

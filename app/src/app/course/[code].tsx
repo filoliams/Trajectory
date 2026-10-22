@@ -1,10 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LevelChip, StatusChip } from '@/components/chips';
+import { Ring, SectionHead, StatCard, flow } from '@/components/dashboard';
 import { TopicList } from '@/components/topic-list';
-import { T, WIDE, font, mono, radius, typo } from '@/constants/trajectory';
+import { Text } from '@/components/ui/text';
+import { T, WIDE } from '@/constants/trajectory';
 import type { Assessment } from '@/data/courses';
 import {
   byPriority,
@@ -15,6 +19,7 @@ import {
   hoursLabel,
   notesLevel,
   percentToGo,
+  shareDone,
   undated,
   urgencyBarColor,
   urgencyColor,
@@ -22,6 +27,7 @@ import {
   whyLabel,
 } from '@/lib/planning';
 import { useStore } from '@/lib/store';
+import { cn } from '@/lib/utils';
 
 export default function CourseDetailScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -29,13 +35,15 @@ export default function CourseDetailScreen() {
   const course = courses.find((c) => c.code === code);
   const now = useNow();
   const wide = useWindowDimensions().width >= WIDE;
+  // The top item starts open; tapping a card opens or closes its actions.
+  const [openId, setOpenId] = useState<string | null | undefined>(undefined);
 
   if (!course) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.content}>
+      <SafeAreaView className="bg-background flex-1">
+        <View className="gap-3 p-4">
           <BackButton />
-          <Text style={styles.metaText}>Course not found.</Text>
+          <Text className="text-muted-foreground text-sm">Course not found.</Text>
         </View>
       </SafeAreaView>
     );
@@ -47,118 +55,136 @@ export default function CourseDetailScreen() {
   const workLeft = [...ranked, ...noDate].reduce((sum, a) => sum + a.hoursLeft, 0);
   const dueThisWeek = ranked.filter((a) => daysUntil(a.due, now) < 7).length;
   const openEdit = (a: Assessment) => router.push({ pathname: '/assessment/[id]', params: { id: a.id } });
+  const expanded = openId === undefined ? ranked[0]?.id : openId;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <SafeAreaView className="bg-background flex-1" edges={['top']}>
       <ScrollView
-        contentContainerStyle={[styles.content, wide && styles.contentWide]}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />}>
-        <View style={styles.topBar}>
+        contentContainerClassName={cn('w-full self-center gap-5 px-4 pb-10', wide ? 'max-w-[1400px] px-10 pt-5' : 'max-w-[720px]')}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} tintColor={T.accent} />}>
+        <View className="flex-row items-center justify-between">
           <BackButton />
           <Pressable
             accessibilityRole="button"
-            style={styles.textBtn}
+            className="min-h-11 justify-center rounded-full px-3 active:bg-accent"
             onPress={() => router.push({ pathname: '/course/manage', params: { code: course.code } })}>
-            <Text style={styles.textBtnLabel}>Edit</Text>
+            <Text className="text-primary text-base font-semibold">Edit</Text>
           </Pressable>
         </View>
 
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>{course.code}</Text>
+        <View className="gap-1 px-1">
+          <View className="flex-row items-center justify-between gap-3">
+            <Text className="font-display text-4xl tracking-tighter">{course.code}</Text>
             <LevelChip level={notesLevel(course)} />
           </View>
-          {course.name ? <Text style={styles.subtitle}>{course.name}</Text> : null}
-          <View style={styles.tiles}>
-            <Tile label="Still to go" value={`${percentToGo(course)}%`} />
-            <Tile label="Work left" value={hoursLabel(workLeft)} />
-            <Tile label="Due this week" value={String(dueThisWeek)} />
-          </View>
+          {course.name ? <Text className="text-muted-foreground text-sm">{course.name}</Text> : null}
         </View>
 
-        <View style={wide ? styles.columns : styles.stack}>
-          <View style={wide ? styles.colWide : styles.stack}>
-            <View style={styles.section}>
-              <View style={styles.sectionHead}>
-                <Text style={styles.sectionTitle}>Assessments by priority</Text>
+        <View className="flex-row flex-wrap gap-3">
+          <StatCard index={0} label="Done" value={`${Math.round(shareDone(course) * 100)}%`} hint={`${percentToGo(course)}% of the grade to go`}>
+            <Ring value={shareDone(course)} size={52} />
+          </StatCard>
+          <StatCard index={1} label="Work left" value={hoursLabel(workLeft)} hint="estimated" />
+          <StatCard index={2} label="Due this week" value={String(dueThisWeek)} tone={dueThisWeek ? T.warn : T.ink} />
+        </View>
+
+        <View className={wide ? 'flex-row items-start gap-6' : 'gap-5'}>
+          <View className={cn('gap-5', wide && 'min-w-0 flex-1')}>
+            <View className="gap-2.5">
+              <SectionHead title="By priority">
                 <Pressable
                   accessibilityRole="button"
-                  style={styles.textBtn}
+                  className="min-h-10 justify-center rounded-full border border-border px-4 active:bg-accent"
                   onPress={() => router.push({ pathname: '/assessment/new', params: { course: course.code } })}>
-                  <Text style={styles.textBtnLabel}>+ Add</Text>
+                  <Text className="text-primary text-sm font-semibold">+ Add</Text>
                 </Pressable>
-              </View>
+              </SectionHead>
 
               {ranked.length === 0 && noDate.length === 0 ? (
-                <Text style={styles.empty}>Nothing left to do here. Add an assessment with + Add.</Text>
+                <Text className="text-muted-foreground px-1 text-sm">Nothing left to do here. Add an assessment with + Add.</Text>
               ) : null}
 
               {ranked.map((a, i) => {
                 const days = daysUntil(a.due, now);
-                const first = i === 0;
+                const open = expanded === a.id;
                 return (
-                  <Pressable key={a.id} onPress={() => openEdit(a)} style={[styles.item, first && styles.itemFirst]}>
-                    <View style={[styles.rank, first && styles.rankFirst]}>
-                      <Text style={[styles.rankText, first && styles.rankTextFirst]}>{i + 1}</Text>
-                    </View>
-                    <View style={styles.itemBody}>
-                      <View style={styles.itemTop}>
-                        <Text style={styles.itemName}>{a.name}</Text>
-                        <Text style={[styles.countdown, { color: urgencyColor(days) }]}>{countdown(a.due, now)}</Text>
+                  <Animated.View key={a.id} entering={FadeInDown.delay(i * 50).springify().damping(18)} layout={flow}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: open }}
+                      accessibilityHint="Shows actions for this assessment"
+                      onPress={() => setOpenId(open ? null : a.id)}
+                      className={cn('bg-card flex-row gap-3 rounded-2xl border p-3.5 active:opacity-90', i === 0 ? 'border-primary' : 'border-border')}>
+                      <View className={cn('h-7 w-7 items-center justify-center rounded-lg', i === 0 ? 'bg-primary' : 'bg-secondary')}>
+                        <Text className={cn('font-mono text-[13px]', i === 0 ? 'text-primary-foreground' : 'text-[#C9CCD3]')}>{i + 1}</Text>
                       </View>
-                      <View style={styles.itemMeta}>
-                        <Text style={styles.metaText}>{dueLabel(a.due)}</Text>
-                        <Text style={styles.weight}>{a.weight}%</Text>
+                      <View className="flex-1 gap-1.5">
+                        <View className="flex-row items-baseline justify-between gap-2">
+                          <Text className="flex-1 font-semibold text-base">{a.name}</Text>
+                          <Text className="font-mono text-sm" style={{ color: urgencyColor(days) }}>
+                            {countdown(a.due, now)}
+                          </Text>
+                        </View>
+                        <View className="flex-row justify-between gap-2">
+                          <Text className="text-muted-foreground text-xs">{dueLabel(a.due)}</Text>
+                          <Text className="font-mono text-xs">{a.weight}%</Text>
+                        </View>
+                        <View className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: T.lineSoft }}>
+                          <View
+                            className="h-full rounded-full"
+                            style={{ width: `${Math.min(Math.max(a.weight, 2), 100)}%`, backgroundColor: urgencyBarColor(days) }}
+                          />
+                        </View>
+                        <View className="flex-row flex-wrap items-center gap-1.5">
+                          <StatusChip status={a.status} />
+                          <Text className="text-muted-foreground text-xs">{hoursLabel(a.hoursLeft)} left</Text>
+                          {a.isHurdle ? <Badge>Hurdle</Badge> : null}
+                          {a.needsReview ? <Badge warn>Check date</Badge> : null}
+                        </View>
+                        {open ? (
+                          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} style={{ gap: 8, paddingTop: 2 }}>
+                            <Text className="text-xs leading-[17px] text-[#C9CCD3]">{a.needsReview && a.note ? a.note : (a.why ?? whyLabel(a, now))}</Text>
+                            <View className="flex-row flex-wrap gap-2">
+                              <QuickButton label="Start timer" primary onPress={() => router.navigate({ pathname: '/', params: { start: a.id } })} />
+                              <QuickButton label="Mark done" onPress={() => setStatus(a.id, 'done')} />
+                              <QuickButton label="Edit" onPress={() => openEdit(a)} />
+                            </View>
+                          </Animated.View>
+                        ) : null}
                       </View>
-                      <View style={styles.track}>
-                        <View
-                          style={[
-                            styles.fill,
-                            { width: `${Math.min(Math.max(a.weight, 2), 100)}%`, backgroundColor: urgencyBarColor(days) },
-                          ]}
-                        />
-                      </View>
-                      <View style={styles.statusRow}>
-                        <StatusChip status={a.status} />
-                        <Text style={styles.metaText}>{hoursLabel(a.hoursLeft)} left</Text>
-                        {a.isHurdle ? <Text style={styles.hurdle}>Hurdle</Text> : null}
-                        {a.needsReview ? <Text style={styles.review}>Check date</Text> : null}
-                      </View>
-                      <Text style={styles.why}>{a.needsReview && a.note ? a.note : (a.why ?? whyLabel(a, now))}</Text>
-                      <View style={styles.quickRow}>
-                        <QuickButton
-                          label="Start timer"
-                          primary
-                          onPress={() => router.navigate({ pathname: '/', params: { start: a.id } })}
-                        />
-                        <QuickButton label="Mark done" onPress={() => setStatus(a.id, 'done')} />
-                        <QuickButton label="Edit" onPress={() => openEdit(a)} />
-                      </View>
-                    </View>
-                  </Pressable>
+                    </Pressable>
+                  </Animated.View>
                 );
               })}
             </View>
 
             {noDate.length > 0 ? (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Needs a due date</Text>
+              <View className="gap-2">
+                <SectionHead title="Needs a due date" />
                 {noDate.map((a) => (
-                  <Pressable key={a.id} accessibilityRole="button" onPress={() => openEdit(a)} style={styles.simpleRow}>
-                    <Text style={styles.itemName}>{a.name}</Text>
-                    <Text style={styles.review}>Add date</Text>
+                  <Pressable
+                    key={a.id}
+                    accessibilityRole="button"
+                    onPress={() => openEdit(a)}
+                    className="bg-card border-border flex-row items-center justify-between gap-3 rounded-xl border px-3.5 py-3 active:bg-accent">
+                    <Text className="flex-1 font-semibold text-base">{a.name}</Text>
+                    <Badge warn>Add date</Badge>
                   </Pressable>
                 ))}
               </View>
             ) : null}
 
             {finished.length > 0 ? (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Done or past</Text>
+              <View className="gap-2">
+                <SectionHead title="Done or past" />
                 {finished.map((a) => (
-                  <Pressable key={a.id} accessibilityRole="button" onPress={() => openEdit(a)} style={styles.simpleRow}>
-                    <Text style={[styles.itemName, styles.doneText]}>{a.name}</Text>
-                    <Text style={styles.metaText}>
+                  <Pressable
+                    key={a.id}
+                    accessibilityRole="button"
+                    onPress={() => openEdit(a)}
+                    className="bg-card border-border flex-row items-center justify-between gap-3 rounded-xl border px-3.5 py-3 active:bg-accent">
+                    <Text className="text-muted-foreground flex-1 text-base">{a.name}</Text>
+                    <Text className="text-muted-foreground text-xs">
                       {a.weight}% · {a.status === 'done' ? 'Done' : 'Past due'}
                     </Text>
                   </Pressable>
@@ -166,7 +192,7 @@ export default function CourseDetailScreen() {
               </View>
             ) : null}
           </View>
-          <View style={wide ? styles.colWide : styles.stack}>
+          <View className={cn('gap-5', wide && 'min-w-0 flex-1')}>
             <TopicList course={course} />
           </View>
         </View>
@@ -179,9 +205,9 @@ function BackButton() {
   return (
     <Pressable
       onPress={() => (router.canGoBack() ? router.back() : router.replace('/courses'))}
-      style={styles.back}
+      className="min-h-11 justify-center rounded-full pr-3 active:opacity-70"
       accessibilityRole="button">
-      <Text style={styles.textBtnLabel}>‹ Courses</Text>
+      <Text className="text-primary text-base font-semibold">‹ Courses</Text>
     </Pressable>
   );
 }
@@ -191,118 +217,19 @@ function QuickButton({ label, onPress, primary }: { label: string; onPress: () =
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.quick, primary && styles.quickPrimary, pressed && styles.pressed]}>
-      <Text style={[styles.quickText, primary && styles.quickTextPrimary]}>{label}</Text>
+      className={cn(
+        'min-h-9 items-center justify-center rounded-full border px-3.5',
+        primary ? 'bg-primary border-primary active:opacity-80' : 'border-border active:bg-accent',
+      )}>
+      <Text className={cn('text-[13px] font-semibold', primary ? 'text-primary-foreground' : 'text-foreground')}>{label}</Text>
     </Pressable>
   );
 }
 
-function Tile({ label, value }: { label: string; value: string }) {
+function Badge({ children, warn }: { children: string; warn?: boolean }) {
   return (
-    <View style={styles.tile}>
-      <Text style={styles.tileLabel}>{label}</Text>
-      <Text style={styles.tileValue}>{value}</Text>
+    <View className={cn('rounded-md px-1.5 py-0.5', warn ? 'bg-[#2E2210]' : 'border border-border')}>
+      <Text className={cn('text-xs font-semibold', warn ? 'text-[#FFB547]' : 'text-[#C9CCD3]')}>{children}</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: T.ground },
-  content: { padding: 16, paddingBottom: 40, gap: 18, maxWidth: 720, width: '100%', alignSelf: 'center' },
-  contentWide: { maxWidth: 1240, paddingHorizontal: 40, paddingTop: 20 },
-  stack: { gap: 18 },
-  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 24 },
-  colWide: { flex: 1, minWidth: 0, gap: 18 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { minHeight: 44, justifyContent: 'center' },
-  textBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  textBtnLabel: { fontSize: 17, fontWeight: '600', color: T.accent },
-
-  header: { gap: 6, paddingHorizontal: 4 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: typo.display,
-  subtitle: { fontSize: 14, color: T.muted },
-  tiles: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  tile: { flex: 1, backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.md, padding: 10, gap: 2 },
-  tileLabel: { fontSize: 11, color: T.muted },
-  tileValue: { fontFamily: mono, fontSize: 17, fontWeight: '600', color: T.ink },
-
-  section: { gap: 8 },
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4 },
-  sectionTitle: { ...typo.heading, paddingHorizontal: 4 },
-  empty: { fontSize: 14, color: T.muted, paddingHorizontal: 4 },
-
-  item: {
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    borderRadius: radius.lg,
-    padding: 12,
-    paddingHorizontal: 14,
-  },
-  itemFirst: { borderWidth: 1.5, borderColor: T.accent },
-  rank: { width: 26, height: 26, borderRadius: 8, backgroundColor: T.neutralSoft, alignItems: 'center', justifyContent: 'center' },
-  rankFirst: { backgroundColor: T.accent },
-  rankText: { fontSize: 13, fontWeight: '600', color: T.inkSoft },
-  rankTextFirst: { color: T.onAccent },
-  itemBody: { flex: 1, gap: 5 },
-  itemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  itemName: { flex: 1, fontFamily: font.semibold, fontSize: 16, color: T.ink },
-  doneText: { color: T.muted, fontWeight: '500' },
-  countdown: { fontFamily: mono, fontSize: 14, fontWeight: '600' },
-  itemMeta: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  metaText: { fontSize: 12, color: T.muted },
-  weight: { fontFamily: mono, fontSize: 12, color: T.ink },
-  track: { height: 4, borderRadius: 9, backgroundColor: T.lineSoft, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 9 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  hurdle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: T.inkSoft,
-    borderWidth: 1,
-    borderColor: T.line,
-    borderRadius: radius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-  },
-  review: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: T.warn,
-    backgroundColor: T.warnSoft,
-    borderRadius: radius.sm,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    overflow: 'hidden',
-  },
-  why: { fontSize: 12, lineHeight: 17, color: T.inkSoft },
-  quickRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  quick: {
-    minHeight: 36,
-    paddingHorizontal: 14,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: T.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickText: { fontSize: 13, fontWeight: '600', color: T.ink },
-  quickPrimary: { backgroundColor: T.accent, borderColor: T.accent },
-  quickTextPrimary: { color: T.onAccent },
-  pressed: { opacity: 0.7 },
-  simpleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    borderRadius: radius.md,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-});

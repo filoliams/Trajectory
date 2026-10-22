@@ -1,48 +1,62 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, ErrorText, Segmented } from '@/components/form';
+import { Text } from '@/components/ui/text';
 import { CURRENT_YEAR } from '@/config';
-import { T, radius, typo } from '@/constants/trajectory';
+import { T, WIDE } from '@/constants/trajectory';
 import { DAILY_HOURS_OPTIONS, useDailyHours } from '@/lib/daily-hours';
 import { useStore } from '@/lib/store';
+import { cn } from '@/lib/utils';
 
 export default function SettingsScreen() {
   const { profile, session, setSemester, signOut, error, online, pendingCount } = useStore();
   const [hours, setHours] = useDailyHours();
+  const wide = useWindowDimensions().width >= WIDE;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+    <SafeAreaView className="bg-background flex-1" edges={['top']}>
+      <ScrollView contentContainerClassName={cn('w-full self-center gap-5 px-4 pb-10 pt-3', wide ? 'max-w-[1100px] px-10 pt-7' : 'max-w-[720px]')}>
+        <Text className="font-display px-1 text-4xl tracking-tighter">Settings</Text>
 
-        <Section title="Study plan" hint="Today's plan fits into this. Courses with fewer topics covered in your notes get more of it.">
-          <Segmented
-            label="Study time each day"
-            options={DAILY_HOURS_OPTIONS.map((h) => ({ value: String(h), label: `${h}h` }))}
-            value={String(hours)}
-            onChange={(v) => setHours(Number(v))}
-          />
-        </Section>
+        <View className="flex-row flex-wrap gap-4">
+          <Section index={0} title="Study plan" hint="Today's plan fits into this. Courses with fewer topics covered in your notes get more of it.">
+            <Segmented
+              label="Study time each day"
+              options={DAILY_HOURS_OPTIONS.map((h) => ({ value: String(h), label: `${h}h` }))}
+              value={String(hours)}
+              onChange={(v) => setHours(Number(v))}
+            />
+          </Section>
 
-        <Section title="Semester" hint="Switching shows that semester's courses. Nothing is deleted.">
-          <Segmented
-            options={[
-              { value: `${CURRENT_YEAR} S1`, label: `Sem 1, ${CURRENT_YEAR}` },
-              { value: `${CURRENT_YEAR} S2`, label: `Sem 2, ${CURRENT_YEAR}` },
-            ]}
-            value={profile?.semester ?? `${CURRENT_YEAR} S2`}
-            onChange={setSemester}
-          />
-          <ErrorText>{error}</ErrorText>
-        </Section>
+          <Section index={1} title="Semester" hint="Switching shows that semester's courses. Nothing is deleted.">
+            <Segmented
+              options={[
+                { value: `${CURRENT_YEAR} S1`, label: `Sem 1, ${CURRENT_YEAR}` },
+                { value: `${CURRENT_YEAR} S2`, label: `Sem 2, ${CURRENT_YEAR}` },
+              ]}
+              value={profile?.semester ?? `${CURRENT_YEAR} S2`}
+              onChange={setSemester}
+            />
+            <ErrorText>{error}</ErrorText>
+          </Section>
 
-        <Section title="Account">
-          <Row label="Signed in as" value={session?.user.email ?? ''} />
-          <Row label="Sync" value={syncLabel(online, pendingCount)} />
-          <Button title="Sign out" variant="secondary" onPress={signOut} />
-        </Section>
+          <Section index={2} title="Account">
+            <Row label="Signed in as" value={session?.user.email ?? ''} />
+            <View className="flex-row items-center justify-between gap-3">
+              <Text className="text-muted-foreground text-[15px]">Sync</Text>
+              <View className="flex-shrink flex-row items-center gap-2">
+                <View className="h-2 w-2 rounded-full" style={{ backgroundColor: !online ? T.warn : pendingCount ? T.accent : T.done }} />
+                <Text className="flex-shrink text-[15px] font-semibold" numberOfLines={1}>
+                  {syncLabel(online, pendingCount)}
+                </Text>
+              </View>
+            </View>
+            <Button title="Sign out" variant="secondary" onPress={signOut} />
+          </Section>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -54,36 +68,23 @@ function syncLabel(online: boolean, pendingCount: number): string {
   return 'Up to date';
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+function Section({ title, hint, index, children }: { title: string; hint?: string; index: number; children: ReactNode }) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.eyebrow}>{title}</Text>
-      <View style={styles.card}>{children}</View>
-      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
-    </View>
+    <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(18)} style={{ flexGrow: 1, flexBasis: 320, gap: 8 }}>
+      <Text className="text-muted-foreground px-1 text-xs font-semibold uppercase tracking-wider">{title}</Text>
+      <View className="bg-card border-border gap-3.5 rounded-2xl border p-4">{children}</View>
+      {hint ? <Text className="text-muted-foreground px-1 text-[13px] leading-[18px]">{hint}</Text> : null}
+    </Animated.View>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue} numberOfLines={1}>
+    <View className="flex-row items-center justify-between gap-3">
+      <Text className="text-muted-foreground text-[15px]">{label}</Text>
+      <Text className="flex-shrink text-[15px] font-semibold" numberOfLines={1}>
         {value}
       </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: T.ground },
-  content: { padding: 20, paddingTop: 12, gap: 24, maxWidth: 720, width: '100%', alignSelf: 'center' },
-  title: { ...typo.display, marginBottom: 4 },
-  section: { gap: 8 },
-  eyebrow: { ...typo.eyebrow, paddingHorizontal: 4 },
-  card: { backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg, padding: 16, gap: 14 },
-  hint: { fontSize: 13, lineHeight: 18, color: T.muted, paddingHorizontal: 4 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  rowLabel: { flexShrink: 0, fontSize: 15, color: T.muted },
-  rowValue: { flexShrink: 1, fontSize: 15, fontWeight: '600', color: T.ink },
-});

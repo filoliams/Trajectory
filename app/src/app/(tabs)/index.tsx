@@ -1,21 +1,24 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CompletedToday } from '@/components/completed-today';
+import { Ring, SectionHead, StatCard, WeekStrip, flow } from '@/components/dashboard';
 import { ProgressBar, StudyTimer } from '@/components/study-timer';
 import { TrajectoryView } from '@/components/trajectory-view';
-import { T, WIDE, font, mono, monoBold, radius, typo } from '@/constants/trajectory';
+import { Text } from '@/components/ui/text';
+import { T, WIDE } from '@/constants/trajectory';
 import type { Assessment, Course, Status } from '@/data/courses';
 import { useSmartPlan } from '@/lib/ai-plan';
-import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
+import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, todayHours, todaysPlan, upcoming, urgencyBarColor, urgencyColor, whyLabel } from '@/lib/planning';
 import { useDailyHours } from '@/lib/daily-hours';
 import { dayKey } from '@/lib/day';
 import { useHolidays } from '@/lib/holidays';
 import { useStore } from '@/lib/store';
 import { minutesLabel, useStudySession } from '@/lib/study-session';
+import { cn } from '@/lib/utils';
 
 const HOUR_MS = 3_600_000;
 
@@ -92,6 +95,115 @@ export default function TodayScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per request
   }, [start]);
 
+  const plannedMs = plannedHours * HOUR_MS;
+  const dayProgress = plannedMs > 0 ? study.totalStudiedMs / plannedMs : 0;
+  const soonest = upcoming(courses, now)[0];
+  const doneCount = plan.length - todo.length;
+
+  const timer = (
+    <Animated.View entering={FadeInDown.duration(400)}>
+      <StudyTimer
+        mode={active ? study.mode : 'idle'}
+        current={
+          active
+            ? {
+                label: `${active.course.code} · ${active.assessment.name}`,
+                studiedMs: active.studied,
+                targetMs: active.target,
+              }
+            : null
+        }
+        breakMs={study.breakMs}
+        totalStudiedMs={study.totalStudiedMs}
+        plannedMs={plannedMs}
+        doneCount={doneCount}
+        planCount={plan.length}
+        celebrating={study.cheering}
+        companion={study.companion}
+        onCompanion={study.setCompanion}
+        onStart={next ? () => startOn(next.assessment.id, next.assessment.status) : undefined}
+        onBreak={study.takeBreak}
+        onResume={study.resume}
+        onStop={study.stop}
+      />
+    </Animated.View>
+  );
+
+  const planList = (
+    <View className="gap-3">
+      <SectionHead title="Today's plan">
+        {online && smart.replansLeft > 0 && (plan.length > 0 || smart.message) ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Re-plan today, ${smart.replansLeft} left`}
+            disabled={smart.busy}
+            onPress={smart.replan}
+            className={cn('min-h-10 justify-center rounded-full border border-border px-4 active:bg-accent', smart.busy && 'opacity-60')}>
+            <Text className="text-primary text-sm font-semibold">{smart.busy ? 'Planning…' : `↻ Re-plan (${smart.replansLeft})`}</Text>
+          </Pressable>
+        ) : null}
+      </SectionHead>
+      {plan.length > 0 || smart.message ? (
+        <View className="flex-row items-center gap-2 px-1">
+          <View className={cn('h-2 w-2 rounded-full', smartItems ? 'bg-primary' : 'bg-muted-foreground')} />
+          <Text className="text-muted-foreground flex-1 text-[13px]">
+            {smartItems ? 'Smart plan from your deadlines and notes.' : smart.loading ? 'Making your smart plan…' : (smart.message ?? 'Showing your usual plan.')}
+          </Text>
+        </View>
+      ) : null}
+
+      {todo.length === 0 && completed.length === 0 ? (
+        <Animated.View entering={FadeInDown.delay(80)}>
+          <View className="bg-card border-border gap-1 rounded-2xl border p-5">
+            <Text className="font-bold text-lg">{empty.title}</Text>
+            <Text className="text-muted-foreground text-sm">{empty.text}</Text>
+          </View>
+        </Animated.View>
+      ) : null}
+
+      {todo.map(({ course, assessment, studied, target }, i) => {
+        const isActive = active?.assessment.id === assessment.id;
+        const block = smartFor.get(assessment.id);
+        return (
+          <Animated.View
+            key={assessment.id}
+            entering={FadeInDown.delay(80 + i * 70)
+              .springify()
+              .damping(18)}
+            exiting={FadeOut.duration(200)}
+            layout={flow}>
+            <PlanCard
+              course={course}
+              assessment={assessment}
+              studied={studied}
+              target={target}
+              hours={hoursToday(assessment, course)}
+              now={now}
+              first={i === 0}
+              mode={isActive ? study.mode : 'idle'}
+              reason={block ? block.reason || whyLabel(assessment, now) : i === 0 ? (assessment.why ?? whyLabel(assessment, now)) : null}
+              topics={block?.topics ?? []}
+              onTimer={() => (!isActive ? startOn(assessment.id, assessment.status) : study.mode === 'break' ? study.resume() : study.takeBreak())}
+            />
+          </Animated.View>
+        );
+      })}
+
+      {completed.length > 0 ? (
+        <Animated.View layout={flow}>
+          <CompletedToday
+            items={completed.map((c) => ({
+              id: c.assessment.id,
+              name: c.assessment.name,
+              code: c.course.code,
+              studied: c.studied,
+            }))}
+          />
+        </Animated.View>
+      ) : null}
+    </View>
+  );
+
   const trajectory = (
     <Animated.View entering={FadeInDown.delay(160).duration(500)}>
       <TrajectoryView courses={courses} now={now} />
@@ -99,209 +211,223 @@ export default function TodayScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={[styles.content, wide && styles.contentWide]}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.date}>
+    <SafeAreaView className="bg-background flex-1" edges={['top']}>
+      <ScrollView contentContainerClassName={cn('w-full self-center gap-5 px-4 pb-10 pt-3', wide ? 'max-w-[1400px] px-10 pt-7' : 'max-w-[720px]')}>
+        <View className="flex-row items-end justify-between gap-3 px-1">
+          <View className="flex-1 gap-0.5">
+            <Text className="text-muted-foreground text-sm">
               {dateLabel}
-              {holidayToday ? <Text style={styles.holiday}> · Public holiday: {holidayToday}</Text> : null}
+              {holidayToday ? <Text className="text-primary text-sm font-semibold"> · Public holiday: {holidayToday}</Text> : null}
             </Text>
-            <Text style={styles.title}>Today</Text>
+            <Text className="font-display text-4xl tracking-tighter">{greeting(now)}</Text>
           </View>
-          {examDays !== null ? <Text style={styles.examPill}>exams in {examDays}d</Text> : null}
+          {examDays !== null ? (
+            <View className="bg-card border-border rounded-full border px-3 py-1.5">
+              <Text className="text-muted-foreground font-mono text-xs">exams in {examDays}d</Text>
+            </View>
+          ) : null}
         </View>
 
-        <View style={wide ? styles.columns : styles.stack}>
-          <View style={wide ? styles.colWide : styles.stack}>
-            <Animated.View entering={FadeInDown.duration(400)}>
-              <StudyTimer
-                mode={active ? study.mode : 'idle'}
-                current={
-                  active
-                    ? {
-                        label: `${active.course.code} · ${active.assessment.name}`,
-                        studiedMs: active.studied,
-                        targetMs: active.target,
-                      }
-                    : null
-                }
-                breakMs={study.breakMs}
-                totalStudiedMs={study.totalStudiedMs}
-                plannedMs={plannedHours * HOUR_MS}
-                doneCount={plan.length - todo.length}
-                planCount={plan.length}
-                celebrating={study.cheering}
-                companion={study.companion}
-                onCompanion={study.setCompanion}
-                onStart={next ? () => startOn(next.assessment.id, next.assessment.status) : undefined}
-                onBreak={study.takeBreak}
-                onResume={study.resume}
-                onStop={study.stop}
-              />
-            </Animated.View>
-            {wide ? <ComingUp courses={courses} now={now} holidays={holidays} /> : null}
-          </View>
-
-          <View style={wide ? styles.colWide : styles.stack}>
-            {wide ? trajectory : null}
-            {plan.length > 0 || smart.message ? (
-              <View style={styles.planBar}>
-                <Text style={styles.planBarText}>
-                  {smartItems
-                    ? 'Smart plan from your deadlines and notes.'
-                    : smart.loading
-                      ? 'Making your smart plan…'
-                      : (smart.message ?? 'Showing your usual plan.')}
-                </Text>
-                {online && smart.replansLeft > 0 ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Re-plan today, ${smart.replansLeft} left`}
-                    disabled={smart.busy}
-                    onPress={smart.replan}
-                    style={({ pressed }) => [styles.replanBtn, (pressed || smart.busy) && styles.pressed]}>
-                    <Text style={styles.replanText}>{smart.busy ? 'Planning…' : `Re-plan (${smart.replansLeft})`}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-
-            {todo.length === 0 && completed.length === 0 ? (
-              <Animated.View entering={FadeInDown.delay(80)} style={styles.task}>
-                <Text style={styles.taskName}>{empty.title}</Text>
-                <Text style={styles.taskMeta}>{empty.text}</Text>
-              </Animated.View>
-            ) : null}
-
-            {todo.map(({ course, assessment, studied, target }, i) => {
-              const days = daysUntil(assessment.due, now);
-              const first = i === 0;
-              const isActive = active?.assessment.id === assessment.id;
-              const status = statusHeading(isActive ? study.mode : 'idle', studied, target);
-              return (
-                <Animated.View
-                  key={assessment.id}
-                  entering={FadeInDown.delay(80 + i * 70)
-                    .springify()
-                    .damping(18)}
-                  exiting={FadeOut.duration(200)}
-                  layout={LinearTransition.springify().damping(18)}
-                  style={[styles.task, first && styles.taskFirst, isActive && styles.taskActive]}>
-                  <View style={styles.taskTop}>
-                    <Text style={[styles.statusHeading, { color: status.color }]}>{status.text}</Text>
-                    <Text style={[styles.countdown, { color: urgencyColor(days) }]}>{countdown(assessment.due, now)}</Text>
-                  </View>
-                  <Text style={styles.taskName}>{assessment.name}</Text>
-                  <Text style={styles.taskMeta}>
-                    {course.code} · {hoursLabel(hoursToday(assessment, course)).replace('~', '')} today · {assessment.weight}% of grade
-                  </Text>
-                  <View style={styles.taskProgress}>
-                    <ProgressBar value={target ? studied / target : 0} color={T.accent} track={T.neutralSoft} height={6} />
-                    <Text style={styles.taskProgressText}>
-                      {minutesLabel(studied)} of {minutesLabel(target)}
-                    </Text>
-                  </View>
-                  {smartFor.has(assessment.id) ? (
-                    <View style={styles.why}>
-                      <Text style={styles.whyText}>
-                        <Text style={styles.whyLabel}>Why this? </Text>
-                        {smartFor.get(assessment.id)!.reason || whyLabel(assessment, now)}
-                      </Text>
-                      {smartFor.get(assessment.id)!.topics.length ? (
-                        <Text style={styles.whyText}>
-                          <Text style={styles.whyLabel}>Focus: </Text>
-                          {smartFor.get(assessment.id)!.topics.join(', ')}
-                        </Text>
-                      ) : null}
-                    </View>
-                  ) : first ? (
-                    <View style={styles.why}>
-                      <Text style={styles.whyText}>
-                        <Text style={styles.whyLabel}>Why this? </Text>
-                        {assessment.why ?? whyLabel(assessment, now)}
-                      </Text>
-                    </View>
-                  ) : null}
-                  <View style={styles.actions}>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() =>
-                        !isActive ? startOn(assessment.id, assessment.status) : study.mode === 'break' ? study.resume() : study.takeBreak()
-                      }
-                      style={({ pressed }) => [styles.startBtn, !first && !isActive && styles.secondaryBtn, pressed && styles.pressed]}>
-                      <Text style={[styles.startText, !first && !isActive && styles.secondaryText]}>
-                        {isActive ? (study.mode === 'break' ? 'Back to it' : 'Take a break') : studied > 0 ? 'Resume timer' : 'Start timer'}
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Open ${course.code}`}
-                      style={({ pressed }) => [styles.secondaryBtn, styles.courseBtn, pressed && styles.pressed]}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/course/[code]',
-                          params: { code: course.code },
-                        })
-                      }>
-                      <Text style={styles.secondaryText}>Course</Text>
-                    </Pressable>
-                  </View>
-                </Animated.View>
-              );
-            })}
-
-            {completed.length > 0 ? (
-              <Animated.View layout={LinearTransition.springify().damping(18)}>
-                <CompletedToday
-                  items={completed.map((c) => ({
-                    id: c.assessment.id,
-                    name: c.assessment.name,
-                    code: c.course.code,
-                    studied: c.studied,
-                  }))}
-                />
-              </Animated.View>
-            ) : null}
-
-            {wide ? null : trajectory}
-            <Text style={styles.footnote}>Only study time counts towards today. Breaks pause the clock.</Text>
-          </View>
+        <View className="flex-row flex-wrap gap-3">
+          <StatCard index={0} label="Studied today" value={minutesLabel(study.totalStudiedMs)} hint={`of ${minutesLabel(plannedMs)} planned`}>
+            <Ring value={dayProgress} size={52}>
+              <Text className="font-mono text-[11px]">{Math.min(100, Math.round(dayProgress * 100))}%</Text>
+            </Ring>
+          </StatCard>
+          <StatCard index={1} label="Plan" value={`${doneCount}/${plan.length}`} hint={plan.length ? 'blocks done' : 'nothing planned'} />
+          <StatCard
+            index={2}
+            label="Next deadline"
+            value={soonest ? shortCountdown(soonest.assessment.due, now) : '—'}
+            tone={soonest ? urgencyColor(daysUntil(soonest.assessment.due, now)) : T.muted}
+            hint={soonest ? `${soonest.course.code} · ${soonest.assessment.name}` : 'all clear'}
+          />
+          <StatCard index={3} label="Exams" value={examDays !== null ? `${examDays}d` : '—'} hint={examDays !== null ? 'until the first one' : 'none scheduled'} />
         </View>
+
+        {wide ? (
+          <View className="flex-row items-start gap-5">
+            <View className="min-w-0 flex-1 gap-5">
+              {timer}
+              <ComingUp courses={courses} now={now} holidays={holidays} />
+            </View>
+            <View className="min-w-0 flex-[1.2] gap-5">
+              {planList}
+              {trajectory}
+            </View>
+          </View>
+        ) : (
+          <View className="gap-5">
+            {timer}
+            {planList}
+            <ComingUp courses={courses} now={now} holidays={holidays} />
+            {trajectory}
+          </View>
+        )}
+        <Text className="text-muted-foreground text-center text-[13px]">Only study time counts towards today. Breaks pause the clock.</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-/** The next few deadlines across every course, filling the column under the timer on wide screens. */
-function ComingUp({ courses, now, holidays }: { courses: Course[]; now: number; holidays: Map<string, string> }) {
-  const next = upcoming(courses, now).slice(0, 5);
-  if (next.length === 0) return null;
+/** One block of today's plan; "Why this?" opens and closes on tap. */
+function PlanCard(p: {
+  course: Course;
+  assessment: Assessment;
+  studied: number;
+  target: number;
+  hours: number;
+  now: number;
+  first: boolean;
+  mode: 'idle' | 'study' | 'break';
+  reason: string | null;
+  topics: string[];
+  onTimer: () => void;
+}) {
+  const [open, setOpen] = useState(p.first);
+  const days = daysUntil(p.assessment.due, p.now);
+  const status = statusHeading(p.mode, p.studied, p.target);
+  const isActive = p.mode !== 'idle';
+  const primary = p.first || isActive;
   return (
-    <Animated.View entering={FadeInDown.delay(120).duration(500)} style={styles.coming}>
-      <Text style={typo.heading}>Coming up</Text>
-      {next.map(({ course, assessment }) => (
-        <Pressable
-          key={assessment.id}
-          accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/course/[code]', params: { code: course.code } })}
-          style={({ pressed }) => [styles.comingRow, pressed && styles.pressed]}>
-          <View style={styles.comingText}>
-            <Text style={styles.comingName} numberOfLines={1}>
-              {assessment.name}
-            </Text>
-            <Text style={styles.comingMeta}>
-              {course.code} · {dueLabel(assessment.due)}
-              {assessment.due && holidays.has(dayKey(new Date(assessment.due).getTime())) ? <Text style={styles.holiday}> · Public holiday</Text> : null}
-            </Text>
-          </View>
-          <Text style={[styles.comingDue, { color: urgencyColor(daysUntil(assessment.due, now)) }]}>
-            {shortCountdown(assessment.due, now)}
+    <View className={cn('bg-card flex-row overflow-hidden rounded-2xl border', isActive ? 'border-primary border-2' : p.first ? 'border-input' : 'border-border')}>
+      <View style={{ width: 4, backgroundColor: urgencyBarColor(days) }} />
+      <View className="flex-1 gap-2 p-4">
+        <View className="flex-row items-center justify-between gap-2">
+          <Text className="font-semibold text-[13px]" style={{ color: status.color }}>
+            {status.text}
           </Text>
-        </Pressable>
-      ))}
+          <Text className="font-mono text-lg" style={{ color: urgencyColor(days) }}>
+            {countdown(p.assessment.due, p.now)}
+          </Text>
+        </View>
+        <Text className="font-bold text-lg leading-6 tracking-tight">{p.assessment.name}</Text>
+        <View className="flex-row flex-wrap gap-1.5">
+          <Tag>{p.course.code}</Tag>
+          <Tag>{hoursLabel(p.hours).replace('~', '')} today</Tag>
+          <Tag>{p.assessment.weight}% of grade</Tag>
+        </View>
+        <View className="flex-row items-center gap-3">
+          <View className="flex-1">
+            <ProgressBar value={p.target ? p.studied / p.target : 0} color={T.accent} track={T.neutralSoft} height={6} />
+          </View>
+          <Text className="text-muted-foreground font-mono text-xs">
+            {minutesLabel(p.studied)} / {minutesLabel(p.target)}
+          </Text>
+        </View>
+
+        {p.reason ? (
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} className="bg-background rounded-xl px-3 py-2.5 active:opacity-80">
+            <View className="flex-row items-center justify-between">
+              <Text className="font-semibold text-[13px]">Why this?</Text>
+              <Text className="text-muted-foreground text-xs">{open ? 'Hide' : 'Show'}</Text>
+            </View>
+            {open ? (
+              <Animated.View entering={FadeIn.duration(200)} style={{ marginTop: 4, gap: 4 }}>
+                <Text className="text-[13px] leading-5 text-[#C9CCD3]">{p.reason}</Text>
+                {p.topics.length ? (
+                  <View className="flex-row flex-wrap gap-1.5 pt-1">
+                    {p.topics.map((t) => (
+                      <View key={t} className="bg-[#1F2610] rounded-full px-2.5 py-1">
+                        <Text className="text-xs font-semibold text-[#D8FF6A]">{t}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </Animated.View>
+            ) : null}
+          </Pressable>
+        ) : null}
+
+        <View className="flex-row gap-2 pt-1">
+          <Pressable
+            accessibilityRole="button"
+            onPress={p.onTimer}
+            className={cn('h-11 flex-1 items-center justify-center rounded-full', primary ? 'bg-primary active:opacity-80' : 'border-border border bg-card active:bg-accent')}>
+            <Text className={cn('text-[15px] font-semibold', primary ? 'text-primary-foreground' : 'text-foreground')}>
+              {isActive ? (p.mode === 'break' ? 'Back to it' : 'Take a break') : p.studied > 0 ? 'Resume timer' : 'Start timer'}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${p.course.code}`}
+            onPress={() => router.push({ pathname: '/course/[code]', params: { code: p.course.code } })}
+            className="border-border bg-card h-11 items-center justify-center rounded-full border px-4 active:bg-accent">
+            <Text className="text-[15px] font-medium">Course</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <View className="bg-secondary rounded-md px-2 py-0.5">
+      <Text className="text-xs font-semibold text-[#C9CCD3]">{children}</Text>
+    </View>
+  );
+}
+
+/** The week ahead with every upcoming deadline; tap a day to see only what's due then. */
+function ComingUp({ courses, now, holidays }: { courses: Course[]; now: number; holidays: Map<string, string> }) {
+  const [day, setDay] = useState<string | null>(null);
+  const all = upcoming(courses, now);
+  if (all.length === 0) return null;
+  const counts = new Map<string, number>();
+  for (const { assessment } of all) {
+    const key = dayKey(new Date(assessment.due!).getTime());
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const shown = day ? all.filter((x) => dayKey(new Date(x.assessment.due!).getTime()) === day) : all.slice(0, 5);
+  return (
+    <Animated.View entering={FadeInDown.delay(120).duration(500)}>
+      <View className="bg-card border-border gap-3 rounded-2xl border p-4">
+        <SectionHead title="Coming up">
+          {day ? (
+            <Pressable accessibilityRole="button" onPress={() => setDay(null)} className="min-h-10 justify-center px-1">
+              <Text className="text-primary text-sm font-semibold">Show all</Text>
+            </Pressable>
+          ) : null}
+        </SectionHead>
+        <WeekStrip now={now} counts={counts} selected={day} onSelect={setDay} />
+        <Animated.View layout={flow} style={{ gap: 4 }}>
+          {shown.length === 0 ? <Text className="text-muted-foreground px-1 py-3 text-sm">Nothing due that day.</Text> : null}
+          {shown.map(({ course, assessment }) => (
+            <Animated.View key={assessment.id} entering={FadeIn.duration(220)} layout={flow}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push({ pathname: '/course/[code]', params: { code: course.code } })}
+                className="min-h-[52px] flex-row items-center gap-3 rounded-xl px-2 py-2 active:bg-accent">
+                <View className="h-9 w-1 rounded-full" style={{ backgroundColor: urgencyBarColor(daysUntil(assessment.due, now)) }} />
+                <View className="flex-1 gap-0.5">
+                  <Text className="font-semibold text-[15px]" numberOfLines={1}>
+                    {assessment.name}
+                  </Text>
+                  <Text className="text-muted-foreground text-[13px]">
+                    {course.code} · {dueLabel(assessment.due)}
+                    {holidays.has(dayKey(new Date(assessment.due!).getTime())) ? <Text className="text-primary text-[13px]"> · Public holiday</Text> : null}
+                  </Text>
+                </View>
+                <Text className="font-mono text-[15px]" style={{ color: urgencyColor(daysUntil(assessment.due, now)) }}>
+                  {shortCountdown(assessment.due, now)}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          ))}
+        </Animated.View>
+      </View>
     </Animated.View>
   );
+}
+
+/** "Good morning" and friends, by the hour in Brisbane. */
+function greeting(now: number): string {
+  const hour = Number(new Date(now).toLocaleString('en-AU', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Australia/Brisbane' }));
+  if (hour < 5) return 'Late night';
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
 }
 
 /** What Today says when there's nothing to plan, depending on why. */
@@ -315,7 +441,7 @@ function emptyState(courses: Course[]): { title: string; text: string } {
 
 /** The heading on each card, from today's progress alone. */
 function statusHeading(mode: 'idle' | 'study' | 'break', studied: number, target: number): { text: string; color: string } {
-  if (mode === 'study') return { text: 'Studying now', color: T.accent };
+  if (mode === 'study') return { text: '● Studying now', color: T.accent };
   if (mode === 'break') return { text: 'On a break', color: T.warn };
   if (studied > 0)
     return {
@@ -324,115 +450,3 @@ function statusHeading(mode: 'idle' | 'study' | 'break', studied: number, target
     };
   return { text: 'Not started', color: T.muted };
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: T.ground },
-  content: {
-    padding: 20,
-    paddingTop: 12,
-    gap: 12,
-    maxWidth: 720,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  contentWide: {
-    maxWidth: 1240,
-    paddingHorizontal: 40,
-    paddingTop: 28,
-    gap: 20,
-  },
-  stack: { gap: 12 },
-  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
-  colWide: { flex: 1, minWidth: 0, gap: 12 },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 6,
-  },
-  headerText: { gap: 2 },
-  date: { fontSize: 14, fontWeight: '500', color: T.muted },
-  holiday: { color: T.accent, fontWeight: '600' },
-  title: typo.display,
-  examPill: {
-    fontFamily: mono,
-    fontSize: 12,
-    color: T.muted,
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.line,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    overflow: 'hidden',
-  },
-
-  task: {
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    borderRadius: radius.lg,
-    padding: 18,
-    gap: 6,
-  },
-  taskFirst: { borderColor: T.lineStrong },
-  taskActive: { borderWidth: 2, borderColor: T.accent },
-  taskTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusHeading: { fontFamily: font.semibold, fontSize: 14 },
-  countdown: { fontFamily: monoBold, fontSize: 22, letterSpacing: -0.5 },
-  taskName: { fontFamily: font.bold, fontSize: 18, color: T.ink, letterSpacing: -0.2 },
-  taskMeta: { fontSize: 14, color: T.muted },
-  taskProgress: { gap: 6, marginTop: 4 },
-  taskProgressText: { fontFamily: mono, fontSize: 12, color: T.muted },
-  why: {
-    backgroundColor: T.ground,
-    borderRadius: radius.md,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginTop: 4,
-  },
-  whyText: { fontSize: 13, lineHeight: 19, color: T.inkSoft },
-  whyLabel: { fontWeight: '700', color: T.ink },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  startBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 999,
-    backgroundColor: T.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  startText: { fontSize: 15, fontWeight: '600', color: T.onAccent },
-  secondaryBtn: {
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.line,
-  },
-  secondaryText: { fontSize: 15, fontWeight: '500', color: T.ink },
-  courseBtn: {
-    height: 44,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressed: { opacity: 0.7 },
-
-  planBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 },
-  planBarText: { flex: 1, fontSize: 13, color: T.muted },
-  replanBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  replanText: { fontSize: 15, fontWeight: '600', color: T.accent },
-
-  footnote: { fontSize: 13, color: T.muted, textAlign: 'center', marginTop: 4 },
-  coming: { backgroundColor: T.surface, borderRadius: radius.lg, padding: 18, gap: 4 },
-  comingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8 },
-  comingText: { flex: 1, gap: 2 },
-  comingName: { fontFamily: font.semibold, fontSize: 15, color: T.ink },
-  comingMeta: { fontSize: 13, color: T.muted },
-  comingDue: { fontFamily: monoBold, fontSize: 15 },
-});

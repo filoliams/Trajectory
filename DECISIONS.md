@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-10-23: Dashboard-style redesign of Today, Courses, course page and Settings
+**Decision:** Restyle these screens with NativeWind classes in the shape of e-learning student dashboards (Dribbble reference): a row of stat cards with tick-ring progress, a tappable seven-day strip that filters "Coming up", filter pills and a 1/2/3-column grid on Courses, per-assessment weight bars, and collapsible "Why this?" and assessment actions. The shared pieces live in `components/dashboard.tsx`. No new dependencies; the rings are plain Views animated with Reanimated, because the app has no SVG library.
+**Why:** The old screens were a single column with spare space on iPad and desktop, and every card showed all its detail at once.
+
 ## 2026-10-23: Elevate the UI inside Expo with NativeWind and React Native Reusables
 **Decision:** Keep the Expo / React Native app and add NativeWind 4 (Tailwind classes) plus React Native Reusables (shadcn/ui ported to React Native). Its theme variables are Trajectory's existing dark palette and lime accent. Design references (awesome-design-md, react-native-reusables source) are cloned into the git-ignored `reference/`.
 **Why:** It's the shadcn/Tailwind ecosystem without rewriting the app, so the iPad app in Expo Go, the web build and the planned iOS share sheet all keep working.
