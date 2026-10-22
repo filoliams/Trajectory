@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-10-23: Upgrade to Expo SDK 58 on its own branch
+**Decision:** SDK 58 (React Native 0.88, React 19.3, Expo Router 58, Reanimated 4.7) lives on branch `sdk-58` until Expo Go for SDK 58 is in the App Store; then it merges. Code changes it needed: `+html.tsx` renders `useServerDocumentContext()` head/body nodes (without them the web page ships no script and never loads); `useSyncExternalStore` calls pass a server snapshot (static rendering now requires one); a `Pressable` ref uses `ComponentRef<typeof Pressable>` for RN 0.88's stricter types.
+**Why:** The owner tests on an iPad in Expo Go and has no Apple Developer membership for a dev build; the new Expo Go only runs SDK 58 and isn't released yet, so upgrading the main branch now would stop the app opening on the iPad.
+
 ## 2026-10-23: Course colours, weekly chart, streak, and new display fonts
 **Decision:** Each course gets a fixed colour (its place among the semester's codes, A–Z) used on its rings, bars, plan cards and deadline dots. Today adds a big progress ring, a tappable seven-day study chart, a streak card, phone quick actions, and three columns on large desktops. Past study days are read from `study_time` (last 28 days) on the client, under row-level security. Titles use Bricolage Grotesque, with one word in Instrument Serif italic; body stays Geist, numbers Geist Mono. Added `@expo-google-fonts/bricolage-grotesque` and `@expo-google-fonts/instrument-serif` at the owner's request.
 **Why:** The Dribbble e-learning dashboards all tell courses apart by colour and show weekly activity and streaks; the owner asked for distinct, premium fonts.
