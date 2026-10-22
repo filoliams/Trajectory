@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-23: Elevate the UI inside Expo with NativeWind and React Native Reusables
+**Decision:** Keep the Expo / React Native app and add NativeWind 4 (Tailwind classes) plus React Native Reusables (shadcn/ui ported to React Native). Its theme variables are Trajectory's existing dark palette and lime accent. Design references (awesome-design-md, react-native-reusables source) are cloned into the git-ignored `reference/`.
+**Why:** It's the shadcn/Tailwind ecosystem without rewriting the app, so the iPad app in Expo Go, the web build and the planned iOS share sheet all keep working.
+**Alternatives:** A separate browser-only React app (Vite/Next.js + shadcn/ui), rejected because every screen would be rewritten and the iPad app would become a Safari web app.
+
 ## 2026-10-22: AI daily plan: assessment blocks, one saved plan a day
 **Decision:** The `plan-day` function asks `claude-sonnet-5-5` (effort `medium`, structured output, server-side refusal fallback) for an ordered list of blocks, each tied to one of the student's open assessments, with minutes, up to 3 focus topics and a one-line reason. One plan is saved per student per Brisbane day; it's reused until the student re-plans or changes their study hours, with at most 3 Sonnet calls a day (the plan plus two re-plans). The server picks the day. Plans are validated on the server (own open assessments only, total within the daily hours, blocks of at least 15 minutes) and the app falls back to its on-device plan whenever there's no AI plan.
 **Why:** Tying blocks to assessments lets the existing timer, progress and "Completed today" work unchanged. Saving per day keeps cost to a few calls per student per day. Only topic names, levels and one-line reasons are sent, never note text.

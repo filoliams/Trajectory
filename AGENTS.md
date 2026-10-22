@@ -14,6 +14,8 @@ app/                    Expo + React Native + TypeScript app (iOS, Android, web)
   app.json              native config; ios/ and android/ are generated
   src/app/              Expo Router screens: sign-in, onboarding, (tabs)/ Today·Courses·Settings, course/, assessment/
   src/components/       UI (topic-list, trajectory-view, study-timer, sheet, ...)
+  src/components/ui/    React Native Reusables (shadcn/ui for RN); add with `npx @react-native-reusables/cli@latest add <name>`
+  src/global.css        Tailwind (NativeWind) theme variables, mirroring the T tokens; style new UI with className
   src/lib/              logic, no UI
     store.tsx           app state + Supabase reads/writes
     planning.ts         on-device daily plan, countdowns, notesLevel
@@ -29,6 +31,8 @@ supabase/
   functions/plan-day    Today's AI study plan (Sonnet 5.5), one saved per day; rules in _shared/plan.ts
   functions/_shared/    pure import-free modules + check.ts; claude.ts is the one Claude call
   tests/                live ingest script, local preview script (spends API money)
+reference/              git-ignored clones to read, never run: awesome-design-md (site DESIGN.md files),
+                        react-native-reusables (component + block source)
 ```
 
 Postgres tables, all under row-level security: `profiles`, `courses`, `assessments`, `topics`, `study_time`, `connections`, `documents`, `document_topics`, `sync_jobs`, `daily_plans`.

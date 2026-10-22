@@ -1,5 +1,6 @@
 import { Geist_600SemiBold, Geist_700Bold, Geist_800ExtraBold, useFonts } from '@expo-google-fonts/geist';
 import { GeistMono_600SemiBold, GeistMono_700Bold } from '@expo-google-fonts/geist-mono';
+import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
@@ -22,6 +23,8 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <Routes />
       <SyncStatus />
+      {/* Where components/ui menus, popovers and tooltips render. */}
+      <PortalHost />
     </StoreProvider>
   );
 }

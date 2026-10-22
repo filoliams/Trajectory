@@ -1,3 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme for Tailwind and React Native Reusables components: the T tokens in constants/trajectory.ts, as HSL. */
+@layer base {
+  :root {
+    --background: 240 15.4% 5.1%; /* ground */
+    --foreground: 220 15.8% 96.3%; /* ink */
+    --card: 230 12% 9.8%; /* surface */
+    --card-foreground: 220 15.8% 96.3%;
+    --popover: 225 11.1% 14.1%; /* elevated */
+    --popover-foreground: 220 15.8% 96.3%;
+    --primary: 74 89.8% 57.6%; /* accent (lime) */
+    --primary-foreground: 240 15.4% 5.1%; /* onAccent */
+    --secondary: 227 11.4% 15.5%; /* neutralSoft */
+    --secondary-foreground: 220 15.8% 96.3%;
+    --muted: 230 12% 9.8%;
+    --muted-foreground: 220 6.9% 57.5%; /* muted */
+    --accent: 225 11.1% 14.1%;
+    --accent-foreground: 220 15.8% 96.3%;
+    --destructive: 5 100% 68.4%; /* urgent */
+    --destructive-foreground: 240 15.4% 5.1%;
+    --border: 227 10.6% 16.7%; /* line */
+    --input: 225 9.4% 25.1%; /* lineStrong */
+    --ring: 74 89.8% 57.6%;
+    --radius: 0.875rem; /* 14px, radius.md */
+    --chart-1: 74 89.8% 57.6%;
+    --chart-2: 142 69.2% 58%;
+    --chart-3: 36 100% 63.9%;
+    --chart-4: 5 100% 68.4%;
+    --chart-5: 220 6.9% 57.5%;
+  }
+}
+
 :root {
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
