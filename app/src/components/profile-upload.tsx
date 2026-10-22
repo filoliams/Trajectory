@@ -1,5 +1,5 @@
 import * as DocumentPicker from 'expo-document-picker';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { T, mono, radius } from '@/constants/trajectory';
@@ -36,7 +36,7 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
   const [dragging, setDragging] = useState(false);
   const nextId = useRef(1);
   const queue = useRef(Promise.resolve());
-  const zone = useRef<View>(null);
+  const zone = useRef<ComponentRef<typeof Pressable>>(null);
 
   function update(id: number, fields: Partial<Upload>) {
     setUploads((list) => list.map((u) => (u.id === id ? { ...u, ...fields } : u)));

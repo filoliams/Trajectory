@@ -16,7 +16,8 @@ function subscribe(listener: () => void) {
 
 /** Hours a day the student wants to study; Today's plan fits into this. */
 export function useDailyHours(): [number, (h: number) => void] {
-  const value = useSyncExternalStore(subscribe, () => hours);
+  // The third argument is for web static rendering, which reads the same value.
+  const value = useSyncExternalStore(subscribe, () => hours, () => hours);
   return [
     value,
     (h) => {
