@@ -7,168 +7,379 @@
   <meta name="description" content="Trajectory reads your notes, tracks your assessments and tells you what to study next and for how long. Join the waitlist.">
   <meta property="og:title" content="Trajectory: know what to study next">
   <meta property="og:description" content="Your courses, assessments and notes in one place, with a daily study plan that adapts to where you actually are.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M7 23 Q14 22 17 15 T26 8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='8' r='2.5' fill='white'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232E55E6'/%3E%3Cpath d='M6 25C11 13 18 9 25 8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='white'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=Caveat:wght@500&display=swap" rel="stylesheet">
   <style>
+    /* Layout: app-style surfaces on a cool grey ground; hero + four live feature demos, alternating sides.
+       Colours mirror app/src/constants/trajectory.ts. */
     :root {
-      --bg: #fbfaf7;
-      --surface: #ffffff;
-      --surface-2: #f3f1ec;
-      --text: #17161a;
-      --muted: #5f5c66;
-      --border: #e4e1da;
-      --accent: #4f46e5;
-      --accent-ink: #ffffff;
-      --accent-soft: #eceafd;
-      --good: #14845a;
-      --warn: #d49a0b;
-      --bad: #c2410c;
-      --shadow: 0 1px 2px rgba(20, 18, 30, .04), 0 12px 32px -12px rgba(20, 18, 30, .14);
-      --radius: 14px;
+      --ground: #F2F3F5;
+      --surface: #FFFFFF;
+      --ink: #15171C;
+      --ink-soft: #3A3F48;
+      --muted: #5A606B;
+      --line: #E2E4E8;
+      --line-soft: #E9EBEE;
+      --accent: #2E55E6;
+      --accent-dark: #1F3FB8;
+      --accent-soft: #E7ECFD;
+      --on-accent: #FFFFFF;
+      --urgent: #B42318;
+      --warn: #A84A0C;
+      --warn-bar: #C2560F;
+      --warn-soft: #FCEBDD;
+      --neutral-soft: #ECEDF0;
+      --done: #2F9A44;
+      --inverse: #15171C;
+      --on-inverse: #FFFFFF;
+      --on-inverse-muted: #B8BCC6;
+      --on-inverse-weak: #F2A46B;
+      --on-inverse-strong: #9DB2FF;
+      --paper-rule: #DCE3F5;
+      --shadow: 0 1px 2px rgba(21, 23, 28, .04), 0 18px 40px -18px rgba(21, 23, 28, .18);
+
+      --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+      --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      --font-hand: "Caveat", "Bradley Hand", cursive;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #111014;
-        --surface: #1a191e;
-        --surface-2: #232228;
-        --text: #f1eff4;
-        --muted: #a29fab;
-        --border: #2e2c34;
-        --accent: #8b85ff;
-        --accent-ink: #111014;
-        --accent-soft: #25234a;
-        --good: #4ade80;
-        --warn: #fbbf24;
-        --bad: #fb923c;
-        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px -12px rgba(0, 0, 0, .6);
+      :root:not([data-theme="light"]) {
+        --ground: #0D0F13;
+        --surface: #16181D;
+        --ink: #ECEEF2;
+        --ink-soft: #C4C8D0;
+        --muted: #9AA0AB;
+        --line: #282B32;
+        --line-soft: #202329;
+        --accent: #6F8CFF;
+        --accent-dark: #9DB2FF;
+        --accent-soft: #1B2347;
+        --on-accent: #0D0F13;
+        --urgent: #F07167;
+        --warn: #F2A46B;
+        --warn-bar: #E07B35;
+        --warn-soft: #3A2416;
+        --neutral-soft: #23262D;
+        --done: #5CC872;
+        --inverse: #22252C;
+        --on-inverse: #ECEEF2;
+        --on-inverse-muted: #9AA0AB;
+        --paper-rule: #252B3B;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 40px -18px rgba(0, 0, 0, .7);
+        color-scheme: dark;
       }
+    }
+    :root[data-theme="dark"] {
+      --ground: #0D0F13;
+      --surface: #16181D;
+      --ink: #ECEEF2;
+      --ink-soft: #C4C8D0;
+      --muted: #9AA0AB;
+      --line: #282B32;
+      --line-soft: #202329;
+      --accent: #6F8CFF;
+      --accent-dark: #9DB2FF;
+      --accent-soft: #1B2347;
+      --on-accent: #0D0F13;
+      --urgent: #F07167;
+      --warn: #F2A46B;
+      --warn-bar: #E07B35;
+      --warn-soft: #3A2416;
+      --neutral-soft: #23262D;
+      --done: #5CC872;
+      --inverse: #22252C;
+      --on-inverse: #ECEEF2;
+      --on-inverse-muted: #9AA0AB;
+      --paper-rule: #252B3B;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 40px -18px rgba(0, 0, 0, .7);
+      color-scheme: dark;
     }
 
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font: 16px/1.6 Inter, system-ui, -apple-system, sans-serif;
+      background: var(--ground);
+      color: var(--ink);
+      font: 16px/1.6 var(--font-body);
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
     a { color: inherit; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-    .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+    h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; }
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .wrap {
+      max-width: 1140px; margin: 0 auto;
+      padding-left: max(20px, env(safe-area-inset-left, 0px));
+      padding-right: max(20px, env(safe-area-inset-right, 0px));
+    }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-    /* Nav */
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; letter-spacing: -.01em; }
-    .logo svg { width: 28px; height: 28px; }
-    .nav-cta { font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); }
+    /* ---------- Nav ---------- */
+    nav { display: flex; align-items: center; justify-content: space-between; padding-block: 22px; }
+    .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; font: 700 20px var(--font-display); letter-spacing: -.01em; }
+    .logo svg { width: 26px; height: 26px; }
+    .nav-cta { font-size: 14px; font-weight: 600; text-decoration: none; padding: 9px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); transition: border-color .2s; }
     .nav-cta:hover { border-color: var(--accent); }
 
-    /* Hero */
-    .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; padding: 56px 0 88px; }
-    .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 5px 12px; border-radius: 999px; }
-    .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    h1 { font-size: clamp(42px, 6vw, 68px); line-height: 1.02; letter-spacing: -.02em; margin: 20px 0 18px; }
-    h1 em { color: var(--accent); }
-    .lede { font-size: 19px; color: var(--muted); max-width: 30em; margin: 0 0 30px; }
+    /* ---------- Hero ---------- */
+    .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; padding-block: 48px 96px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent-dark); background: var(--accent-soft); padding: 5px 12px; border-radius: 999px; }
+    .eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: ping 2s ease-out infinite; }
+    @keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent); } 80%, 100% { box-shadow: 0 0 0 8px transparent; } }
+    h1 { font-size: clamp(42px, 6vw, 66px); line-height: 1.02; letter-spacing: -.035em; font-weight: 700; margin: 20px 0 20px; }
+    .next { position: relative; color: var(--accent); white-space: nowrap; }
+    .next svg { position: absolute; left: -2%; bottom: -.2em; width: 108%; height: .5em; overflow: visible; }
+    .next path { stroke: var(--accent); stroke-width: 5; fill: none; stroke-linecap: round; stroke-dasharray: 260; stroke-dashoffset: 260; animation: draw 1.1s .5s cubic-bezier(.6, 0, .2, 1) forwards; }
+    .next circle { fill: var(--accent); opacity: 0; animation: pop .3s 1.5s forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @keyframes pop { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
+    .next circle { transform-box: fill-box; transform-origin: center; }
+    .lede { font-size: 19px; color: var(--ink-soft); max-width: 31em; margin: 0 0 30px; }
 
-    /* Waitlist form */
-    .waitlist { display: flex; flex-direction: column; gap: 10px; max-width: 470px; }
+    /* ---------- Waitlist form ---------- */
+    .waitlist { display: flex; flex-direction: column; gap: 10px; max-width: 480px; }
     .row { display: flex; gap: 8px; }
     .waitlist input {
-      flex: 1; min-width: 0; font: inherit; font-size: 15px; color: var(--text);
-      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+      min-width: 0; font: inherit; font-size: 15px; color: var(--ink);
+      background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0 14px; height: 48px;
     }
-    .waitlist input::placeholder { color: var(--muted); opacity: .8; }
-    .waitlist input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
-    .waitlist button {
-      font: inherit; font-size: 15px; font-weight: 600; color: var(--accent-ink); background: var(--accent);
-      border: 0; border-radius: 10px; padding: 12px 20px; cursor: pointer; white-space: nowrap;
+    .row input { flex: 1 1 auto; }
+    .waitlist input::placeholder { color: var(--muted); }
+    .waitlist input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+    .btn {
+      font: 600 15px var(--font-body); color: var(--on-accent); background: var(--accent);
+      border: 0; border-radius: 12px; height: 48px; padding: 0 22px; cursor: pointer; white-space: nowrap;
+      transition: transform .15s, background .2s;
     }
-    .waitlist button:hover { filter: brightness(1.08); }
-    .waitlist button:disabled { opacity: .6; cursor: progress; }
+    .btn:hover { background: var(--accent-dark); }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .6; cursor: progress; }
     .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
     .form-note { font-size: 13px; color: var(--muted); margin: 0; min-height: 1.4em; }
-    .form-note.error { color: var(--bad); }
-    .success {
-      display: none; max-width: 470px; padding: 16px 18px; border-radius: 12px;
-      background: var(--accent-soft); border: 1px solid var(--accent);
-    }
-    .success strong { display: block; margin-bottom: 2px; }
+    .form-note.error { color: var(--urgent); }
+    .success { display: none; max-width: 480px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1.5px solid var(--ink); }
+    .success strong { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 17px; }
+    .success strong svg { width: 20px; height: 20px; color: var(--done); }
     .success span { color: var(--muted); font-size: 14px; }
     .done .waitlist { display: none; }
-    .done .success { display: block; }
+    .done .success { display: block; animation: rise .5s cubic-bezier(.2, .8, .2, 1); }
 
-    /* Product mock */
-    .mock { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 22px; }
-    .mock-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
-    .mock-head h3 { margin: 0; font-size: 15px; }
-    .mock-head span { font-size: 12px; color: var(--muted); }
-    .plan { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 8px; }
-    .plan li { display: grid; grid-template-columns: 4px 1fr auto; gap: 12px; align-items: center; background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
-    .plan li::before { content: ""; height: 100%; min-height: 32px; border-radius: 4px; background: var(--c); }
-    .plan b { display: block; font-size: 14px; font-weight: 600; }
-    .plan small { color: var(--muted); font-size: 12px; }
-    .plan .time { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .courses { display: grid; gap: 12px; }
-    .course { display: grid; grid-template-columns: 80px 1fr 38px; gap: 12px; align-items: center; font-size: 13px; }
-    .course .code { font-weight: 600; }
-    .course .pct { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
-    .bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
-    .bar i { display: block; height: 100%; width: var(--w); background: var(--c); border-radius: 99px; }
-    .mock-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+    /* ---------- Shared app-style pieces ---------- */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; }
+    .chip { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 9px; white-space: nowrap; transition: background .3s, color .3s; }
+    .chip.warn { color: var(--warn); background: var(--warn-soft); }
+    .chip.urgent { color: var(--urgent); background: color-mix(in srgb, var(--urgent) 12%, transparent); }
+    .chip.okay { color: var(--ink-soft); background: var(--neutral-soft); }
+    .chip.strong { color: var(--on-accent); background: var(--accent); }
+    .chip.info { color: var(--accent-dark); background: var(--accent-soft); }
+    .chip.good { color: var(--done); background: color-mix(in srgb, var(--done) 14%, transparent); }
+    .chip.reading { color: var(--muted); background: var(--neutral-soft); }
+    .chip.reading::after { content: ""; width: 10px; height: 10px; margin-left: 6px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .why { background: var(--ground); border-radius: 12px; padding: 11px 13px; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+    .why strong { color: var(--ink); }
+    .kicker { font: 500 13px var(--font-mono); color: var(--muted); }
 
-    /* Sections */
-    section { padding: 80px 0; border-top: 1px solid var(--border); }
-    h2 { font-size: clamp(32px, 4.5vw, 46px); line-height: 1.08; letter-spacing: -.015em; margin: 0 0 14px; }
-    .section-lede { color: var(--muted); font-size: 18px; max-width: 36em; margin: 0 0 44px; }
+    /* ---------- Hero demo: Today ---------- */
+    .today { padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+    .today-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+    .today-head small { display: block; font-size: 13px; color: var(--muted); font-weight: 500; }
+    .today-head h3 { margin: 0; font-size: 28px; letter-spacing: -.02em; line-height: 1.1; }
+    .free { font-size: 13px; color: var(--muted); text-align: right; }
+    .free b { font-family: var(--font-display); color: var(--ink); font-size: 15px; }
+    .meter { height: 6px; border-radius: 9px; background: var(--line-soft); overflow: hidden; display: flex; gap: 2px; }
+    .meter i { height: 100%; width: 0; transition: width 1s cubic-bezier(.6, 0, .2, 1); }
+    .task { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; border-radius: 16px; }
+    .task.top { border: 1.5px solid var(--ink); }
+    .task-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 10px; }
+    .kicker { white-space: nowrap; }
+    .task b { font-size: 16px; font-weight: 600; }
+    .task p { margin: 0; font-size: 13px; color: var(--muted); }
+    .task .why { min-height: 4.6em; }
+    .caret { display: inline-block; width: 2px; height: 1em; background: var(--accent); vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .task-actions { display: flex; gap: 8px; }
+    .mini-btn { font: 600 13px var(--font-body); border-radius: 10px; height: 36px; padding: 0 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+    .mini-btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; animation: nudge 3s 3.2s ease-in-out infinite; }
+    @keyframes nudge { 0%, 70%, 100% { box-shadow: 0 0 0 0 transparent; } 80% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); } }
+    .boot > * { opacity: 0; animation: rise .7s cubic-bezier(.2, .8, .2, 1) forwards; animation-delay: calc(var(--i, 0) * 140ms + 200ms); }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
-    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
-    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
-    .step::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; margin-bottom: 16px; }
-    .step h3, .feature h3 { margin: 0 0 6px; font-size: 17px; }
-    .step p, .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+    /* ---------- Sections ---------- */
+    section { padding-block: 88px; }
+    .section-head { max-width: 640px; margin-bottom: 48px; }
+    .label { font: 600 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+    h2 { font-size: clamp(32px, 4.4vw, 46px); line-height: 1.06; letter-spacing: -.03em; margin: 0 0 14px; font-weight: 700; }
+    .section-lede { color: var(--ink-soft); font-size: 18px; margin: 0; }
 
-    .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    .feature { background: var(--surface); padding: 28px; }
-    .feature svg { width: 22px; height: 22px; color: var(--accent); margin-bottom: 14px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-    .chips span { font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+    .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .step { padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+    .step-num { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font: 600 14px var(--font-display); background: var(--neutral-soft); color: var(--ink-soft); }
+    .step:first-child .step-num { background: var(--ink); color: var(--surface); }
+    .step h3 { margin: 6px 0 0; font-size: 19px; font-weight: 600; }
+    .step p { margin: 0; color: var(--muted); font-size: 15px; }
 
+    /* Feature rows */
+    .feature { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 44px; }
+    .feature.flip { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+    .feature.flip .copy { order: 2; }
+    .copy h3 { font-size: clamp(26px, 3vw, 32px); line-height: 1.1; letter-spacing: -.025em; margin: 0 0 12px; font-weight: 700; }
+    .copy p { color: var(--ink-soft); margin: 0 0 16px; font-size: 17px; }
+    .copy ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+    .copy li { display: flex; gap: 10px; font-size: 15px; color: var(--ink-soft); }
+    .copy li::before { content: ""; flex: none; width: 6px; height: 6px; margin-top: 9px; border-radius: 50%; background: var(--accent); }
+    .stage { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px; box-shadow: var(--shadow); min-width: 0; }
+    .stage-tag { position: absolute; top: -12px; left: 22px; font: 600 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; background: var(--ink); color: var(--surface); border-radius: 999px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; }
+    .stage-tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--urgent); animation: blink 1.4s steps(1) infinite; }
+
+    /* Demo 1: import */
+    .imp { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1.15fr); gap: 10px; align-items: start; }
+    .doc { position: relative; border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: var(--ground); overflow: hidden; }
+    .doc-title { font: 600 15px var(--font-display); margin: 2px 0 10px; }
+    .doc-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px; border-radius: 8px; font-size: 13px; transition: background .3s; }
+    .doc-row span:last-child { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+    .doc-row.hit { background: var(--accent-soft); }
+    .scan { position: absolute; left: 0; right: 0; height: 2px; background: var(--accent); box-shadow: 0 0 12px 2px color-mix(in srgb, var(--accent) 50%, transparent); top: 40px; opacity: 0; transition: top .45s cubic-bezier(.6, 0, .2, 1), opacity .3s; }
+    .flow { align-self: center; color: var(--muted); }
+    .flow svg { width: 28px; height: 28px; }
+    .alist { display: flex; flex-direction: column; gap: 8px; }
+    .alist-head { display: flex; justify-content: space-between; align-items: baseline; font: 600 15px var(--font-display); }
+    .alist-head span { font: 400 12px var(--font-body); color: var(--muted); }
+    .aitem { padding: 10px 12px; border-radius: 14px; display: flex; flex-direction: column; gap: 5px; opacity: 0; transform: translateX(-16px) scale(.98); transition: opacity .45s, transform .45s cubic-bezier(.2, .8, .2, 1); }
+    .aitem.in { opacity: 1; transform: none; }
+    .aitem .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .aitem b { font-size: 14px; }
+    .cd { font: 600 13px var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .aitem .meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); gap: 8px; }
+    .wbar { height: 4px; border-radius: 9px; background: var(--line-soft); overflow: hidden; }
+    .wbar i { display: block; height: 100%; width: 0; border-radius: 9px; transition: width .8s .2s cubic-bezier(.2, .8, .2, 1); }
+
+    /* Demo 2: notes */
+    .notes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .paper { position: relative; border-radius: 14px; border: 1px solid var(--line); padding: 12px 16px 16px 34px; background: repeating-linear-gradient(var(--surface) 0 27px, var(--paper-rule) 27px 28px); background-position: 0 6px; min-height: 290px; overflow: hidden; }
+    .paper::before { content: ""; position: absolute; left: 24px; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--urgent) 35%, transparent); }
+    .paper-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
+    .nl { font: 500 21px/28px var(--font-hand); color: var(--ink); white-space: nowrap; overflow: hidden; clip-path: inset(0 100% 0 0); transition: clip-path .7s steps(18), background .3s; border-radius: 4px; }
+    .nl.h { color: var(--accent-dark); font-size: 24px; }
+    .nl.in { clip-path: inset(0 0 0 0); }
+    .nl.lit { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+    .topics { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
+    .topics-head { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); font: 600 15px var(--font-display); }
+    .topics-head span { font: 400 12px var(--font-body); color: var(--muted); }
+    .topic { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--line-soft); }
+    .topic:last-child { border-bottom: 0; }
+    .topic b { display: block; font-size: 14px; font-weight: 600; }
+    .topic small { display: block; font-size: 12px; color: var(--muted); min-height: 1.5em; transition: opacity .3s; }
+    .chip.settle { animation: chip-pop .35s cubic-bezier(.3, 1.6, .5, 1); }
+    @keyframes chip-pop { from { transform: scale(.6); } to { transform: scale(1); } }
+
+    /* Demo 3: priorities */
+    .prio-event { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; padding: 8px 12px; border-radius: 12px; background: var(--inverse); color: var(--on-inverse); margin-bottom: 12px; transition: opacity .3s, transform .3s; }
+    .prio-event.hide { opacity: 0; transform: translateY(-6px); }
+    .prio-event svg { width: 16px; height: 16px; flex: none; color: var(--on-inverse-muted); }
+    .ranks { position: relative; height: calc(4 * 62px + 3 * 8px); }
+    .rcard { position: absolute; left: 0; right: 0; height: 62px; padding: 0 14px; display: flex; align-items: center; gap: 12px; border-radius: 14px; transition: transform .7s cubic-bezier(.65, 0, .25, 1), border-color .4s, opacity .4s; }
+    .rcard.first { border: 1.5px solid var(--ink); }
+    .rcard.isdone { opacity: .55; }
+    .rank { width: 28px; height: 28px; flex: none; border-radius: 8px; display: grid; place-items: center; font: 600 13px var(--font-display); background: var(--neutral-soft); color: var(--ink-soft); transition: background .4s, color .4s; }
+    .rcard.first .rank { background: var(--ink); color: var(--surface); }
+    .rcard .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .rcard b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rcard small { font: 500 12px var(--font-mono); color: var(--muted); }
+    .prio .why { margin-top: 12px; min-height: 5.2em; transition: opacity .3s; }
+
+    /* Demo 4: time */
+    .time-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .time-head b { font: 600 18px var(--font-display); }
+    .toggle { font: 500 14px var(--font-body); height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .25s, color .25s, border-color .25s; }
+    .toggle .sw { width: 30px; height: 18px; border-radius: 99px; background: var(--neutral-soft); position: relative; transition: background .25s; }
+    .toggle .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .25s; }
+    .toggle[aria-pressed="true"] { border-color: var(--accent); }
+    .toggle[aria-pressed="true"] .sw { background: var(--accent); }
+    .toggle[aria-pressed="true"] .sw::after { transform: translateX(12px); }
+    .track { position: relative; height: 34px; border-radius: 10px; background: var(--line-soft); display: flex; overflow: hidden; }
+    .track i { height: 100%; transition: width .9s cubic-bezier(.65, 0, .25, 1); border-right: 2px solid var(--surface); }
+    .track i:last-of-type { border-right: 0; }
+    .scale { display: flex; justify-content: space-between; font: 500 11px var(--font-mono); color: var(--muted); margin: 6px 0 14px; }
+    .blocks { display: flex; flex-direction: column; gap: 8px; }
+    .block { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 14px; transition: opacity .5s; }
+    .block .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+    .block .info { flex: 1; min-width: 0; }
+    .block b { display: block; font-size: 14px; }
+    .block small { display: block; font-size: 12px; color: var(--muted); }
+    .block .t { font: 600 15px var(--font-mono); font-variant-numeric: tabular-nums; }
+    .block.moved { opacity: .5; }
+    .time-note { margin-top: 12px; font-size: 13px; color: var(--muted); min-height: 2.8em; }
+
+    /* Exams strip (inverse card, as in the app) */
+    .exams { background: var(--inverse); color: var(--on-inverse); border-radius: 22px; padding: 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 32px; align-items: center; }
+    .exams h3 { margin: 0 0 10px; font-size: 26px; line-height: 1.15; letter-spacing: -.02em; }
+    .exams p { margin: 0; color: var(--on-inverse-muted); }
+    .exam-list { display: flex; flex-direction: column; gap: 10px; }
+    .exam { display: grid; grid-template-columns: 90px 1fr 54px 44px; align-items: center; gap: 12px; font-size: 14px; }
+    .exam .bar { height: 6px; border-radius: 9px; background: color-mix(in srgb, var(--on-inverse) 12%, transparent); overflow: hidden; }
+    .exam .bar i { display: block; height: 100%; border-radius: 9px; width: 0; transition: width 1.2s cubic-bezier(.2, .8, .2, 1); }
+    .exams.go .bar i { width: var(--w); }
+    .exam .lvl { font-size: 13px; }
+    .exam .d { text-align: right; color: var(--on-inverse-muted); }
+
+    /* FAQ + CTA */
     .faq { max-width: 760px; }
-    details { border-bottom: 1px solid var(--border); padding: 18px 0; }
-    summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+    details { border-bottom: 1px solid var(--line); padding-block: 18px; }
+    summary { cursor: pointer; font: 600 18px var(--font-display); list-style: none; display: flex; justify-content: space-between; gap: 16px; }
     summary::-webkit-details-marker { display: none; }
-    summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 22px; line-height: 1; }
-    details[open] summary::after { content: "\2212"; }
-    details p { color: var(--muted); margin: 10px 0 0; }
-
+    summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 24px; line-height: 1; transition: transform .25s; }
+    details[open] summary::after { transform: rotate(45deg); }
+    details p { color: var(--ink-soft); margin: 10px 0 0; }
     .cta { text-align: center; }
-    .cta .waitlist, .cta .success { margin: 0 auto; text-align: left; }
-    .cta .section-lede { margin-left: auto; margin-right: auto; margin-bottom: 30px; }
+    .cta-box { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; padding: 56px 24px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .cta-box > svg { position: absolute; right: -40px; top: -30px; width: 340px; height: 240px; opacity: .9; pointer-events: none; }
+    .cta-box > svg path { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 10; }
+    .cta-box > svg circle { fill: var(--accent); }
+    .cta .waitlist, .cta .success { margin: 0 auto; text-align: left; position: relative; }
+    .cta .section-lede { margin: 0 auto 28px; max-width: 30em; position: relative; }
+    .cta h2 { position: relative; }
 
-    footer { border-top: 1px solid var(--border); padding: 28px 0 40px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
-    @media (max-width: 880px) {
-      .hero { grid-template-columns: 1fr; gap: 44px; padding: 32px 0 64px; }
-      .steps, .features { grid-template-columns: 1fr; }
-      section { padding: 60px 0; }
+    /* Scroll reveal: only below-the-fold elements start hidden, and only once JS is running */
+    .reveal.pre { opacity: 0; transform: translateY(36px); }
+    .reveal.show { opacity: 1; transform: none; transition: opacity .8s cubic-bezier(.2, .8, .2, 1), transform .9s cubic-bezier(.2, .8, .2, 1); transition-delay: calc(var(--d, 0) * 110ms); }
+
+    @media (max-width: 900px) {
+      .hero, .feature, .feature.flip, .exams { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+      .feature.flip .copy { order: 0; }
+      .hero { padding-block: 24px 64px; }
+      .steps { grid-template-columns: minmax(0, 1fr); }
+      section { padding-block: 64px; }
+      .feature { padding-block: 28px; }
     }
-    @media (max-width: 480px) {
+    @media (max-width: 560px) {
       .row { flex-direction: column; }
       .lede { font-size: 17px; }
-      .mock { padding: 16px; }
-      .course { grid-template-columns: 64px 1fr 34px; }
+      .stage, .today { padding: 16px; }
+      .imp { grid-template-columns: minmax(0, 1fr); }
+      .flow { justify-self: center; transform: rotate(90deg); }
+      .notes { grid-template-columns: minmax(0, 1fr); }
+      .paper { min-height: 0; }
+      .exam { grid-template-columns: 80px 1fr 48px 36px; gap: 8px; }
+      .cta-box { padding: 40px 16px; }
+      .cta-box > svg { opacity: .35; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <nav>
-      <a class="logo" href="/" aria-label="Trajectory home">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M7 23 Q14 22 17 15 T26 8" stroke="var(--accent-ink)" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="26" cy="8" r="2.5" fill="var(--accent-ink)"/></svg>
+      <a class="logo" href="#" aria-label="Trajectory home">
+        <svg viewBox="0 0 32 32" fill="none" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M4 26C10 12 18 7 28 6"/><circle cx="28" cy="6" r="2.5" fill="var(--accent)"/></svg>
         Trajectory
       </a>
       <a class="nav-cta" href="#join">Join the waitlist</a>
@@ -176,111 +387,229 @@
 
     <header class="hero">
       <div class="signup-block">
-        <span class="eyebrow">Early access opening soon</span>
-        <h1 class="serif">Know exactly what to study <em>next.</em></h1>
+        <span class="eyebrow"><i></i>Early access opening soon</span>
+        <h1>Know exactly what to study <span class="next">next.<svg viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true"><path d="M2 16 C30 18 70 14 112 5"/><circle cx="113" cy="5" r="4"/></svg></span></h1>
         <p class="lede">Trajectory pulls in your courses, assessments and notes, works out how far along you really are in each subject, and builds a daily plan that puts your time where it counts.</p>
         <form class="waitlist" novalidate>
           <div class="row">
-            <input type="email" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
-            <button type="submit">Get early access</button>
+            <input type="email" id="email-top" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
+            <button class="btn" type="submit">Get early access</button>
           </div>
-          <input type="text" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
+          <input type="text" id="uni-top" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
           <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
           <p class="form-note" role="status">Free during early access. No spam, just a note when your spot opens.</p>
         </form>
         <div class="success" role="status">
-          <strong>You're on the list.</strong>
+          <strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>You're on the list.</strong>
           <span>We'll email you when your spot opens up.</span>
         </div>
       </div>
 
-      <div class="mock" aria-label="Example of a Trajectory study plan" role="img">
-        <div class="mock-head">
-          <h3>Today's plan</h3>
-          <span>3h 15m · Tue</span>
+      <div class="card today boot" role="img" aria-label="Example of Trajectory's Today screen: a three-task study plan with the reason the first task was chosen">
+        <div class="today-head" style="--i:0">
+          <div><small id="today-date">Thursday 15 October · Week 12</small><h3>Today</h3></div>
+          <div class="free"><b>3h 15m</b> of 4h free</div>
         </div>
-        <ul class="plan">
-          <li style="--c: var(--bad)"><div><b>Linear Algebra: eigenvalues</b><small>Problem set due Thu · notes 40% covered</small></div><span class="time">1h 30m</span></li>
-          <li style="--c: var(--warn)"><div><b>Microeconomics: market failure</b><small>Midterm in 9 days</small></div><span class="time">1h 00m</span></li>
-          <li style="--c: var(--good)"><div><b>Psychology: review week 6</b><small>On track · light revision</small></div><span class="time">45m</span></li>
-        </ul>
-        <p class="mock-label">Progress by course</p>
-        <div class="courses">
-          <div class="course"><span class="code">MATH1051</span><div class="bar"><i style="--w: 42%; --c: var(--bad)"></i></div><span class="pct">42%</span></div>
-          <div class="course"><span class="code">ECON1010</span><div class="bar"><i style="--w: 61%; --c: var(--warn)"></i></div><span class="pct">61%</span></div>
-          <div class="course"><span class="code">PSYC1030</span><div class="bar"><i style="--w: 84%; --c: var(--good)"></i></div><span class="pct">84%</span></div>
+        <div class="meter" style="--i:1"><i id="m1" style="background: var(--accent)"></i><i id="m2" style="background: var(--warn-bar)"></i><i id="m3" style="background: var(--done)"></i></div>
+        <div class="card task top" style="--i:2">
+          <div class="task-row"><span class="kicker">1 · STAT2201 · 1h 30m</span><span class="chip warn">Due in 4 days · 25%</span></div>
+          <b>Problem Set: regression problems</b>
+          <div class="why"><strong>Why this?</strong> <span id="why-type"></span><span class="caret"></span></div>
+          <div class="task-actions"><span class="mini-btn primary" style="display:inline-flex;align-items:center">Start session</span><span class="mini-btn" style="display:inline-flex;align-items:center">Skip today</span></div>
+        </div>
+        <div class="card task" style="--i:3">
+          <div class="task-row"><span class="kicker">2 · MATH2010 · 45m</span></div>
+          <b>Revise phase-line stability</b>
+          <p>Your notes stop partway through this topic.</p>
+        </div>
+        <div class="card task" style="--i:4">
+          <div class="task-row"><span class="kicker">3 · ELEC2004 · 1h</span></div>
+          <b>Lab report: write method</b>
+          <p>Due next Friday. An hour today keeps next week light.</p>
         </div>
       </div>
     </header>
-
-    <section id="how">
-      <h2 class="serif">Set up once. Then just open it and study.</h2>
-      <p class="section-lede">No more rebuilding a spreadsheet every semester or guessing which subject you've been neglecting.</p>
-      <div class="steps">
-        <div class="step"><h3>Pick your university and courses</h3><p>Choose your courses at sign-up and Trajectory pulls assessment dates and weightings straight from your course profiles.</p></div>
-        <div class="step"><h3>Connect your notes</h3><p>Link the notes you already take. Trajectory reads them to see which topics you've covered and which you haven't touched yet.</p></div>
-        <div class="step"><h3>Get your daily plan</h3><p>Each day you get a ranked list of what to work on and how long to spend, weighted by deadlines, grade impact and where you're behind.</p></div>
-      </div>
-    </section>
-
-    <section id="features">
-      <h2 class="serif">Built around how you actually study.</h2>
-      <p class="section-lede">Trajectory works from your real coursework and your real notes, not a to-do list you have to keep updated by hand.</p>
-      <div class="features">
-        <div class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          <h3>Assessments, imported for you</h3>
-          <p>Due dates and weightings come straight from your online course profiles. When something changes, your plan changes with it.</p>
-        </div>
-        <div class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
-          <h3>Works with the notes you already have</h3>
-          <p>Keep taking notes the way you do now. Trajectory connects to your existing apps.</p>
-          <div class="chips"><span>Obsidian</span><span>OneNote</span><span>GoodNotes</span></div>
-        </div>
-        <div class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg>
-          <h3>Honest progress, per subject</h3>
-          <p>AI reads your notes against each course's content to estimate how far along you really are, so the weak spots show up before exam week.</p>
-        </div>
-        <div class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          <h3>Time where it counts</h3>
-          <p>Subjects that need more work get more of your hours. Ones you're on top of get just enough to stay there.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="faq">
-      <h2 class="serif">Questions</h2>
-      <div class="faq">
-        <details><summary>When can I start using it?</summary><p>We're opening early access in small groups. Join the waitlist and we'll email you as soon as your spot is ready.</p></details>
-        <details><summary>Does it cost anything?</summary><p>Early access is free. If we introduce paid plans later, waitlist members will hear about it first.</p></details>
-        <details><summary>Is my university supported?</summary><p>Tell us your university when you sign up. We're prioritising support for the universities our waitlist asks for most.</p></details>
-        <details><summary>What happens to my notes?</summary><p>Your notes are only used to work out your progress and build your plan. They're never sold or shared.</p></details>
-      </div>
-    </section>
-
-    <section id="join" class="cta">
-      <h2 class="serif">Start next semester ahead.</h2>
-      <p class="section-lede">Join the waitlist and be one of the first to get a study plan built around you.</p>
-      <div class="signup-block">
-        <form class="waitlist" novalidate>
-          <div class="row">
-            <input type="email" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
-            <button type="submit">Get early access</button>
-          </div>
-          <input type="text" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
-          <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
-          <p class="form-note" role="status">Free during early access. No spam, just a note when your spot opens.</p>
-        </form>
-        <div class="success" role="status">
-          <strong>You're on the list.</strong>
-          <span>We'll email you when your spot opens up.</span>
-        </div>
-      </div>
-    </section>
   </div>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="label">How it works</p>
+        <h2>Set up once. Then just open it and study.</h2>
+        <p class="section-lede">No more rebuilding a spreadsheet every semester or guessing which subject you've been neglecting.</p>
+      </div>
+      <div class="steps">
+        <div class="card step reveal" style="--d:0"><span class="step-num">1</span><h3>Pick your university and courses</h3><p>Trajectory pulls assessment dates and weightings straight from your course profiles.</p></div>
+        <div class="card step reveal" style="--d:1"><span class="step-num">2</span><h3>Connect your notes</h3><p>Link the notes you already take. Trajectory reads them to see which topics you've covered.</p></div>
+        <div class="card step reveal" style="--d:2"><span class="step-num">3</span><h3>Get your daily plan</h3><p>A ranked list of what to work on and how long, weighted by deadlines, grade impact and where you're behind.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" style="padding-top: 24px">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="label">See it work</p>
+        <h2>Built around how you actually study.</h2>
+        <p class="section-lede">Trajectory works from your real coursework and your real notes, so you never maintain a to-do list by hand.</p>
+      </div>
+
+      <!-- Feature 1: assessment import -->
+      <div class="feature">
+        <div class="copy reveal">
+          <h3>Assessments, imported for you</h3>
+          <p>Pick your courses and Trajectory reads each course profile for every assessment, its weighting and its due date.</p>
+          <ul><li>Live countdowns to every deadline</li><li>Weightings show what each piece is worth</li><li>Your plan updates when dates change</li></ul>
+        </div>
+        <div class="stage reveal" style="--d:1" data-demo="import" role="img" aria-label="Animation: Trajectory scans a STAT2201 course profile and adds each assessment to a list with a live countdown">
+          <span class="stage-tag"><i></i>Importing</span>
+          <div class="imp">
+            <div class="doc">
+              <div class="scan"></div>
+              <div class="kicker">STAT2201 · Course profile</div>
+              <div class="doc-title">5. Assessment</div>
+              <div class="doc-row"><span>Quiz (Wk 12)</span><span class="mono">2.5%</span><span data-date="0"></span></div>
+              <div class="doc-row"><span>Problem Set</span><span class="mono">25%</span><span data-date="1"></span></div>
+              <div class="doc-row"><span>Final exam</span><span class="mono">60%</span><span data-date="2"></span></div>
+            </div>
+            <div class="flow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+            <div class="alist">
+              <div class="alist-head">Your assessments <span>Live countdown</span></div>
+              <div class="card aitem"><div class="top"><b>Quiz (Wk 12)</b><span class="cd" data-due="0" style="color: var(--urgent)"></span></div><div class="meta"><span data-date="0"></span><span class="mono">2.5%</span></div><div class="wbar"><i data-w="6" style="background: var(--urgent)"></i></div></div>
+              <div class="card aitem"><div class="top"><b>Problem Set</b><span class="cd" data-due="1" style="color: var(--warn)"></span></div><div class="meta"><span data-date="1"></span><span class="mono">25%</span></div><div class="wbar"><i data-w="25" style="background: var(--warn-bar)"></i></div></div>
+              <div class="card aitem"><div class="top"><b>Final exam</b><span class="cd" data-due="2"></span></div><div class="meta"><span data-date="2"></span><span class="mono">60%</span></div><div class="wbar"><i data-w="60" style="background: var(--accent)"></i></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2: notes footprint -->
+      <div class="feature flip">
+        <div class="copy reveal">
+          <h3>Reads the notes you already take</h3>
+          <p>Keep writing the way you do now. Trajectory reads your notes, handwriting included, and maps what you've covered against each course.</p>
+          <ul><li>Works with GoodNotes, Obsidian and OneNote</li><li>Every topic rated Strong, Okay or Weak</li><li>See exactly why, down to "headings only"</li></ul>
+        </div>
+        <div class="stage reveal" style="--d:1" data-demo="notes" role="img" aria-label="Animation: handwritten STAT2201 notes are read and each topic is rated Weak, Okay or Strong">
+          <span class="stage-tag"><i></i>Reading notes</span>
+          <div class="notes">
+            <div class="paper">
+              <div class="paper-head"><span class="kicker">STAT2201 · Wk 9</span><span class="chip okay">GoodNotes</span></div>
+              <div class="nl h" data-t="0">Linear regression</div>
+              <div class="nl" data-t="0">y = β₀ + β₁x + ε</div>
+              <div class="nl" data-t="0">min Σ (yᵢ − ŷᵢ)²</div>
+              <div class="nl h" data-t="1">Confidence intervals</div>
+              <div class="nl" data-t="1">(finish later…)</div>
+              <div class="nl h" data-t="2">Residuals</div>
+              <div class="nl" data-t="2">plot eᵢ vs ŷᵢ, look for fan</div>
+              <div class="nl h" data-t="3">Hypothesis testing</div>
+              <div class="nl" data-t="3">Q1 ✓ Q2 ✓ Q3 ✓ Q4 ✓ … Q12 ✓</div>
+            </div>
+            <div class="card topics">
+              <div class="topics-head">Topics <span>From your notes</span></div>
+              <div class="topic"><div><b>Linear regression</b><small data-detail="3 pages, no practice yet"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Reading</span></div>
+              <div class="topic"><div><b>Confidence intervals</b><small data-detail="Headings only"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Reading</span></div>
+              <div class="topic"><div><b>Residual analysis</b><small data-detail="Good notes, no practice yet"></small></div><span class="chip reading" data-level="okay" data-label="Okay">Reading</span></div>
+              <div class="topic"><div><b>Hypothesis testing</b><small data-detail="12 practice problems, mostly right"></small></div><span class="chip reading" data-level="strong" data-label="Strong">Reading</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3: priorities -->
+      <div class="feature">
+        <div class="copy reveal">
+          <h3>Always the right thing first, with the reason</h3>
+          <p>Every task is ranked by deadline, grade weight and how prepared you are. When something changes, the order changes with it, and Trajectory tells you why.</p>
+          <ul><li>Reacts to new or moved deadlines</li><li>Weak topics pull related work forward</li><li>A plain-English reason for every pick</li></ul>
+        </div>
+        <div class="stage prio reveal" style="--d:1" data-demo="prio" role="img" aria-label="Animation: a ranked task list reorders when a quiz is moved to tomorrow, with an explanation of the new top task">
+          <span class="stage-tag"><i></i>Re-ranking</span>
+          <div class="prio-event hide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="ev-text">Course profile updated</span></div>
+          <div class="ranks">
+            <div class="card rcard" data-id="ps"><span class="rank">1</span><div class="info"><b>Problem Set</b><small>STAT2201 · 25%</small></div><span class="chip warn">4 days</span></div>
+            <div class="card rcard" data-id="lab"><span class="rank">2</span><div class="info"><b>Lab report</b><small>ELEC2004 · 15%</small></div><span class="chip okay">8 days</span></div>
+            <div class="card rcard" data-id="ode"><span class="rank">3</span><div class="info"><b>Phase-line stability</b><small>MATH2010 · revision</small></div><span class="chip okay">Exam prep</span></div>
+            <div class="card rcard" data-id="quiz"><span class="rank">4</span><div class="info"><b>Quiz (Wk 12)</b><small>STAT2201 · 2.5%</small></div><span class="chip okay">6 days</span></div>
+          </div>
+          <div class="why"><strong>Why this?</strong> <span class="why-text"></span></div>
+        </div>
+      </div>
+
+      <!-- Feature 4: time -->
+      <div class="feature flip">
+        <div class="copy reveal">
+          <h3>Time where it counts</h3>
+          <p>Tell Trajectory how much time you have. Subjects that need work get more of it, and anything that can wait moves to a day that has room.</p>
+          <ul><li>Short on time? One tap re-plans the day</li><li>Weak subjects get more hours</li><li>Nothing important quietly falls off</li></ul>
+        </div>
+        <div class="stage reveal" style="--d:1" data-demo="time">
+          <span class="stage-tag"><i></i>Try it</span>
+          <div class="time-head"><b id="time-total">Plan · 3h 15m of 4h</b><button class="toggle" type="button" aria-pressed="false"><span class="sw" aria-hidden="true"></span>I have less time today</button></div>
+          <div class="track" aria-hidden="true"><i data-b="0" style="background: var(--accent)"></i><i data-b="1" style="background: var(--warn-bar)"></i><i data-b="2" style="background: var(--done)"></i></div>
+          <div class="scale" aria-hidden="true"><span>0h</span><span>1h</span><span>2h</span><span>3h</span><span>4h</span></div>
+          <div class="blocks">
+            <div class="card block"><span class="dot" style="background: var(--accent)"></span><div class="info"><b>Problem Set</b><small>STAT2201 · weak topic, due soonest</small></div><span class="t" data-t="0">1h 30m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--warn-bar)"></span><div class="info"><b>Phase-line stability</b><small>MATH2010 · notes incomplete</small></div><span class="t" data-t="1">45m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--done)"></span><div class="info"><b>Lab report method</b><small data-s="2">ELEC2004 · due next Friday</small></div><span class="t" data-t="2">1h 00m</span></div>
+          </div>
+          <p class="time-note" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <!-- Exams -->
+      <div class="exams reveal" style="margin-top: 44px">
+        <div>
+          <p class="label" style="color: var(--on-inverse-muted)">Exam season</p>
+          <h3>Walk into every exam knowing where you stand.</h3>
+          <p>As exams get close, Trajectory shifts from coursework to revision and shows how ready you are for each one.</p>
+        </div>
+        <div class="exam-list" aria-label="Example exam readiness">
+          <div class="exam"><span class="mono">STAT2201</span><span class="bar"><i style="--w: 38%; background: var(--on-inverse-weak)"></i></span><span class="lvl" style="color: var(--on-inverse-weak)">Weak</span><span class="d mono">22d</span></div>
+          <div class="exam"><span class="mono">MATH2010</span><span class="bar"><i style="--w: 61%; background: var(--on-inverse-muted)"></i></span><span class="lvl" style="color: var(--on-inverse-muted)">Okay</span><span class="d mono">26d</span></div>
+          <div class="exam"><span class="mono">ELEC2004</span><span class="bar"><i style="--w: 84%; background: var(--on-inverse-strong)"></i></span><span class="lvl" style="color: var(--on-inverse-strong)">Strong</span><span class="d mono">29d</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-head reveal"><p class="label">Questions</p><h2>Good to know</h2></div>
+      <div class="faq">
+        <details class="reveal" style="--d:0"><summary>When can I start using it?</summary><p>We're opening early access in small groups. Join the waitlist and we'll email you as soon as your spot is ready.</p></details>
+        <details class="reveal" style="--d:1"><summary>Does it cost anything?</summary><p>Early access is free. If we introduce paid plans later, waitlist members will hear about it first.</p></details>
+        <details class="reveal" style="--d:2"><summary>Is my university supported?</summary><p>Tell us your university when you sign up. We're prioritising support for the universities our waitlist asks for most.</p></details>
+        <details class="reveal" style="--d:3"><summary>What happens to my notes?</summary><p>Your notes are only used to work out your progress and build your plan. They're never sold or shared.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="join" class="cta">
+    <div class="wrap">
+      <div class="cta-box reveal">
+        <svg viewBox="0 0 340 240" aria-hidden="true"><path d="M10 230 C90 200 170 150 300 50"/><circle cx="304" cy="46" r="8"/></svg>
+        <p class="label">Early access</p>
+        <h2>Start next semester ahead.</h2>
+        <p class="section-lede">Join the waitlist and be one of the first to get a study plan built around you.</p>
+        <div class="signup-block">
+          <form class="waitlist" novalidate>
+            <div class="row">
+              <input type="email" id="email-bottom" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
+              <button class="btn" type="submit">Get early access</button>
+            </div>
+            <input type="text" id="uni-bottom" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
+            <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
+            <p class="form-note" role="status">Free during early access. No spam, just a note when your spot opens.</p>
+          </form>
+          <div class="success" role="status">
+            <strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>You're on the list.</strong>
+            <span>We'll email you when your spot opens up.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <div class="wrap">
     <footer>
@@ -290,13 +619,257 @@
   </div>
 
   <script>
+    // Set to true only in static previews with no backend behind them
+    const PREVIEW = false;
+
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, reduceMotion ? 0 : ms));
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
     document.getElementById("year").textContent = new Date().getFullYear();
 
+    /* ---------- Scroll reveal ---------- */
+    // Elements already on screen at load stay visible; the rest float up as they arrive.
+    if (!reduceMotion && "IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          e.target.classList.add("show");
+          e.target.classList.remove("pre");
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: "0px 0px -8% 0px" });
+      $$(".reveal").forEach((el) => {
+        if (el.getBoundingClientRect().top < innerHeight) return;
+        el.classList.add("pre");
+        io.observe(el);
+      });
+    }
+
+    /* ---------- Hero: Today card ---------- */
+    (async () => {
+      const today = new Date();
+      $("#today-date").textContent = today.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
+      await sleep(900);
+      $("#m1").style.width = "37.5%";
+      await sleep(250);
+      $("#m2").style.width = "18.75%";
+      await sleep(250);
+      $("#m3").style.width = "25%";
+      const text = "Worth 25% and due soonest of anything big. Your STAT2201 notes have no practice problems on regression yet.";
+      const out = $("#why-type");
+      await sleep(500);
+      if (reduceMotion) { out.textContent = text; return; }
+      for (let i = 1; i <= text.length; i++) {
+        out.textContent = text.slice(0, i);
+        await sleep(text[i - 1] === "." ? 260 : 22);
+      }
+    })();
+
+    /* ---------- Demo plumbing ---------- */
+    // Each demo loops while on screen and pauses when scrolled away.
+    function runWhenVisible(el, loop) {
+      let active = false, running = false;
+      const tick = async () => {
+        if (running) return;
+        running = true;
+        while (active) await loop(() => active);
+        running = false;
+      };
+      new IntersectionObserver(([e]) => {
+        active = e.isIntersecting;
+        if (active) tick();
+      }, { threshold: 0.35 }).observe(el);
+    }
+
+    /* ---------- Demo 1: import ---------- */
+    {
+      const stage = $('[data-demo="import"]');
+      const now = Date.now(), H = 3600e3, D = 24 * H;
+      const dues = [now + 1 * D + 5 * H + 17 * 60e3, now + 4 * D + 2 * H + 41 * 60e3, now + 22 * D + 7 * H + 3 * 60e3];
+      const fmtDate = (t) => new Date(t).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+      $$("[data-date]", stage).forEach((el) => { el.textContent = fmtDate(dues[+el.dataset.date]); });
+      const pad = (n) => String(n).padStart(2, "0");
+      const fmtCd = (ms) => {
+        const s = Math.max(0, Math.floor(ms / 1000));
+        return `${Math.floor(s / 86400)}d ${pad(Math.floor(s / 3600) % 24)}h ${pad(Math.floor(s / 60) % 60)}m ${pad(s % 60)}s`;
+      };
+      const cds = $$("[data-due]", stage);
+      const tickCd = () => cds.forEach((el) => { el.textContent = fmtCd(dues[+el.dataset.due] - Date.now()); });
+      tickCd();
+      setInterval(tickCd, 1000);
+
+      const rows = $$(".doc-row", stage), items = $$(".aitem", stage), scan = $(".scan", stage);
+      runWhenVisible(stage, async (alive) => {
+        rows.forEach((r) => r.classList.remove("hit"));
+        items.forEach((it) => { it.classList.remove("in"); $(".wbar i", it).style.width = "0"; });
+        scan.style.opacity = "1";
+        scan.style.top = "40px";
+        await sleep(700);
+        for (let i = 0; i < rows.length && alive(); i++) {
+          scan.style.top = rows[i].offsetTop + rows[i].offsetHeight / 2 + "px";
+          await sleep(500);
+          rows[i].classList.add("hit");
+          items[i].classList.add("in");
+          const bar = $(".wbar i", items[i]);
+          bar.style.width = bar.dataset.w + "%";
+          await sleep(700);
+        }
+        scan.style.opacity = "0";
+        await sleep(4200);
+      });
+    }
+
+    /* ---------- Demo 2: notes ---------- */
+    {
+      const stage = $('[data-demo="notes"]');
+      const lines = $$(".nl", stage), topics = $$(".topic", stage);
+      const setChip = (chip, cls, label) => { chip.className = "chip " + cls; chip.textContent = label; };
+      runWhenVisible(stage, async (alive) => {
+        lines.forEach((l) => l.classList.remove("in", "lit"));
+        topics.forEach((t) => { setChip($(".chip", t), "reading", "Reading"); $("small", t).textContent = ""; });
+        await sleep(500);
+        for (const l of lines) { if (!alive()) return; l.classList.add("in"); await sleep(380); }
+        await sleep(400);
+        for (let i = 0; i < topics.length && alive(); i++) {
+          const mine = lines.filter((l) => +l.dataset.t === i);
+          mine.forEach((l) => l.classList.add("lit"));
+          await sleep(650);
+          mine.forEach((l) => l.classList.remove("lit"));
+          const chip = $(".chip", topics[i]);
+          setChip(chip, chip.dataset.level + " settle", chip.dataset.label);
+          const small = $("small", topics[i]);
+          small.textContent = small.dataset.detail;
+          await sleep(250);
+        }
+        await sleep(4500);
+      });
+    }
+
+    /* ---------- Demo 3: priorities ---------- */
+    {
+      const stage = $('[data-demo="prio"]');
+      const cards = Object.fromEntries($$(".rcard", stage).map((c) => [c.dataset.id, c]));
+      const ev = $(".prio-event", stage), evText = $(".ev-text", stage), why = $(".why", stage), whyText = $(".why-text", stage);
+      const quizChip = $(".chip", cards.quiz);
+      const STEP = 62 + 8;
+      const states = [
+        {
+          order: ["ps", "lab", "ode", "quiz"],
+          why: "The Problem Set is worth 25% and due in 4 days, and your notes have no regression practice yet.",
+          quiz: ["okay", "6 days"],
+        },
+        {
+          event: "Quiz (Wk 12) moved to tomorrow",
+          order: ["quiz", "ps", "lab", "ode"],
+          why: "The quiz is due tomorrow and covers confidence intervals, one of your weak topics. 45 minutes now, then back to the Problem Set.",
+          quiz: ["urgent", "Tomorrow"],
+        },
+        {
+          event: "Quiz (Wk 12) submitted",
+          order: ["ps", "lab", "ode", "quiz"],
+          why: "Quiz done. The Problem Set is back on top: it's the biggest piece of coursework left and it leans on regression.",
+          quiz: ["good", "Done"],
+          done: true,
+        },
+      ];
+      const apply = (s) => {
+        s.order.forEach((id, i) => {
+          const c = cards[id];
+          c.style.transform = `translateY(${i * STEP}px)`;
+          c.classList.toggle("first", i === 0);
+          $(".rank", c).textContent = i + 1;
+        });
+        quizChip.className = "chip " + s.quiz[0];
+        quizChip.textContent = s.quiz[1];
+        cards.quiz.classList.toggle("isdone", !!s.done);
+        whyText.textContent = s.why;
+      };
+      apply(states[0]);
+      runWhenVisible(stage, async (alive) => {
+        apply(states[0]);
+        ev.classList.add("hide");
+        await sleep(3200);
+        for (const s of states.slice(1)) {
+          if (!alive()) return;
+          evText.textContent = s.event;
+          ev.classList.remove("hide");
+          await sleep(900);
+          why.style.opacity = "0";
+          apply(s);
+          await sleep(350);
+          why.style.opacity = "1";
+          await sleep(3800);
+        }
+        ev.classList.add("hide");
+        await sleep(400);
+      });
+    }
+
+    /* ---------- Demo 4: time ---------- */
+    {
+      const stage = $('[data-demo="time"]');
+      const btn = $(".toggle", stage), bars = $$("[data-b]", stage), times = $$("[data-t]", stage);
+      const blocks = $$(".block", stage), note = $(".time-note", stage), total = $("#time-total");
+      const labLabel = $('[data-s="2"]', stage);
+      const plans = {
+        full: { mins: [90, 45, 60], avail: 240, note: "" },
+        short: { mins: [75, 45, 0], avail: 120, note: "The Problem Set keeps its spot because it's due soonest. The lab report moves to tomorrow, which still leaves 4 days before it's due." },
+      };
+      const fmt = (m) => (m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : `${m}m`);
+      let current = [90, 45, 60];
+      const tween = (from, to) => {
+        const start = performance.now(), dur = reduceMotion ? 1 : 800;
+        const step = (t) => {
+          const k = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - k, 3);
+          times.forEach((el, i) => {
+            const v = Math.round((from[i] + (to[i] - from[i]) * e) / 5) * 5;
+            el.textContent = v === 0 && k === 1 ? "Tomorrow" : fmt(v);
+          });
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      };
+      const show = (key) => {
+        const p = plans[key];
+        btn.setAttribute("aria-pressed", key === "short");
+        bars.forEach((b, i) => { b.style.width = (p.mins[i] / 240) * 100 + "%"; });
+        tween(current, p.mins);
+        current = p.mins;
+        const used = p.mins.reduce((a, b) => a + b, 0);
+        total.textContent = `Plan · ${fmt(used)} of ${p.avail / 60}h`;
+        blocks[2].classList.toggle("moved", key === "short");
+        labLabel.textContent = key === "short" ? "ELEC2004 · moved to tomorrow" : "ELEC2004 · due next Friday";
+        note.textContent = p.note;
+      };
+      show("full");
+      let auto = true;
+      btn.addEventListener("click", () => {
+        auto = false;
+        show(btn.getAttribute("aria-pressed") === "true" ? "full" : "short");
+      });
+      runWhenVisible(stage, async (alive) => {
+        if (!auto) { await sleep(1000); return; }
+        await sleep(1800);
+        if (auto && alive()) show("short");
+        await sleep(4500);
+        if (auto && alive()) show("full");
+        await sleep(1500);
+      });
+    }
+
+    /* ---------- Exams bars ---------- */
+    new IntersectionObserver(([e], o) => {
+      if (e.isIntersecting) { $(".exams").classList.add("go"); o.disconnect(); }
+    }, { threshold: 0.4 }).observe($(".exams"));
+
+    /* ---------- Waitlist forms ---------- */
     const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-    document.querySelectorAll("form.waitlist").forEach((form) => {
-      const note = form.querySelector(".form-note");
-      const button = form.querySelector("button");
+    $$("form.waitlist").forEach((form) => {
+      const note = $(".form-note", form);
+      const button = $("button", form);
       const defaultNote = note.textContent;
 
       form.addEventListener("submit", async (event) => {
@@ -317,17 +890,21 @@
         note.classList.remove("error");
 
         try {
-          const res = await fetch("/api/waitlist", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-          if (!res.ok) {
-            const body = await res.json().catch(() => ({}));
-            throw new Error(typeof body.detail === "string" ? body.detail : "Something went wrong. Please try again.");
+          if (PREVIEW) {
+            await new Promise((r) => setTimeout(r, 500));
+          } else {
+            const res = await fetch("/api/waitlist", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+            if (!res.ok) {
+              const body = await res.json().catch(() => ({}));
+              throw new Error(typeof body.detail === "string" ? body.detail : "Something went wrong. Please try again.");
+            }
           }
           // Both forms flip to the success state so the page stays consistent
-          document.querySelectorAll(".signup-block").forEach((block) => block.classList.add("done"));
+          $$(".signup-block").forEach((block) => block.classList.add("done"));
         } catch (err) {
           note.textContent = err instanceof TypeError
             ? "Couldn't reach the server. Check your connection and try again."
