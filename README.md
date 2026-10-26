@@ -30,12 +30,40 @@ Copy the example environment file and fill in your own keys:
 copy .env.example .env
 ```
 
-_Add install and run commands here once the backend is set up._
+Install the backend dependencies and apply the database migrations:
+
+```bash
+pip install -r backend/requirements.txt
+supabase link --project-ref <your-project-id>
+supabase db push
+```
+
+Run the server (landing page at http://127.0.0.1:8000, health check at `/health`):
+
+```bash
+uvicorn main:app --app-dir backend --reload
+```
+
+## Landing page and waitlist
+
+`frontend/index.html` is the public landing page, served by the backend at `/`.
+Its sign-up forms post to `POST /api/waitlist`, which stores rows in the
+`waitlist` table (see `supabase/migrations/`).
+
+- Emails are lowercased and unique; signing up twice is accepted silently.
+- Bots are filtered with a hidden honeypot field and a 5-per-minute per-IP limit.
+- The table has row-level security on with no policies, so only the backend
+  (using the secret key) can read or write it.
+- To see or export sign-ups, open the `waitlist` table in the Supabase
+  dashboard (Table Editor > Export to CSV).
 
 ## Project structure
 
 ```
 study-tracker/
+├── backend/         # FastAPI app (API + serves the landing page)
+├── frontend/        # Landing page (index.html)
+├── supabase/        # Supabase config and migrations
 ├── .env.example     # Template for environment variables
 ├── .gitignore
 └── README.md
@@ -43,7 +71,8 @@ study-tracker/
 
 ## Roadmap
 
-- [ ] Backend setup
+- [x] Backend setup
+- [x] Landing page and waitlist
 - [ ] Course and assessment data model
 - [ ] Notes import (Obsidian first, then OneNote and GoodNotes)
 - [ ] AI progress analysis

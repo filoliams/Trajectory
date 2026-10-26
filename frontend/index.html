@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trajectory: know what to study next</title>
+  <meta name="description" content="Trajectory reads your notes, tracks your assessments and tells you what to study next and for how long. Join the waitlist.">
+  <meta property="og:title" content="Trajectory: know what to study next">
+  <meta property="og:description" content="Your courses, assessments and notes in one place, with a daily study plan that adapts to where you actually are.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M7 23 Q14 22 17 15 T26 8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='8' r='2.5' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fbfaf7;
+      --surface: #ffffff;
+      --surface-2: #f3f1ec;
+      --text: #17161a;
+      --muted: #5f5c66;
+      --border: #e4e1da;
+      --accent: #4f46e5;
+      --accent-ink: #ffffff;
+      --accent-soft: #eceafd;
+      --good: #14845a;
+      --warn: #d49a0b;
+      --bad: #c2410c;
+      --shadow: 0 1px 2px rgba(20, 18, 30, .04), 0 12px 32px -12px rgba(20, 18, 30, .14);
+      --radius: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111014;
+        --surface: #1a191e;
+        --surface-2: #232228;
+        --text: #f1eff4;
+        --muted: #a29fab;
+        --border: #2e2c34;
+        --accent: #8b85ff;
+        --accent-ink: #111014;
+        --accent-soft: #25234a;
+        --good: #4ade80;
+        --warn: #fbbf24;
+        --bad: #fb923c;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px -12px rgba(0, 0, 0, .6);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 Inter, system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+    .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+
+    /* Nav */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; letter-spacing: -.01em; }
+    .logo svg { width: 28px; height: 28px; }
+    .nav-cta { font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); }
+    .nav-cta:hover { border-color: var(--accent); }
+
+    /* Hero */
+    .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; padding: 56px 0 88px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 5px 12px; border-radius: 999px; }
+    .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    h1 { font-size: clamp(42px, 6vw, 68px); line-height: 1.02; letter-spacing: -.02em; margin: 20px 0 18px; }
+    h1 em { color: var(--accent); }
+    .lede { font-size: 19px; color: var(--muted); max-width: 30em; margin: 0 0 30px; }
+
+    /* Waitlist form */
+    .waitlist { display: flex; flex-direction: column; gap: 10px; max-width: 470px; }
+    .row { display: flex; gap: 8px; }
+    .waitlist input {
+      flex: 1; min-width: 0; font: inherit; font-size: 15px; color: var(--text);
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+    }
+    .waitlist input::placeholder { color: var(--muted); opacity: .8; }
+    .waitlist input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+    .waitlist button {
+      font: inherit; font-size: 15px; font-weight: 600; color: var(--accent-ink); background: var(--accent);
+      border: 0; border-radius: 10px; padding: 12px 20px; cursor: pointer; white-space: nowrap;
+    }
+    .waitlist button:hover { filter: brightness(1.08); }
+    .waitlist button:disabled { opacity: .6; cursor: progress; }
+    .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+    .form-note { font-size: 13px; color: var(--muted); margin: 0; min-height: 1.4em; }
+    .form-note.error { color: var(--bad); }
+    .success {
+      display: none; max-width: 470px; padding: 16px 18px; border-radius: 12px;
+      background: var(--accent-soft); border: 1px solid var(--accent);
+    }
+    .success strong { display: block; margin-bottom: 2px; }
+    .success span { color: var(--muted); font-size: 14px; }
+    .done .waitlist { display: none; }
+    .done .success { display: block; }
+
+    /* Product mock */
+    .mock { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 22px; }
+    .mock-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+    .mock-head h3 { margin: 0; font-size: 15px; }
+    .mock-head span { font-size: 12px; color: var(--muted); }
+    .plan { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 8px; }
+    .plan li { display: grid; grid-template-columns: 4px 1fr auto; gap: 12px; align-items: center; background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+    .plan li::before { content: ""; height: 100%; min-height: 32px; border-radius: 4px; background: var(--c); }
+    .plan b { display: block; font-size: 14px; font-weight: 600; }
+    .plan small { color: var(--muted); font-size: 12px; }
+    .plan .time { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .courses { display: grid; gap: 12px; }
+    .course { display: grid; grid-template-columns: 80px 1fr 38px; gap: 12px; align-items: center; font-size: 13px; }
+    .course .code { font-weight: 600; }
+    .course .pct { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+    .bar i { display: block; height: 100%; width: var(--w); background: var(--c); border-radius: 99px; }
+    .mock-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+
+    /* Sections */
+    section { padding: 80px 0; border-top: 1px solid var(--border); }
+    h2 { font-size: clamp(32px, 4.5vw, 46px); line-height: 1.08; letter-spacing: -.015em; margin: 0 0 14px; }
+    .section-lede { color: var(--muted); font-size: 18px; max-width: 36em; margin: 0 0 44px; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .step::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; margin-bottom: 16px; }
+    .step h3, .feature h3 { margin: 0 0 6px; font-size: 17px; }
+    .step p, .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .feature { background: var(--surface); padding: 28px; }
+    .feature svg { width: 22px; height: 22px; color: var(--accent); margin-bottom: 14px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .chips span { font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+
+    .faq { max-width: 760px; }
+    details { border-bottom: 1px solid var(--border); padding: 18px 0; }
+    summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 22px; line-height: 1; }
+    details[open] summary::after { content: "\2212"; }
+    details p { color: var(--muted); margin: 10px 0 0; }
+
+    .cta { text-align: center; }
+    .cta .waitlist, .cta .success { margin: 0 auto; text-align: left; }
+    .cta .section-lede { margin-left: auto; margin-right: auto; margin-bottom: 30px; }
+
+    footer { border-top: 1px solid var(--border); padding: 28px 0 40px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; gap: 44px; padding: 32px 0 64px; }
+      .steps, .features { grid-template-columns: 1fr; }
+      section { padding: 60px 0; }
+    }
+    @media (max-width: 480px) {
+      .row { flex-direction: column; }
+      .lede { font-size: 17px; }
+      .mock { padding: 16px; }
+      .course { grid-template-columns: 64px 1fr 34px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="/" aria-label="Trajectory home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M7 23 Q14 22 17 15 T26 8" stroke="var(--accent-ink)" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="26" cy="8" r="2.5" fill="var(--accent-ink)"/></svg>
+        Trajectory
+      </a>
+      <a class="nav-cta" href="#join">Join the waitlist</a>
+    </nav>
+
+    <header class="hero">
+      <div class="signup-block">
+        <span class="eyebrow">Early access opening soon</span>
+        <h1 class="serif">Know exactly what to study <em>next.</em></h1>
+        <p class="lede">Trajectory pulls in your courses, assessments and notes, works out how far along you really are in each subject, and builds a daily plan that puts your time where it counts.</p>
+        <form class="waitlist" novalidate>
+          <div class="row">
+            <input type="email" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
+            <button type="submit">Get early access</button>
+          </div>
+          <input type="text" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
+          <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
+          <p class="form-note" role="status">Free during early access. No spam, just a note when your spot opens.</p>
+        </form>
+        <div class="success" role="status">
+          <strong>You're on the list.</strong>
+          <span>We'll email you when your spot opens up.</span>
+        </div>
+      </div>
+
+      <div class="mock" aria-label="Example of a Trajectory study plan" role="img">
+        <div class="mock-head">
+          <h3>Today's plan</h3>
+          <span>3h 15m · Tue</span>
+        </div>
+        <ul class="plan">
+          <li style="--c: var(--bad)"><div><b>Linear Algebra: eigenvalues</b><small>Problem set due Thu · notes 40% covered</small></div><span class="time">1h 30m</span></li>
+          <li style="--c: var(--warn)"><div><b>Microeconomics: market failure</b><small>Midterm in 9 days</small></div><span class="time">1h 00m</span></li>
+          <li style="--c: var(--good)"><div><b>Psychology: review week 6</b><small>On track · light revision</small></div><span class="time">45m</span></li>
+        </ul>
+        <p class="mock-label">Progress by course</p>
+        <div class="courses">
+          <div class="course"><span class="code">MATH1051</span><div class="bar"><i style="--w: 42%; --c: var(--bad)"></i></div><span class="pct">42%</span></div>
+          <div class="course"><span class="code">ECON1010</span><div class="bar"><i style="--w: 61%; --c: var(--warn)"></i></div><span class="pct">61%</span></div>
+          <div class="course"><span class="code">PSYC1030</span><div class="bar"><i style="--w: 84%; --c: var(--good)"></i></div><span class="pct">84%</span></div>
+        </div>
+      </div>
+    </header>
+
+    <section id="how">
+      <h2 class="serif">Set up once. Then just open it and study.</h2>
+      <p class="section-lede">No more rebuilding a spreadsheet every semester or guessing which subject you've been neglecting.</p>
+      <div class="steps">
+        <div class="step"><h3>Pick your university and courses</h3><p>Choose your courses at sign-up and Trajectory pulls assessment dates and weightings straight from your course profiles.</p></div>
+        <div class="step"><h3>Connect your notes</h3><p>Link the notes you already take. Trajectory reads them to see which topics you've covered and which you haven't touched yet.</p></div>
+        <div class="step"><h3>Get your daily plan</h3><p>Each day you get a ranked list of what to work on and how long to spend, weighted by deadlines, grade impact and where you're behind.</p></div>
+      </div>
+    </section>
+
+    <section id="features">
+      <h2 class="serif">Built around how you actually study.</h2>
+      <p class="section-lede">Trajectory works from your real coursework and your real notes, not a to-do list you have to keep updated by hand.</p>
+      <div class="features">
+        <div class="feature">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <h3>Assessments, imported for you</h3>
+          <p>Due dates and weightings come straight from your online course profiles. When something changes, your plan changes with it.</p>
+        </div>
+        <div class="feature">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
+          <h3>Works with the notes you already have</h3>
+          <p>Keep taking notes the way you do now. Trajectory connects to your existing apps.</p>
+          <div class="chips"><span>Obsidian</span><span>OneNote</span><span>GoodNotes</span></div>
+        </div>
+        <div class="feature">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg>
+          <h3>Honest progress, per subject</h3>
+          <p>AI reads your notes against each course's content to estimate how far along you really are, so the weak spots show up before exam week.</p>
+        </div>
+        <div class="feature">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <h3>Time where it counts</h3>
+          <p>Subjects that need more work get more of your hours. Ones you're on top of get just enough to stay there.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2 class="serif">Questions</h2>
+      <div class="faq">
+        <details><summary>When can I start using it?</summary><p>We're opening early access in small groups. Join the waitlist and we'll email you as soon as your spot is ready.</p></details>
+        <details><summary>Does it cost anything?</summary><p>Early access is free. If we introduce paid plans later, waitlist members will hear about it first.</p></details>
+        <details><summary>Is my university supported?</summary><p>Tell us your university when you sign up. We're prioritising support for the universities our waitlist asks for most.</p></details>
+        <details><summary>What happens to my notes?</summary><p>Your notes are only used to work out your progress and build your plan. They're never sold or shared.</p></details>
+      </div>
+    </section>
+
+    <section id="join" class="cta">
+      <h2 class="serif">Start next semester ahead.</h2>
+      <p class="section-lede">Join the waitlist and be one of the first to get a study plan built around you.</p>
+      <div class="signup-block">
+        <form class="waitlist" novalidate>
+          <div class="row">
+            <input type="email" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
+            <button type="submit">Get early access</button>
+          </div>
+          <input type="text" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
+          <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
+          <p class="form-note" role="status">Free during early access. No spam, just a note when your spot opens.</p>
+        </form>
+        <div class="success" role="status">
+          <strong>You're on the list.</strong>
+          <span>We'll email you when your spot opens up.</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <footer>
+      <span>© <span id="year"></span> Trajectory</span>
+      <a href="#join">Join the waitlist</a>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+    document.querySelectorAll("form.waitlist").forEach((form) => {
+      const note = form.querySelector(".form-note");
+      const button = form.querySelector("button");
+      const defaultNote = note.textContent;
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = Object.fromEntries(new FormData(form));
+        data.email = data.email.trim();
+
+        if (!EMAIL_RE.test(data.email)) {
+          note.textContent = "Please enter a valid email address.";
+          note.classList.add("error");
+          form.email.focus();
+          return;
+        }
+
+        button.disabled = true;
+        button.textContent = "Joining…";
+        note.textContent = defaultNote;
+        note.classList.remove("error");
+
+        try {
+          const res = await fetch("/api/waitlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(typeof body.detail === "string" ? body.detail : "Something went wrong. Please try again.");
+          }
+          // Both forms flip to the success state so the page stays consistent
+          document.querySelectorAll(".signup-block").forEach((block) => block.classList.add("done"));
+        } catch (err) {
+          note.textContent = err instanceof TypeError
+            ? "Couldn't reach the server. Check your connection and try again."
+            : err.message;
+          note.classList.add("error");
+        } finally {
+          button.disabled = false;
+          button.textContent = "Get early access";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
