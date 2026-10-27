@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-27: Landing page hosted on Vercel, from main
+**Decision:** Vercel serves `frontend/` as a static site (preset Other, root directory `frontend`, no build), with `frontend/api/waitlist.js` as a serverless function that writes sign-ups to Supabase over REST using `SUPABASE_SECRET_KEY` from Vercel's environment variables. `main` was fast-forwarded to `local-uq-import` so Vercel's production branch has the landing page.
+**Why:** The FastAPI backend only runs locally, so the page's `/api/waitlist` needs its own server-side endpoint where it's hosted. Plain `fetch` to Supabase's REST API keeps the function dependency-free.
+**Alternatives:** Deploying the whole FastAPI backend to Vercel (would also expose the course-import endpoint publicly); setting Vercel's production branch to `local-uq-import` instead of updating `main`.
+
 ## 2026-10-27: Privacy Policy, Terms of Use and Data Consent
 **Decision:** The three documents live once in `app/src/lib/legal.ts`. The app shows them at `legal/[doc]` (open signed in or out, linked from sign-in and Settings); `app/scripts/legal-pages.mjs` writes the website copies (`frontend/privacy.html`, `terms.html`, `data-consent.html`), and `legal.check.ts` fails if those fall out of date. Create account needs one ticked box agreeing to all three; the accepted `legal_version` and `legal_accepted_at` are saved in the account's Supabase auth metadata. Minimum age 16, younger with a parent's permission; governed by Queensland law; written to the Australian Privacy Principles. Operator name and contact email are placeholders (`OPERATOR`, `CONTACT_EMAIL`) until the owner fills them in.
 **Why:** The waitlist collects emails and the app sends note contents to Anthropic, overseas, so students need to be told and to agree before signing up. Auth metadata records consent without a migration. One source stops the app and website wording drifting apart.

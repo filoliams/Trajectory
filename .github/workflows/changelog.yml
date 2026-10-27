@@ -1,0 +1,44 @@
+name: Update changelog
+
+# Runs from main, but logs new commits from every branch.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 * * * *" # hourly
+  workflow_dispatch: # "Run workflow" button on the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: changelog
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Add new commits to CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python .github/scripts/update_changelog.py
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -am "docs(changelog): add new commits"
+          git push

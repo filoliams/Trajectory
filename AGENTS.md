@@ -27,7 +27,8 @@ app/                    Expo + React Native + TypeScript app (iOS, Android, web)
   src/constants/trajectory.ts   theme tokens T, fonts (Bricolage Grotesque display, Instrument Serif italic accents, Geist body, Geist Mono numbers)
 backend/                FastAPI, runs locally; course-profile import (uq_import.py), waitlist sign-ups, serves frontend/
 frontend/               public landing page with waitlist sign-up (index.html), served by the backend at /;
-                        privacy/terms/data-consent.html are generated from app/src/lib/legal.ts (node app/scripts/legal-pages.mjs)
+                        privacy/terms/data-consent.html are generated from app/src/lib/legal.ts (node app/scripts/legal-pages.mjs);
+                        api/waitlist.js is the same sign-up endpoint as a Vercel function (Vercel root directory: frontend)
 supabase/
   migrations/           SQL, run by hand in the Supabase SQL editor
   functions/notes-check, notes-ingest   note pipeline (Haiku 5.5)
