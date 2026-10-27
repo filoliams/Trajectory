@@ -7,8 +7,8 @@ export const LEGAL_VERSION = '2026-10-27';
 export const LEGAL_UPDATED = '27 October 2026';
 
 // Fill these in before launch.
-export const OPERATOR = '[your full name]';
-export const CONTACT_EMAIL = '[contact email]';
+export const OPERATOR = 'Liam Salve';
+export const CONTACT_EMAIL = 'liamsalve@icloud.com';
 
 export type LegalSlug = 'privacy' | 'terms' | 'data-consent';
 export type LegalSection = { heading: string; paragraphs?: string[]; bullets?: string[] };
