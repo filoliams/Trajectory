@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Trajectory: know what to study next</title>
-  <meta name="description" content="Trajectory reads your notes, tracks your assessments and tells you what to study next and for how long. Join the waitlist.">
+  <title>Trajectory: know what to study next, and prove you've learned it</title>
+  <meta name="description" content="Trajectory checks what you actually know with quick quizzes, weighs it against your assessments and deadlines, and tells you exactly what to study next. Join the waitlist.">
   <meta property="og:title" content="Trajectory: know what to study next">
   <meta property="og:description" content="Your courses, assessments and notes in one place, with a daily study plan that adapts to where you actually are.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -212,6 +212,9 @@
     .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
     .form-note { font-size: 13px; color: var(--muted); margin: 0; min-height: 1.4em; }
     .form-note.error { color: var(--urgent); }
+    .form-legal { font-size: 12px; line-height: 1.5; color: var(--muted); margin: 0; }
+    .band .form-legal { color: var(--on-band-muted); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0; }
     .success { color: var(--ink); display: none; max-width: 480px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1.5px solid var(--ink); }
     .success strong { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 17px; }
     .success strong svg { width: 20px; height: 20px; color: var(--done); }
@@ -318,6 +321,16 @@
     .nl.h { color: var(--ink); font-size: 24px; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
     .nl.in { clip-path: inset(0 0 0 0); }
     .nl.lit { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+    .check { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
+    .q { display: grid; grid-template-columns: 26px minmax(0, 1fr) 22px; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); font-size: 13px; opacity: .35; transition: opacity .3s, background .3s; }
+    .q:last-child { border-bottom: 0; }
+    .q.in { opacity: 1; }
+    .q.lit { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+    .q .qn { font: 600 12px var(--font-mono); color: var(--muted); }
+    .q .qt { color: var(--ink); }
+    .q .mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; transform: scale(0); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+    .q .mark.ok { transform: scale(1); color: var(--done); background: color-mix(in srgb, var(--done) 14%, transparent); }
+    .q .mark.no { transform: scale(1); color: var(--urgent); background: color-mix(in srgb, var(--urgent) 12%, transparent); }
     .topics { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
     .topics-head { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); font: 600 15px var(--font-display); }
     .topics-head span { font: 400 12px var(--font-body); color: var(--muted); }
@@ -372,11 +385,12 @@
     .exams h3 { margin: 0 0 10px; font-size: 26px; line-height: 1.15; letter-spacing: -.02em; }
     .exams p { margin: 0; color: var(--on-inverse-muted); }
     .exam-list { display: flex; flex-direction: column; gap: 10px; }
-    .exam { display: grid; grid-template-columns: 90px 1fr 54px 44px; align-items: center; gap: 12px; font-size: 14px; }
+    .exam { display: grid; grid-template-columns: 112px 1fr 118px; align-items: center; gap: 12px; font-size: 14px; }
     .exam .bar { height: 6px; border-radius: 9px; background: color-mix(in srgb, var(--on-inverse) 12%, transparent); overflow: hidden; }
-    .exam .bar i { display: block; height: 100%; border-radius: 9px; width: 0; transition: width 1.2s cubic-bezier(.2, .8, .2, 1); }
+    .exam .bar i { display: block; height: 100%; border-radius: 9px; width: var(--from, 0); transition: width 1.4s .3s cubic-bezier(.2, .8, .2, 1); }
     .exams.go .bar i { width: var(--w); }
-    .exam .lvl { font-size: 13px; }
+    .exam .lvl { font-size: 13px; color: var(--on-inverse-muted); white-space: nowrap; }
+    .exam .lvl s { opacity: .7; }
     .exam .d { text-align: right; color: var(--on-inverse-muted); }
 
     /* FAQ + CTA */
@@ -423,7 +437,7 @@
       .flow { justify-self: center; transform: rotate(90deg); }
       .notes { grid-template-columns: minmax(0, 1fr); }
       .paper { min-height: 0; }
-      .exam { grid-template-columns: 80px 1fr 48px 36px; gap: 8px; }
+      .exam { grid-template-columns: 92px 1fr 104px; gap: 8px; font-size: 13px; }
       .cta-box { padding: 40px 16px; }
       .cta-path { opacity: .5; }
     }
@@ -449,8 +463,8 @@
     <header class="hero">
       <div class="signup-block">
         <span class="eyebrow"><i></i>Early access opening soon</span>
-        <h1>Know exactly what to study <span class="next">next.<svg viewBox="0 0 140 24" aria-hidden="true"><path d="M6 20 C30 19 44 15 58 12 C76 8 92 9 110 6 L124 4"/><circle class="node n1" cx="58" cy="12" r="4.5"/><circle class="node n2" cx="94" cy="8" r="4.5"/><circle class="goal" cx="128" cy="4" r="9"/><path class="tick" d="M123.5 4.5 L127 8 L133 0.5" style="stroke-width: 2.4; fill: none"/></svg></span></h1>
-        <p class="lede">Trajectory pulls in your courses, assessments and notes, works out how far along you really are in each subject, and builds a daily plan that puts your time where it counts.</p>
+        <h1>Tells you exactly what to study <span class="next">next<svg viewBox="0 0 140 24" aria-hidden="true"><path d="M6 20 C30 19 44 15 58 12 C76 8 92 9 110 6 L124 4"/><circle class="node n1" cx="58" cy="12" r="4.5"/><circle class="node n2" cx="94" cy="8" r="4.5"/><circle class="goal" cx="128" cy="4" r="9"/><path class="tick" d="M123.5 4.5 L127 8 L133 0.5" style="stroke-width: 2.4; fill: none"/></svg></span> — and proves you've learned it.</h1>
+        <p class="lede">Quick check-in quizzes show what you really know. Trajectory weighs that against what each assessment is worth and when it's due, then gives you specific, time-boxed next steps.</p>
         <form class="waitlist" novalidate>
           <div class="row">
             <input type="email" id="email-top" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
@@ -459,6 +473,7 @@
           <input type="text" id="uni-top" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
           <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
           <p class="form-note" role="status">Free during early access. No spam, just a note when your spot opens.</p>
+          <p class="form-legal">By joining, you agree to our <a href="terms.html">Terms</a>, <a href="privacy.html">Privacy Policy</a> and <a href="data-consent.html">Data Consent</a>.</p>
         </form>
         <div class="success" role="status">
           <strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>You're on the list.</strong>
@@ -466,27 +481,27 @@
         </div>
       </div>
 
-      <div class="card today boot" role="img" aria-label="Example of Trajectory's Today screen: a three-task study plan with the reason the first task was chosen">
+      <div class="card today boot" role="img" aria-label="Example of Trajectory's Today screen: three specific study steps with the reason the first one was chosen">
         <div class="today-head" style="--i:0">
           <div><small id="today-date">Thursday 15 October · Week 12</small><h3>Today</h3></div>
-          <div class="free"><b>3h 15m</b> of 4h free</div>
+          <div class="free"><b>1h</b> · 3 steps</div>
         </div>
         <div class="meter" style="--i:1"><i id="m1" style="background: var(--accent)"></i><i id="m2" style="background: var(--warn-bar)"></i><i id="m3" style="background: var(--done)"></i></div>
         <div class="card task top" style="--i:2">
-          <div class="task-row"><span class="kicker">1 · STAT2201 · 1h 30m</span><span class="chip warn">Due in 4 days · 25%</span></div>
-          <b>Problem Set: regression problems</b>
+          <div class="task-row"><span class="kicker">1 · STAT2201 · 20 min</span><span class="chip warn">Problem Set · 25% · 4 days</span></div>
+          <b>Do 5 questions on linear regression</b>
           <div class="why"><strong>Why this?</strong> <span id="why-type"></span><span class="caret"></span></div>
-          <div class="task-actions"><span class="mini-btn primary" style="display:inline-flex;align-items:center">Start session</span><span class="mini-btn" style="display:inline-flex;align-items:center">Skip today</span></div>
+          <div class="task-actions"><span class="mini-btn primary" style="display:inline-flex;align-items:center">Start questions</span><span class="mini-btn" style="display:inline-flex;align-items:center">Skip today</span></div>
         </div>
         <div class="card task" style="--i:3">
-          <div class="task-row"><span class="kicker">2 · MATH2010 · 45m</span></div>
-          <b>Revise phase-line stability</b>
-          <p>Your notes stop partway through this topic.</p>
+          <div class="task-row"><span class="kicker">2 · MATH2010 · 10 min</span></div>
+          <b>Take a 4-question check-in on phase-line stability</b>
+          <p>No results on this topic yet. A quick check shows where you stand.</p>
         </div>
         <div class="card task" style="--i:4">
-          <div class="task-row"><span class="kicker">3 · ELEC2004 · 1h</span></div>
-          <b>Lab report: write method</b>
-          <p>Due next Friday. An hour today keeps next week light.</p>
+          <div class="task-row"><span class="kicker">3 · ELEC2004 · 30 min</span></div>
+          <b>Work through 3 op-amp circuit problems</b>
+          <p>Up from weak to okay. One more round before the exam in 12 days.</p>
         </div>
       </div>
     </header>
@@ -497,13 +512,13 @@
     <div class="wrap">
       <div class="section-head reveal">
         <p class="label">How it works</p>
-        <h2>Set up once. Then just open it and study.</h2>
-        <p class="section-lede">No more rebuilding a spreadsheet every semester or guessing which subject you've been neglecting.</p>
+        <h2>Set up once. Then just answer a few questions.</h2>
+        <p class="section-lede">Sign in and add your courses. After that, short check-ins are the only thing you do regularly. Adding your notes is optional.</p>
       </div>
       <div class="steps">
-        <div class="card step reveal" style="--d:0"><span class="step-num">1</span><h3>Pick your university and courses</h3><p>Trajectory pulls assessment dates and weightings straight from your course profiles.</p></div>
-        <div class="card step reveal" style="--d:1"><span class="step-num">2</span><h3>Connect your notes</h3><p>Link the notes you already take. Trajectory reads them to see which topics you've covered.</p></div>
-        <div class="card step reveal" style="--d:2"><span class="step-num">3</span><h3>Get your daily plan</h3><p>A ranked list of what to work on and how long, weighted by deadlines, grade impact and where you're behind.</p></div>
+        <div class="card step reveal" style="--d:0"><span class="step-num">1</span><h3>Add your courses</h3><p>Upload or share each course profile. Trajectory reads every assessment, weighting, due date and topic, then asks "is this right?"</p></div>
+        <div class="card step reveal" style="--d:1"><span class="step-num">2</span><h3>Take a quick check-in</h3><p>3 to 5 questions on your course's topics, about five minutes. Add your notes if you like, and the questions follow what you've studied.</p></div>
+        <div class="card step reveal" style="--d:2"><span class="step-num">3</span><h3>Do the next thing</h3><p>A short ranked list of specific steps, like "Do 5 questions on thermodynamics, 20 min", picked by what's weak, what it's worth and when it's due.</p></div>
       </div>
     </div>
   </section>
@@ -512,16 +527,16 @@
     <div class="wrap">
       <div class="section-head reveal">
         <p class="label">See it work</p>
-        <h2>Built around how you actually study.</h2>
-        <p class="section-lede">Trajectory works from your real coursework and your real notes, so you never maintain a to-do list by hand.</p>
+        <h2>Built on evidence, not guesswork.</h2>
+        <p class="section-lede">Trajectory works from your real assessments and your real results, so you always know why something is at the top of the list.</p>
       </div>
 
       <!-- Feature 1: assessment import -->
       <div class="feature">
         <div class="copy reveal">
-          <h3>Assessments, imported for you</h3>
-          <p>Pick your courses and Trajectory reads each course profile for every assessment, its weighting and its due date.</p>
-          <ul><li>Live countdowns to every deadline</li><li>Weightings show what each piece is worth</li><li>Your plan updates when dates change</li></ul>
+          <h3>Your assessments, read for you</h3>
+          <p>Upload or share a course profile and Trajectory pulls out every assessment, its weighting, its due date and the weekly topics. You check it once, and you're set.</p>
+          <ul><li>A quick "is this right?" check after every import</li><li>Weightings and due dates set your priorities</li><li>Works from the file you share. No logins needed</li></ul>
         </div>
         <div class="stage reveal" style="--d:1" data-demo="import" role="img" aria-label="Animation: Trajectory scans a STAT2201 course profile and adds each assessment to a list with a live countdown">
           <span class="stage-tag"><i></i>Importing</span>
@@ -545,34 +560,30 @@
         </div>
       </div>
 
-      <!-- Feature 2: notes footprint -->
+      <!-- Feature 2: check-in -->
       <div class="feature flip">
         <div class="copy reveal">
-          <h3>Reads the notes you already take</h3>
-          <p>Keep writing the way you do now. Trajectory reads your notes, handwriting included, and maps what you've covered against each course.</p>
-          <ul><li>Works with GoodNotes, Obsidian and OneNote</li><li>Every topic rated Strong, Okay or Weak</li><li>See exactly why, down to "headings only"</li></ul>
+          <h3>Measures what you know, not what you've written</h3>
+          <p>Short check-ins built from your course's topics show where you're actually strong and where you're not. Add your notes and the questions get more specific, but you don't have to.</p>
+          <ul><li>3 to 5 questions, about five minutes</li><li>Every topic rated Weak, Okay or Strong from your answers</li><li>Works with just your courses. Notes are optional</li></ul>
         </div>
-        <div class="stage reveal" style="--d:1" data-demo="notes" role="img" aria-label="Animation: handwritten STAT2201 notes are read and each topic is rated Weak, Okay or Strong">
-          <span class="stage-tag"><i></i>Reading notes</span>
+        <div class="stage reveal" style="--d:1" data-demo="check" role="img" aria-label="Animation: a five-question STAT2201 check-in is marked, and each topic is rated Weak, Okay or Strong from the answers">
+          <span class="stage-tag"><i></i>Check-in</span>
           <div class="notes">
-            <div class="paper">
-              <div class="paper-head"><span class="kicker">STAT2201 · Wk 9</span><span class="chip okay">GoodNotes</span></div>
-              <div class="nl h" data-t="0">Linear regression</div>
-              <div class="nl" data-t="0">y = β₀ + β₁x + ε</div>
-              <div class="nl" data-t="0">min Σ (yᵢ − ŷᵢ)²</div>
-              <div class="nl h" data-t="1">Confidence intervals</div>
-              <div class="nl" data-t="1">(finish later…)</div>
-              <div class="nl h" data-t="2">Residuals</div>
-              <div class="nl" data-t="2">plot eᵢ vs ŷᵢ, look for fan</div>
-              <div class="nl h" data-t="3">Hypothesis testing</div>
-              <div class="nl" data-t="3">Q1 ✓ Q2 ✓ Q3 ✓ Q4 ✓ … Q12 ✓</div>
+            <div class="card check">
+              <div class="topics-head">STAT2201 check-in <span>5 questions</span></div>
+              <div class="q" data-t="0" data-ok="0"><span class="qn">Q1</span><span class="qt">Which line minimises the squared residuals?</span><span class="mark"></span></div>
+              <div class="q" data-t="1" data-ok="0"><span class="qn">Q2</span><span class="qt">What does a 95% confidence interval mean?</span><span class="mark"></span></div>
+              <div class="q" data-t="0" data-ok="1"><span class="qn">Q3</span><span class="qt">Interpret the slope β₁ in context</span><span class="mark"></span></div>
+              <div class="q" data-t="2" data-ok="1"><span class="qn">Q4</span><span class="qt">A fan-shaped residual plot suggests…</span><span class="mark"></span></div>
+              <div class="q" data-t="3" data-ok="1"><span class="qn">Q5</span><span class="qt">When do you reject H₀ at α = 0.05?</span><span class="mark"></span></div>
             </div>
             <div class="card topics">
-              <div class="topics-head">Topics <span>From your notes</span></div>
-              <div class="topic"><div><b>Linear regression</b><small data-detail="3 pages, no practice yet"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Reading</span></div>
-              <div class="topic"><div><b>Confidence intervals</b><small data-detail="Headings only"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Reading</span></div>
-              <div class="topic"><div><b>Residual analysis</b><small data-detail="Good notes, no practice yet"></small></div><span class="chip reading" data-level="okay" data-label="Okay">Reading</span></div>
-              <div class="topic"><div><b>Hypothesis testing</b><small data-detail="12 practice problems, mostly right"></small></div><span class="chip reading" data-level="strong" data-label="Strong">Reading</span></div>
+              <div class="topics-head">Topics <span>From your answers</span></div>
+              <div class="topic"><div><b>Linear regression</b><small data-detail="1 of 2 right"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Marking</span></div>
+              <div class="topic"><div><b>Confidence intervals</b><small data-detail="0 of 1 right"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Marking</span></div>
+              <div class="topic"><div><b>Residual analysis</b><small data-detail="1 of 1 right, first check-in"></small></div><span class="chip reading" data-level="okay" data-label="Okay">Marking</span></div>
+              <div class="topic"><div><b>Hypothesis testing</b><small data-detail="Right 3 check-ins running"></small></div><span class="chip reading" data-level="strong" data-label="Strong">Marking</span></div>
             </div>
           </div>
         </div>
@@ -581,18 +592,18 @@
       <!-- Feature 3: priorities -->
       <div class="feature">
         <div class="copy reveal">
-          <h3>Always the right thing first, with the reason</h3>
-          <p>Every task is ranked by deadline, grade weight and how prepared you are. When something changes, the order changes with it, and Trajectory tells you why.</p>
-          <ul><li>Reacts to new or moved deadlines</li><li>Weak topics pull related work forward</li><li>A plain-English reason for every pick</li></ul>
+          <h3>Ranked by what's at stake</h3>
+          <p>Priority is how weak a topic is, times what its assessment is worth, times how soon it's due. When a result or a deadline changes, the order changes with it, and Trajectory tells you why.</p>
+          <ul><li>Weak topics in big, close assessments come first</li><li>A good check-in result moves a topic down</li><li>A plain-English reason for every pick</li></ul>
         </div>
-        <div class="stage prio reveal" style="--d:1" data-demo="prio" role="img" aria-label="Animation: a ranked task list reorders when a quiz is moved to tomorrow, with an explanation of the new top task">
+        <div class="stage prio reveal" style="--d:1" data-demo="prio" role="img" aria-label="Animation: a ranked list of study steps reorders when a quiz moves to tomorrow, then again after a strong check-in result">
           <span class="stage-tag"><i></i>Re-ranking</span>
           <div class="prio-event hide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="ev-text">Course profile updated</span></div>
           <div class="ranks">
-            <div class="card rcard" data-id="ps"><span class="rank">1</span><div class="info"><b>Problem Set</b><small>STAT2201 · 25%</small></div><span class="chip warn">4 days</span></div>
-            <div class="card rcard" data-id="lab"><span class="rank">2</span><div class="info"><b>Lab report</b><small>ELEC2004 · 15%</small></div><span class="chip okay">8 days</span></div>
-            <div class="card rcard" data-id="ode"><span class="rank">3</span><div class="info"><b>Phase-line stability</b><small>MATH2010 · revision</small></div><span class="chip okay">Exam prep</span></div>
-            <div class="card rcard" data-id="quiz"><span class="rank">4</span><div class="info"><b>Quiz (Wk 12)</b><small>STAT2201 · 2.5%</small></div><span class="chip okay">6 days</span></div>
+            <div class="card rcard" data-id="ps"><span class="rank">1</span><div class="info"><b>5 questions: linear regression</b><small>STAT2201 · Problem Set 25%</small></div><span class="chip warn">4 days</span></div>
+            <div class="card rcard" data-id="lab"><span class="rank">2</span><div class="info"><b>3 problems: op-amp circuits</b><small>ELEC2004 · Lab report 15%</small></div><span class="chip okay">8 days</span></div>
+            <div class="card rcard" data-id="ode"><span class="rank">3</span><div class="info"><b>Check-in: phase-line stability</b><small>MATH2010 · Final exam 50%</small></div><span class="chip okay">26 days</span></div>
+            <div class="card rcard" data-id="quiz"><span class="rank">4</span><div class="info"><b>4 questions: confidence intervals</b><small>STAT2201 · Quiz 2.5%</small></div><span class="chip okay">6 days</span></div>
           </div>
           <div class="why"><strong>Why this?</strong> <span class="why-text"></span></div>
         </div>
@@ -601,19 +612,19 @@
       <!-- Feature 4: time -->
       <div class="feature flip">
         <div class="copy reveal">
-          <h3>Time where it counts</h3>
-          <p>Tell Trajectory how much time you have. Subjects that need work get more of it, and anything that can wait moves to a day that has room.</p>
-          <ul><li>Short on time? One tap re-plans the day</li><li>Weak subjects get more hours</li><li>Nothing important quietly falls off</li></ul>
+          <h3>Specific steps, never "revise everything"</h3>
+          <p>Every recommendation says exactly what to do and for how long, like "Do 5 questions on thermodynamics, 20 min". Finish it and your results update straight away.</p>
+          <ul><li>Time-boxed steps, 10 to 30 minutes each</li><li>A clear finish line, so you know when you're done</li><li>Every result feeds back into your priorities</li></ul>
         </div>
-        <div class="stage reveal" style="--d:1" data-demo="time">
+        <div class="stage reveal" style="--d:1" data-demo="time" aria-label="Demo: three specific, time-boxed study steps, with a toggle to compare them with a vague to-do list">
           <span class="stage-tag"><i></i>Try it</span>
-          <div class="time-head"><b id="time-total">Plan · 3h 15m of 4h</b><button class="toggle" type="button" aria-pressed="false"><span class="sw" aria-hidden="true"></span>I have less time today</button></div>
+          <div class="time-head"><b id="time-total">Today · 1h, 3 steps</b><button class="toggle" type="button" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Show a typical to-do list</button></div>
           <div class="track" aria-hidden="true"><i data-b="0" style="background: var(--accent)"></i><i data-b="1" style="background: var(--warn-bar)"></i><i data-b="2" style="background: var(--done)"></i></div>
-          <div class="scale" aria-hidden="true"><span>0h</span><span>1h</span><span>2h</span><span>3h</span><span>4h</span></div>
+          <div class="scale" aria-hidden="true"><span>0</span><span>15m</span><span>30m</span><span>45m</span><span>1h</span></div>
           <div class="blocks">
-            <div class="card block"><span class="dot" style="background: var(--accent)"></span><div class="info"><b>Problem Set</b><small>STAT2201 · weak topic, due soonest</small></div><span class="t" data-t="0">1h 30m</span></div>
-            <div class="card block"><span class="dot" style="background: var(--warn-bar)"></span><div class="info"><b>Phase-line stability</b><small>MATH2010 · notes incomplete</small></div><span class="t" data-t="1">45m</span></div>
-            <div class="card block"><span class="dot" style="background: var(--done)"></span><div class="info"><b>Lab report method</b><small data-s="2">ELEC2004 · due next Friday</small></div><span class="t" data-t="2">1h 00m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--accent)"></span><div class="info"><b data-v="Revise STAT2201">Do 5 questions on linear regression</b><small data-v="Sometime this week">STAT2201 · weakest topic, Problem Set in 4 days</small></div><span class="t" data-t="0">20m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--warn-bar)"></span><div class="info"><b data-v="Study for MATH2010">4-question check-in: phase-line stability</b><small data-v="When you get a chance">MATH2010 · no results yet</small></div><span class="t" data-t="1">10m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--done)"></span><div class="info"><b data-v="Work on ELEC2004">Work through 3 op-amp circuit problems</b><small data-v="Before the exam">ELEC2004 · okay, exam in 12 days</small></div><span class="t" data-t="2">30m</span></div>
           </div>
           <p class="time-note" aria-live="polite"></p>
         </div>
@@ -622,14 +633,15 @@
       <!-- Exams -->
       <div class="exams reveal" style="margin-top: 44px">
         <div>
-          <p class="label" style="color: var(--on-inverse-muted)">Exam season</p>
-          <h3>Walk into every exam knowing where you stand.</h3>
-          <p>As exams get close, Trajectory shifts from coursework to revision and shows how ready you are for each one.</p>
+          <p class="label" style="color: var(--on-inverse-muted)">Progress</p>
+          <h3>Watch weak topics turn into strong ones.</h3>
+          <p>Each course shows every topic's strength and how it's changed since your first check-in, so you can see the work paying off before the exam.</p>
         </div>
-        <div class="exam-list" aria-label="Example exam readiness">
-          <div class="exam"><span class="mono">STAT2201</span><span class="bar"><i style="--w: 38%; background: var(--on-inverse-weak)"></i></span><span class="lvl" style="color: var(--on-inverse-weak)">Weak</span><span class="d mono">22d</span></div>
-          <div class="exam"><span class="mono">MATH2010</span><span class="bar"><i style="--w: 61%; background: var(--on-inverse-muted)"></i></span><span class="lvl" style="color: var(--on-inverse-muted)">Okay</span><span class="d mono">26d</span></div>
-          <div class="exam"><span class="mono">ELEC2004</span><span class="bar"><i style="--w: 84%; background: var(--on-inverse-strong)"></i></span><span class="lvl" style="color: var(--on-inverse-strong)">Strong</span><span class="d mono">29d</span></div>
+        <div class="exam-list" aria-label="Example STAT2201 topic progress since the first check-in">
+          <div class="exam"><span>Regression</span><span class="bar"><i style="--from: 24%; --w: 58%; background: var(--on-inverse-muted)"></i></span><span class="lvl"><s>Weak</s> → <b style="color: var(--on-inverse-muted)">Okay</b></span></div>
+          <div class="exam"><span>Conf. intervals</span><span class="bar"><i style="--from: 18%; --w: 81%; background: var(--on-inverse-strong)"></i></span><span class="lvl"><s>Weak</s> → <b style="color: var(--on-inverse-strong)">Strong</b></span></div>
+          <div class="exam"><span>Residuals</span><span class="bar"><i style="--from: 52%; --w: 86%; background: var(--on-inverse-strong)"></i></span><span class="lvl"><s>Okay</s> → <b style="color: var(--on-inverse-strong)">Strong</b></span></div>
+          <div class="exam"><span>Hypothesis tests</span><span class="bar"><i style="--from: 30%; --w: 34%; background: var(--on-inverse-weak)"></i></span><span class="lvl"><s>Weak</s> → <b style="color: var(--on-inverse-weak)">Weak</b></span></div>
         </div>
       </div>
     </div>
@@ -641,8 +653,9 @@
       <div class="faq">
         <details class="reveal" style="--d:0"><summary>When can I start using it?</summary><p>We're opening early access in small groups. Join the waitlist and we'll email you as soon as your spot is ready.</p></details>
         <details class="reveal" style="--d:1"><summary>Does it cost anything?</summary><p>Early access is free. If we introduce paid plans later, waitlist members will hear about it first.</p></details>
-        <details class="reveal" style="--d:2"><summary>Is my university supported?</summary><p>Tell us your university when you sign up. We're prioritising support for the universities our waitlist asks for most.</p></details>
-        <details class="reveal" style="--d:3"><summary>What happens to my notes?</summary><p>Your notes are only used to work out your progress and build your plan. They're never sold or shared.</p></details>
+        <details class="reveal" style="--d:2"><summary>Is my university supported?</summary><p>Trajectory reads the course profile you upload or share, so it never needs to log in to your university's systems. We're starting with The University of Queensland, then adding the universities our waitlist asks for most.</p></details>
+        <details class="reveal" style="--d:3"><summary>Do I have to add my notes?</summary><p>No. Trajectory works with just your courses and your check-in results. Adding notes makes the questions more specific to what you've studied.</p></details>
+        <details class="reveal" style="--d:4"><summary>What happens to my notes?</summary><p>If you add notes, they're read to tailor your questions and then deleted. We keep only a result for each topic, never the text of your notes, and we never sell or share them. See our <a href="privacy.html">Privacy Policy</a>.</p></details>
       </div>
     </div>
   </section>
@@ -653,7 +666,7 @@
         <svg class="cta-path" viewBox="0 0 360 260" aria-hidden="true"><path d="M20 250 C80 210 120 190 160 170 C210 145 240 110 300 50"/><circle class="node" cx="160" cy="170" r="12"/><circle class="node" cx="236" cy="118" r="12"/><circle class="goal" cx="306" cy="44" r="22"/></svg>
         <p class="label">Early access</p>
         <h2>Start next semester ahead.</h2>
-        <p class="section-lede">Join the waitlist and be one of the first to get a study plan built around you.</p>
+        <p class="section-lede">Join the waitlist and be one of the first to know exactly what to study next, and see it working.</p>
         <div class="signup-block">
           <form class="waitlist" novalidate>
             <div class="row">
@@ -663,6 +676,7 @@
             <input type="text" id="uni-bottom" name="university" placeholder="Your university (optional)" autocomplete="organization" aria-label="University (optional)">
             <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
             <p class="form-note" role="status">Free during early access. No spam, just a note when your spot opens.</p>
+            <p class="form-legal">By joining, you agree to our <a href="terms.html">Terms</a>, <a href="privacy.html">Privacy Policy</a> and <a href="data-consent.html">Data Consent</a>.</p>
           </form>
           <div class="success" role="status">
             <strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>You're on the list.</strong>
@@ -676,7 +690,12 @@
   <div class="wrap">
     <footer>
       <span>© <span id="year"></span> Trajectory</span>
-      <a href="#join">Join the waitlist</a>
+      <nav aria-label="Legal">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Use</a>
+        <a href="data-consent.html">Data Consent</a>
+        <a href="#join">Join the waitlist</a>
+      </nav>
     </footer>
   </div>
 
@@ -714,12 +733,12 @@
       const today = new Date();
       $("#today-date").textContent = today.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
       await sleep(900);
-      $("#m1").style.width = "37.5%";
+      $("#m1").style.width = "33.3%";
       await sleep(250);
-      $("#m2").style.width = "18.75%";
+      $("#m2").style.width = "16.7%";
       await sleep(250);
-      $("#m3").style.width = "25%";
-      const text = "Worth 25% and due soonest of anything big. Your STAT2201 notes have no practice problems on regression yet.";
+      $("#m3").style.width = "50%";
+      const text = "Linear regression is your weakest STAT2201 topic (1 of 2 right last check-in), and it's in the Problem Set: worth 25%, due in 4 days.";
       const out = $("#why-type");
       await sleep(500);
       if (reduceMotion) { out.textContent = text; return; }
@@ -783,22 +802,30 @@
       });
     }
 
-    /* ---------- Demo 2: notes ---------- */
+    /* ---------- Demo 2: check-in ---------- */
     {
-      const stage = $('[data-demo="notes"]');
-      const lines = $$(".nl", stage), topics = $$(".topic", stage);
+      const stage = $('[data-demo="check"]');
+      const qs = $$(".q", stage), topics = $$(".topic", stage);
       const setChip = (chip, cls, label) => { chip.className = "chip " + cls; chip.textContent = label; };
       runWhenVisible(stage, async (alive) => {
-        lines.forEach((l) => l.classList.remove("in", "lit"));
-        topics.forEach((t) => { setChip($(".chip", t), "reading", "Reading"); $("small", t).textContent = ""; });
+        qs.forEach((q) => { q.classList.remove("in", "lit"); const m = $(".mark", q); m.className = "mark"; m.textContent = ""; });
+        topics.forEach((t) => { setChip($(".chip", t), "reading", "Marking"); $("small", t).textContent = ""; });
         await sleep(500);
-        for (const l of lines) { if (!alive()) return; l.classList.add("in"); await sleep(380); }
+        for (const q of qs) {
+          if (!alive()) return;
+          q.classList.add("in");
+          await sleep(420);
+          const ok = q.dataset.ok === "1", m = $(".mark", q);
+          m.className = "mark " + (ok ? "ok" : "no");
+          m.textContent = ok ? "✓" : "✗";
+          await sleep(260);
+        }
         await sleep(400);
         for (let i = 0; i < topics.length && alive(); i++) {
-          const mine = lines.filter((l) => +l.dataset.t === i);
-          mine.forEach((l) => l.classList.add("lit"));
+          const mine = qs.filter((q) => +q.dataset.t === i);
+          mine.forEach((q) => q.classList.add("lit"));
           await sleep(650);
-          mine.forEach((l) => l.classList.remove("lit"));
+          mine.forEach((q) => q.classList.remove("lit"));
           const chip = $(".chip", topics[i]);
           setChip(chip, chip.dataset.level + " settle", chip.dataset.label);
           const small = $("small", topics[i]);
@@ -819,20 +846,20 @@
       const states = [
         {
           order: ["ps", "lab", "ode", "quiz"],
-          why: "The Problem Set is worth 25% and due in 4 days, and your notes have no regression practice yet.",
+          why: "Linear regression is your weakest topic, and the Problem Set it's in is worth 25% and due in 4 days.",
           quiz: ["okay", "6 days"],
         },
         {
           event: "Quiz (Wk 12) moved to tomorrow",
           order: ["quiz", "ps", "lab", "ode"],
-          why: "The quiz is due tomorrow and covers confidence intervals, one of your weak topics. 45 minutes now, then back to the Problem Set.",
+          why: "The quiz is tomorrow and covers confidence intervals, where you got 0 of 1 right last time. 15 minutes now, then back to regression.",
           quiz: ["urgent", "Tomorrow"],
         },
         {
-          event: "Quiz (Wk 12) submitted",
+          event: "Check-in: confidence intervals 4 of 4",
           order: ["ps", "lab", "ode", "quiz"],
-          why: "Quiz done. The Problem Set is back on top: it's the biggest piece of coursework left and it leans on regression.",
-          quiz: ["good", "Done"],
+          why: "Confidence intervals is now strong, so it drops down. Regression is back on top: your weakest topic in the biggest piece of work left.",
+          quiz: ["good", "Strong"],
           done: true,
         },
       ];
@@ -869,54 +896,35 @@
       });
     }
 
-    /* ---------- Demo 4: time ---------- */
+    /* ---------- Demo 4: specific steps vs a vague to-do list ---------- */
     {
       const stage = $('[data-demo="time"]');
       const btn = $(".toggle", stage), bars = $$("[data-b]", stage), times = $$("[data-t]", stage);
-      const blocks = $$(".block", stage), note = $(".time-note", stage), total = $("#time-total");
-      const labLabel = $('[data-s="2"]', stage);
-      const plans = {
-        full: { mins: [90, 45, 60], avail: 240, note: "" },
-        short: { mins: [75, 45, 0], avail: 120, note: "The Problem Set keeps its spot because it's due soonest. The lab report moves to tomorrow, which still leaves 4 days before it's due." },
+      const labels = $$("[data-v]", stage), note = $(".time-note", stage), total = $("#time-total");
+      labels.forEach((el) => { el.dataset.s = el.textContent; });
+      const mins = [20, 10, 30];
+      const show = (vague) => {
+        btn.setAttribute("aria-pressed", vague);
+        labels.forEach((el) => { el.textContent = vague ? el.dataset.v : el.dataset.s; });
+        bars.forEach((b, i) => { b.style.width = vague ? "0" : (mins[i] / 60) * 100 + "%"; });
+        times.forEach((el, i) => { el.textContent = vague ? "?" : mins[i] + "m"; });
+        total.textContent = vague ? "To-do · no end in sight" : "Today · 1h, 3 steps";
+        note.textContent = vague
+          ? "\u201cRevise STAT2201\u201d doesn't say where to start, how long to spend, or when you're done."
+          : "Each step is small enough to start now, and ends with a result that updates your progress.";
       };
-      const fmt = (m) => (m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : `${m}m`);
-      let current = [90, 45, 60];
-      const tween = (from, to) => {
-        const start = performance.now(), dur = reduceMotion ? 1 : 800;
-        const step = (t) => {
-          const k = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - k, 3);
-          times.forEach((el, i) => {
-            const v = Math.round((from[i] + (to[i] - from[i]) * e) / 5) * 5;
-            el.textContent = v === 0 && k === 1 ? "Tomorrow" : fmt(v);
-          });
-          if (k < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      };
-      const show = (key) => {
-        const p = plans[key];
-        btn.setAttribute("aria-pressed", key === "short");
-        bars.forEach((b, i) => { b.style.width = (p.mins[i] / 240) * 100 + "%"; });
-        tween(current, p.mins);
-        current = p.mins;
-        const used = p.mins.reduce((a, b) => a + b, 0);
-        total.textContent = `Plan · ${fmt(used)} of ${p.avail / 60}h`;
-        blocks[2].classList.toggle("moved", key === "short");
-        labLabel.textContent = key === "short" ? "ELEC2004 · moved to tomorrow" : "ELEC2004 · due next Friday";
-        note.textContent = p.note;
-      };
-      show("full");
+      show(false);
       let auto = true;
       btn.addEventListener("click", () => {
         auto = false;
-        show(btn.getAttribute("aria-pressed") === "true" ? "full" : "short");
+        show(btn.getAttribute("aria-pressed") !== "true");
       });
       runWhenVisible(stage, async (alive) => {
         if (!auto) { await sleep(1000); return; }
-        await sleep(1800);
-        if (auto && alive()) show("short");
-        await sleep(4500);
-        if (auto && alive()) show("full");
+        await sleep(3500);
+        if (auto && alive()) show(true);
+        await sleep(3500);
+        if (auto && alive()) show(false);
         await sleep(1500);
       });
     }

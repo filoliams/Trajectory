@@ -1,0 +1,91 @@
+<!doctype html>
+<!-- Generated from app/src/lib/legal.ts by app/scripts/legal-pages.mjs. Edit that file, not this one. -->
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Consent · Trajectory</title>
+  <meta name="description" content="What you agree to when you create an account or join the waitlist, in plain terms, and how to change your mind.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --ground: #F5F1E6; --surface: #FCF9F1; --ink: #1C3A3A; --ink-soft: #36504E; --muted: #5B6E6B; --line: #E2DAC7; --accent: #EE8162; color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) { --ground: #102221; --surface: #18302F; --ink: #F1ECD9; --ink-soft: #D2D3C5; --muted: #9CB0AC; --line: #2A4443; color-scheme: dark; }
+    }
+    :root[data-theme="dark"] { --ground: #102221; --surface: #18302F; --ink: #F1ECD9; --ink-soft: #D2D3C5; --muted: #9CB0AC; --line: #2A4443; color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--ground); color: var(--ink-soft); font: 400 16px/1.65 "IBM Plex Sans", system-ui, -apple-system, sans-serif; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+    nav { display: flex; align-items: center; justify-content: space-between; padding-block: 22px; }
+    .logo { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font: 700 20px "Space Grotesk", "Helvetica Neue", Arial, sans-serif; }
+    .logo img { width: 34px; height: 34px; border-radius: 9px; }
+    nav > a:last-child { color: var(--muted); font-size: 14px; }
+    h1, h2 { color: var(--ink); font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif; letter-spacing: -.02em; text-wrap: balance; }
+    h1 { font-size: clamp(34px, 7vw, 48px); line-height: 1.05; margin: 28px 0 10px; }
+    h2 { font-size: 21px; line-height: 1.25; margin: 0 0 8px; }
+    .updated { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+    .summary { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 14px; padding: 16px 18px; color: var(--ink); margin: 0 0 36px; }
+    section { margin-bottom: 30px; }
+    p { margin: 0 0 12px; }
+    ul { margin: 0 0 12px; padding-left: 22px; }
+    li { margin-bottom: 8px; }
+    a { color: inherit; }
+    footer { border-top: 1px solid var(--line); margin-top: 48px; padding-block: 24px 40px; display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="./" aria-label="Trajectory home"><img src="icon.svg" alt="" width="34" height="34">Trajectory</a>
+      <a href="./#join">Join the waitlist</a>
+    </nav>
+    <h1>Data Consent</h1>
+    <p class="updated">Last updated 27 October 2026</p>
+    <p class="summary">What you agree to when you create an account or join the waitlist, in plain terms, and how to change your mind.</p>
+    <section>
+      <h2>When you join the waitlist, you agree that</h2>
+      <ul>
+        <li>we store your email address, your university if you add it, and the page that linked you to us;</li>
+        <li>we may email you about Trajectory, such as when your spot opens. You can ask us to stop at any time.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>When you create an account, you agree that</h2>
+      <ul>
+        <li>we store the study details you add or import (courses, assessments, topics, study hours and study time) so Trajectory can plan your study and sync it across your devices;</li>
+        <li>when you add a note, its contents are sent to Anthropic's Claude AI to rate how well it covers each topic. We keep only the rating and a one-line reason for each topic, and delete the note file as soon as it has been read;</li>
+        <li>your courses, assessments, topic ratings and study hours are sent to Claude to make your daily plan;</li>
+        <li>Supabase and Anthropic may store or process this information outside Australia, including in the United States, as explained in the Privacy Policy.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>What we will never do</h2>
+      <ul>
+        <li>look through your files, folders or note apps. We only see files you pick;</li>
+        <li>keep the text of your notes;</li>
+        <li>sell your information or use it for advertising.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Changing your mind</h2>
+      <p>Agreeing is your choice, but Trajectory cannot work without it. You can withdraw at any time:</p>
+      <ul>
+        <li>To stop AI note analysis, simply stop adding notes. Nothing is sent unless you add a note. Your plan then uses topic names only.</li>
+        <li>To withdraw entirely, email [contact email] and we will delete your account or waitlist entry and the information linked to it within 30 days.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Our record of your consent</h2>
+      <p>When you create an account, we save the date you agreed and which version of these documents you saw. If these documents change in a way that matters, we will ask you again.</p>
+    </section>
+    <footer>
+      <a href="./">Home</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+    </footer>
+  </div>
+</body>
+</html>
