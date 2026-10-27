@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { ScrollView, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,6 +9,7 @@ import { Text } from '@/components/ui/text';
 import { CURRENT_YEAR } from '@/config';
 import { T, WIDE } from '@/constants/trajectory';
 import { DAILY_HOURS_OPTIONS, useDailyHours } from '@/lib/daily-hours';
+import { CONTACT_EMAIL, LEGAL_DOCS } from '@/lib/legal';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
@@ -57,6 +59,19 @@ export default function SettingsScreen() {
               </View>
             </View>
             <Button title="Sign out" variant="secondary" onPress={signOut} />
+          </Section>
+
+          <Section index={3} title="Privacy & legal" hint={`To get a copy of your data or delete your account, email ${CONTACT_EMAIL}.`}>
+            {LEGAL_DOCS.map((d) => (
+              <Pressable
+                key={d.slug}
+                accessibilityRole="link"
+                onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: d.slug } })}
+                className="flex-row items-center justify-between gap-3">
+                <Text className="text-[15px] font-semibold">{d.title}</Text>
+                <Text className="text-muted-foreground text-[17px]">›</Text>
+              </Pressable>
+            ))}
           </Section>
         </View>
       </ScrollView>

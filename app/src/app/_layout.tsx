@@ -76,6 +76,9 @@ function Routes() {
         <Stack.Screen name="assessment/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="assessment/new" options={{ presentation: 'modal' }} />
       </Stack.Protected>
+
+      {/* Readable signed in or out: sign-up links to it before there's an account. */}
+      <Stack.Screen name="legal/[doc]" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

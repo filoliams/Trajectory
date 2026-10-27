@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-27: Privacy Policy, Terms of Use and Data Consent
+**Decision:** The three documents live once in `app/src/lib/legal.ts`. The app shows them at `legal/[doc]` (open signed in or out, linked from sign-in and Settings); `app/scripts/legal-pages.mjs` writes the website copies (`frontend/privacy.html`, `terms.html`, `data-consent.html`), and `legal.check.ts` fails if those fall out of date. Create account needs one ticked box agreeing to all three; the accepted `legal_version` and `legal_accepted_at` are saved in the account's Supabase auth metadata. Minimum age 16, younger with a parent's permission; governed by Queensland law; written to the Australian Privacy Principles. Operator name and contact email are placeholders (`OPERATOR`, `CONTACT_EMAIL`) until the owner fills them in.
+**Why:** The waitlist collects emails and the app sends note contents to Anthropic, overseas, so students need to be told and to agree before signing up. Auth metadata records consent without a migration. One source stops the app and website wording drifting apart.
+**Alternatives:** A `profiles` column for consent (needs a migration); a second checkbox just for AI note analysis (the owner chose one box); 18+ only (would exclude 17-year-old first-years).
+
 ## 2026-10-23: Course colours, weekly chart, streak, and new display fonts
 **Decision:** Each course gets a fixed colour (its place among the semester's codes, A–Z) used on its rings, bars, plan cards and deadline dots. Today adds a big progress ring, a tappable seven-day study chart, a streak card, phone quick actions, and three columns on large desktops. Past study days are read from `study_time` (last 28 days) on the client, under row-level security. Titles use Bricolage Grotesque, with one word in Instrument Serif italic; body stays Geist, numbers Geist Mono. Added `@expo-google-fonts/bricolage-grotesque` and `@expo-google-fonts/instrument-serif` at the owner's request.
 **Why:** The Dribbble e-learning dashboards all tell courses apart by colour and show weekly activity and streaks; the owner asked for distinct, premium fonts.
