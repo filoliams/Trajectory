@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Trajectory">
+  <defs>
+    <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="#1C3A3A"/>
+    <path d="M64 0V512M128 0V512M192 0V512M256 0V512M320 0V512M384 0V512M448 0V512M0 64H512M0 128H512M0 192H512M0 256H512M0 320H512M0 384H512M0 448H512" stroke="#2B4748" stroke-width="3"/>
+
+    <!-- sheet behind -->
+    <rect x="132" y="128" width="250" height="318" rx="14" fill="#2E5150" transform="rotate(7 257 287)"/>
+
+    <!-- notebook page -->
+    <g transform="rotate(-7 251 293)">
+      <rect x="126" y="134" width="250" height="318" rx="14" fill="#F1ECD9"/>
+      <line x1="160" y1="148" x2="160" y2="438" stroke="#E9A790" stroke-width="3"/>
+      <g stroke="#C5D9D8" stroke-width="4" stroke-linecap="round">
+        <line x1="182" y1="190" x2="346" y2="190"/>
+        <line x1="182" y1="226" x2="346" y2="226"/>
+        <line x1="182" y1="262" x2="340" y2="262"/>
+        <line x1="182" y1="298" x2="346" y2="298"/>
+        <line x1="182" y1="334" x2="346" y2="334"/>
+        <line x1="182" y1="370" x2="346" y2="370"/>
+        <line x1="182" y1="406" x2="310" y2="406"/>
+      </g>
+      <g fill="#1C3A3A"><circle cx="143" cy="210" r="7"/><circle cx="143" cy="302" r="7"/><circle cx="143" cy="394" r="7"/></g>
+    </g>
+
+    <!-- trajectory -->
+    <path d="M99 417C140 380 180 345 217 322C260 296 285 275 310 245C345 205 378 158 410 116" fill="none" stroke="#1C3A3A" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="99" cy="417" r="20" fill="#F1ECD9" stroke="#1C3A3A" stroke-width="6"/>
+    <circle cx="217" cy="322" r="18" fill="#F1ECD9" stroke="#1C3A3A" stroke-width="10"/>
+    <circle cx="310" cy="245" r="18" fill="#F1ECD9" stroke="#1C3A3A" stroke-width="10"/>
+
+    <!-- target -->
+    <circle cx="413" cy="112" r="58" fill="none" stroke="#68544B" stroke-width="10" opacity=".9"/>
+    <circle cx="413" cy="112" r="44" fill="#F1ECD9"/>
+    <circle cx="413" cy="112" r="34" fill="#EE8162"/>
+    <path d="M396 113L408 126L431 97" fill="none" stroke="#F1ECD9" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- sparkles -->
+    <g fill="#E4E0D2">
+      <path d="M344 56L348 66L358 70L348 74L344 84L340 74L330 70L340 66Z"/>
+      <path d="M471 172L476 186L490 191L476 196L471 210L466 196L452 191L466 186Z"/>
+    </g>
+  </g>
+</svg>

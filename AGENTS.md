@@ -25,7 +25,8 @@ app/                    Expo + React Native + TypeScript app (iOS, Android, web)
     sync/               offline cache, outbox queue, realtime
     *.check.ts          self-checks, run with plain node
   src/constants/trajectory.ts   theme tokens T, fonts (Bricolage Grotesque display, Instrument Serif italic accents, Geist body, Geist Mono numbers)
-backend/                FastAPI, runs locally; course-profile import only (uq_import.py)
+backend/                FastAPI, runs locally; course-profile import (uq_import.py), waitlist sign-ups, serves frontend/
+frontend/               public landing page with waitlist sign-up (index.html), served by the backend at /
 supabase/
   migrations/           SQL, run by hand in the Supabase SQL editor
   functions/notes-check, notes-ingest   note pipeline (Haiku 5.5)
@@ -36,7 +37,7 @@ reference/              git-ignored clones to read, never run: awesome-design-md
                         react-native-reusables (component + block source)
 ```
 
-Postgres tables, all under row-level security: `profiles`, `courses`, `assessments`, `topics`, `study_time`, `connections`, `documents`, `document_topics`, `sync_jobs`, `daily_plans`.
+Postgres tables, all under row-level security: `profiles`, `courses`, `assessments`, `topics`, `study_time`, `connections`, `documents`, `document_topics`, `sync_jobs`, `daily_plans`, `waitlist` (RLS on with no policies; only the backend writes it).
 
 ## Done means green
 

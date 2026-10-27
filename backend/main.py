@@ -1,9 +1,14 @@
 import os
+import re
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 from supabase import create_client
 
 from uq_import import (
@@ -40,7 +45,7 @@ app.add_middleware(
 )
 
 
-@app.get("/")
+@app.get("/health")
 def hello():
     return {"status": "backend running"}
 
@@ -91,3 +96,67 @@ async def import_file_endpoint(
             "Download this semester's profile instead.",
         )
     return course.to_dict()
+
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+# Simple per-IP limit so a script can't flood the waitlist table.
+# In-memory, so it resets on restart and is per-process; fine for launch.
+RATE_LIMIT = 5
+RATE_WINDOW_SECONDS = 60
+_recent_signups: dict[str, deque] = defaultdict(deque)
+
+
+class WaitlistSignup(BaseModel):
+    email: str = Field(max_length=254)
+    university: str | None = Field(default=None, max_length=120)
+    # Honeypot: hidden on the page, so only bots fill it in
+    website: str | None = None
+
+
+def _rate_limited(ip: str) -> bool:
+    now = time.monotonic()
+    hits = _recent_signups[ip]
+    while hits and now - hits[0] > RATE_WINDOW_SECONDS:
+        hits.popleft()
+    if len(hits) >= RATE_LIMIT:
+        return True
+    hits.append(now)
+    return False
+
+
+@app.post("/api/waitlist", status_code=201)
+def join_waitlist(signup: WaitlistSignup, request: Request):
+    if signup.website:
+        # Pretend it worked so bots don't learn to skip the field
+        return {"ok": True}
+
+    email = signup.email.strip().lower()
+    if not EMAIL_RE.match(email):
+        raise HTTPException(status_code=422, detail="Please enter a valid email address.")
+
+    ip = request.client.host if request.client else "unknown"
+    if _rate_limited(ip):
+        raise HTTPException(status_code=429, detail="Too many sign-ups. Try again in a minute.")
+
+    row = {
+        "email": email,
+        "university": (signup.university or "").strip() or None,
+        "referrer": (request.headers.get("referer") or "")[:500] or None,
+    }
+    try:
+        # Ignore duplicates so signing up twice is harmless and doesn't
+        # reveal whether an address is already on the list
+        supabase.table("waitlist").upsert(
+            row, on_conflict="email", ignore_duplicates=True
+        ).execute()
+    except Exception as exc:
+        # Public endpoint: log the real cause, show visitors a generic message
+        print(f"Waitlist insert failed: {exc}")
+        raise HTTPException(status_code=500, detail="Something went wrong. Please try again.")
+    return {"ok": True}
+
+
+# Landing page. Mounted last so the API routes above take priority.
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
