@@ -203,7 +203,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [data]);
 
   const subscribePending = useCallback((fn: () => void) => outbox?.subscribe(fn) ?? (() => {}), [outbox]);
-  const pendingCount = useSyncExternalStore(subscribePending, () => outbox?.size ?? 0);
+  const pendingCount = useSyncExternalStore(subscribePending, () => outbox?.size ?? 0, () => 0);
 
   const mine = data;
   const latest = useRef(mine);
