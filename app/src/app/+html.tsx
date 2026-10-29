@@ -1,10 +1,12 @@
-import { ScrollViewStyleReset } from 'expo-router/html';
+import { ScrollViewStyleReset, useServerDocumentContext } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 
 /** The web page shell: title, description and the dark ground before the app paints. */
 export default function Root({ children }: PropsWithChildren) {
+  // Expo hands over the app's scripts and styles here; without them the page never starts.
+  const { htmlAttributes, headNodes, bodyAttributes, bodyNodes } = useServerDocumentContext();
   return (
-    <html lang="en">
+    <html lang="en" {...htmlAttributes}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -14,8 +16,12 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="theme-color" content="#0B0B0F" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: 'body { background-color: #0B0B0F; }' }} />
+        {headNodes}
       </head>
-      <body>{children}</body>
+      <body {...bodyAttributes}>
+        {children}
+        {bodyNodes}
+      </body>
     </html>
   );
 }
