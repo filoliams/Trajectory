@@ -27,6 +27,8 @@ New commits are added here automatically. When you cut a version, rename this he
 
 | When | Branch | Commit | Change |
 |---|---|---|---|
+| 2026-10-29 10:20 | `local-uq-import` | [`e3c073c`](https://github.com/filoliams/Trajectory/commit/e3c073c8336e77d20dfd40f7bad17959e5f19e24) | **Log the move from OneDrive to GitHub-synced clones.** |
+| 2026-10-29 10:19 | `local-uq-import` | [`c146cac`](https://github.com/filoliams/Trajectory/commit/c146cacc9bcb3641ae2f768858908bf597b47bac) | **Set the repo up to live outside OneDrive, synced through GitHub.** Adds scripts/setup-windows.ps1 for a fresh clone (npm packages, backend venv, expo-env.d.ts, .env from the old OneDrive copy), README steps for setting up and moving between machines, and a decision entry. Also escapes an apostrophe in... |
 | 2026-10-28 17:14 | `wip/analyze-note` | [`0f838a1`](https://github.com/filoliams/Trajectory/commit/0f838a1b6eddaf92652804d48a3b6d26475dd25f) | **WIP: analyze-note (from stash; reverted for deno lint errors).** |
 | 2026-10-28 17:14 | `local-uq-import` | [`92ab305`](https://github.com/filoliams/Trajectory/commit/92ab3057f54e9421e3e1e4b1e4860c5ec6d5897b) | **Give the store hooks a server snapshot so the web page renders.** Expo's static web output pre-renders on the server, where useSyncExternalStore needs a getServerSnapshot; without it the page returned a 500. Also refresh package-lock.json from a clean install. |
 | 2026-10-23 02:32 | `sdk-58` | [`a7b7c38`](https://github.com/filoliams/Trajectory/commit/a7b7c383fe8d29b24336be2bf2e6bbadc2004222) | **Log the SDK 58 upgrade decision.** |
