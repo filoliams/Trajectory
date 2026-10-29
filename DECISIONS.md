@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-28: Code lives in GitHub, not OneDrive
+**Decision:** The working copy moved from `OneDrive\Desktop\Trajectory` to `C:\dev\Trajectory`, a plain git clone. Each machine (laptop, home PC) keeps its own clone outside OneDrive and syncs through GitHub: pull at the start of a session, push at the end. `scripts/setup-windows.ps1` sets up a new clone; `.env` is copied between machines by hand.
+**Why:** OneDrive's Files On-Demand turned `node_modules` and the backend `.venv` into online-only placeholders, breaking installs, builds and git writes.
+**Alternatives:** Keeping OneDrive with "Always keep on this device" (still syncs thousands of generated files and fights git's locks).
+
 ## 2026-10-27: Landing page hosted on Vercel, from main
 **Decision:** Vercel serves `frontend/` as a static site (preset Other, root directory `frontend`, no build), with `frontend/api/waitlist.js` as a serverless function that writes sign-ups to Supabase over REST using `SUPABASE_SECRET_KEY` from Vercel's environment variables. `main` was fast-forwarded to `local-uq-import` so Vercel's production branch has the landing page.
 **Why:** The FastAPI backend only runs locally, so the page's `/api/waitlist` needs its own server-side endpoint where it's hosted. Plain `fetch` to Supabase's REST API keeps the function dependency-free.
