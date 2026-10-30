@@ -104,10 +104,12 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@types/react@19.3",
         "npm:expo-doctor@^1.21.5",
         "npm:expo@^58.0.19",
         "npm:react-native@0.88.0",
-        "npm:react@19.3.0"
+        "npm:react@19.3.0",
+        "npm:typescript@~6.0.3"
       ]
     }
   }
