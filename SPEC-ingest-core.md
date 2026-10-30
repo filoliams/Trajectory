@@ -19,8 +19,11 @@ the daily study plan.
 2. `notes-ingest` handles `.md`, `.txt`, `.pdf` (with a text layer or handwritten) and images
    (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`). HTML is phase 3.
 3. Course comes from a course code in the path or filename first, otherwise from Claude choosing among
-   the user's courses (`course_source = 'ai'`, with a confidence).
+   the user's courses (`course_source = 'ai'`, with a confidence). A notebook can cover several courses:
+   each one found is scored, and the file's `course_id` is the main one (the folder's, else the most confident).
 4. Each analysed document stores a level (`none|weak|okay|strong`) and a one-line reason per topic.
+   Claude first says where in the notes each topic appears (pages or headings), then rates only that
+   evidence; a topic with no location is `none`. The reason starts with the location, e.g. "pp. 12-15 · …".
    `topics.understanding` is the **best** level across that topic's documents.
 5. **No note text and no original file is kept after processing.** The storage object is deleted on
    success and on failure. Leftovers (uploaded but never read, e.g. the app closed mid-sync) are
