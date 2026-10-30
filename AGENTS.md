@@ -4,6 +4,7 @@ Map and rules for AI coding agents in this repo. Work under `app/` also follows 
 
 - **[CONTEXT.md](CONTEXT.md):** read when a change touches what the app does, who it's for, or MVP scope.
 - **[DECISIONS.md](DECISIONS.md):** read before reversing an earlier choice; append a dated entry when you make a choice someone would later ask "why?" about.
+- **[LIMITATIONS.md](LIMITATIONS.md):** known limits and inconsistencies still to resolve; read before building on notes, topics or quizzes, and remove an entry when you resolve it.
 - **Tickets:** `.scratch/notes-sharing/issues/`. Work the frontier (tickets whose blockers are done); tick acceptance criteria and set **Status** as you go.
 - **Specs:** [SPEC.md](SPEC.md) (note-ingestion map) and [SPEC-ingest-core.md](SPEC-ingest-core.md) (models, caps, privacy boundaries). The caps live there; quote them from there.
 
@@ -46,7 +47,7 @@ Postgres tables, all under row-level security: `profiles`, `courses`, `assessmen
 A task is done when every check for the area you touched is green:
 
 ```
-App:       cd app; npx tsc --noEmit; npx expo lint; node src/lib/levels.check.ts; node src/lib/notes-match.check.ts; node src/lib/qld-holidays.check.ts; node src/lib/note-files.check.ts; node src/lib/study-stats.check.ts; node src/lib/legal.check.ts
+App:       cd app; npx tsc --noEmit; npx expo lint; node src/lib/levels.check.ts; node src/lib/notes-match.check.ts; node src/lib/qld-holidays.check.ts; node src/lib/note-files.check.ts; node src/lib/study-stats.check.ts; node src/lib/legal.check.ts; node src/lib/confidence.check.ts
 Backend:   cd backend; .venv\Scripts\python -m pytest
 Functions: node supabase/functions/_shared/check.ts; npx deno@2 check supabase/functions/*/index.ts; npx deno@2 lint supabase/functions/
 ```

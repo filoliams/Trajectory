@@ -80,6 +80,11 @@ async function ingest(db: SupabaseClient, userId: string, doc: Doc, jobId: numbe
     const reply = await askClaude(content, courses.map((c) => c.code));
     const analysis = validateResult(reply.raw, courses, fromPath?.code ?? null);
 
+    // Courses this file scored before, so they're re-scored even if it no longer covers them.
+    const { data: before } = await db.from('document_topics').select('topic_id').eq('document_id', doc.id);
+    const touched = new Set([doc.course_id, ...analysis.courses.map((m) => m.course.id)]);
+    for (const row of before ?? []) touched.add(courses.find((c) => c.topics.some((t) => t.id === row.topic_id))?.id ?? null);
+
     await db.from('document_topics').delete().eq('document_id', doc.id);
     if (analysis.readings.length) {
       const { error } = await db.from('document_topics').insert(
@@ -99,12 +104,10 @@ async function ingest(db: SupabaseClient, userId: string, doc: Doc, jobId: numbe
       error: analysis.course ? null : 'Couldn’t tell which course this file belongs to. Choose one to include it.',
     });
 
-    // Re-score the course this file now belongs to, and the one it used to belong to.
-    for (const courseId of new Set([analysis.course?.id, doc.course_id].filter((id): id is number => id != null))) {
-      await reaggregate(db, courseId, courses);
-    }
+    // Re-score every course this file covers now or covered before.
+    for (const courseId of touched) if (courseId != null) await reaggregate(db, courseId, courses);
     await finishJob(db, jobId, { status: 'done', input_tokens: reply.inputTokens, output_tokens: reply.outputTokens });
-    console.log(JSON.stringify({ event: 'ingested', document_id: doc.id, kind: type.kind, bytes: bytes.length, input_tokens: reply.inputTokens, output_tokens: reply.outputTokens }));
+    console.log(JSON.stringify({ event: 'ingested', document_id: doc.id, kind: type.kind, bytes: bytes.length, courses: analysis.courses.length, input_tokens: reply.inputTokens, output_tokens: reply.outputTokens }));
   } catch (e) {
     const skipped = e instanceof Skip;
     const message = e instanceof Friendly || skipped ? e.message : 'Something went wrong reading this file. Try syncing it again.';

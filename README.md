@@ -14,26 +14,37 @@ A study tracker app that keeps track of your courses and assessments, reads your
 
 ### Prerequisites
 
-- Git
-- _Add your runtime here (e.g. Python 3.12 or Node 20)_
+- Git, Node 26, Python 3.11 (`py -3.11`)
 
-### Setup
+### Setup on a new Windows machine
 
-```bash
-git clone https://github.com/<your-username>/study-tracker.git
-cd study-tracker
+GitHub is the source of truth; each computer keeps its own clone **outside OneDrive**
+(OneDrive turns `node_modules` and `.venv` into online-only placeholders, which breaks them).
+
+```powershell
+git clone https://github.com/filoliams/Trajectory.git C:\dev\Trajectory
+cd C:\dev\Trajectory
+powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1
 ```
 
-Copy the example environment file and fill in your own keys:
+The script installs the npm packages, creates `backend\.venv` and copies `.env` from the old
+OneDrive copy if it finds one. `.env` holds the keys and is never in git: copy it between
+machines yourself, or start from `.env.example`.
 
-```bash
-copy .env.example .env
+### Moving between machines
+
+Pull when you sit down at a machine; commit and push before you leave it:
+
+```powershell
+git pull
+git add <files>; git commit -m "..."; git push
 ```
 
-Install the backend dependencies and apply the database migrations:
+### Database and local server
+
+Apply the database migrations:
 
 ```bash
-pip install -r backend/requirements.txt
 supabase link --project-ref <your-project-id>
 supabase db push
 ```

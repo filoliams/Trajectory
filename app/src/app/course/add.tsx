@@ -44,8 +44,9 @@ export default function AddCourseScreen() {
   return (
     <Sheet title="Add a course">
       <Text style={styles.body}>
-        Upload the {university.profileName} for each course you are adding. We will read it for assessments, weightings and due
-        dates. Uploading a course you already have refreshes its imported assessments and keeps the ones you added yourself.
+        Upload the {university.profileName} for each course you are adding. Each tab saves as its own PDF: the Assessment tab
+        gives assessments, weightings and due dates, and the Learning activities tab gives weekly topics. Drop in one or both.
+        Uploading a course you already have refreshes its imported assessments and keeps the ones you added yourself.
       </Text>
       <ProfileUpload profileName={university.profileName} />
       {added.map((code) => (

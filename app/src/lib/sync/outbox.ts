@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 
 import { readJson, writeJson } from './storage';
 
-export type Table = 'profiles' | 'courses' | 'assessments' | 'topics';
+export type Table = 'profiles' | 'courses' | 'assessments' | 'topics' | 'quiz_attempts';
 type Values = Record<string, unknown>;
 
 export type Op = { id: string; at: number } & (

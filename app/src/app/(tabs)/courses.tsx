@@ -11,6 +11,7 @@ import { PressScale } from '@/components/press-scale';
 import { Text } from '@/components/ui/text';
 import { T, WIDE } from '@/constants/trajectory';
 import type { Course } from '@/data/courses';
+import { courseConfidence } from '@/lib/confidence';
 import { courseColor } from '@/lib/course-colors';
 import { byPriority, countdown, daysUntil, notesLevel, percentToGo, shareDone, urgencyColor, useNow } from '@/lib/planning';
 import { useStore } from '@/lib/store';
@@ -174,7 +175,9 @@ function CourseCard({ course, now, color }: { course: Course; now: number; color
           </View>
           <View className="flex-row justify-between">
             <Text className="text-muted-foreground text-xs">
-              {course.assessments.length} assessment{course.assessments.length === 1 ? '' : 's'}
+              {course.assessments.length} assessment{course.assessments.length === 1 ? '' : 's'} · {course.topics.length} topic
+              {course.topics.length === 1 ? '' : 's'}
+              {course.topics.length ? ` · ${courseConfidence(course.topics)}% confident` : ''}
             </Text>
             <Text className="font-mono text-xs text-[#C9CCD3]">{percentToGo(course)}% to go</Text>
           </View>

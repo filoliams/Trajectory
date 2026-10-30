@@ -68,6 +68,7 @@ async def import_file_endpoint(
     file: UploadFile = File(description="A course profile saved as a PDF, or the page saved as HTML."),
     year: int | None = Form(default=None, ge=2015, le=2100),
     semester: int | None = Form(default=None, ge=1, le=2),
+    want: str = Form(default="any", pattern="^(any|topics)$", description="'topics' when adding a course's topics"),
 ):
     """Read a course profile the user downloaded and uploaded during onboarding.
 
@@ -81,7 +82,7 @@ async def import_file_endpoint(
     if not data:
         raise HTTPException(status_code=422, detail="That file is empty.")
     try:
-        course = parse_uploaded_profile(data, file.filename or "")
+        course = parse_uploaded_profile(data, file.filename or "", want)
     except ImportFailed as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     if not course.code:

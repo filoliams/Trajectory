@@ -14,6 +14,26 @@ Format:
 
 ---
 
+## 2026-10-30: "Quiz me" per topic, with confidence
+**Decision:** Students check what they know with an optional "Quiz me" on each topic (option C of three prototyped). Questions come from Haiku 5.5 at low effort, written from the course and topic name. 15 quizzes per student per day, set in one place by plan tier. Confidence = notes 40% and quizzes 60% after one quiz, notes 20% and quizzes 80% after two; a round green ↑ / red ↓ / yellow – bubble shows which way the latest quiz moved it. No result screen and no legend. The daily plan will use confidence (tickets 14-16).
+**Why:** Notes levels say what the notes cover, not what the student knows; students drop tools that don't show them improving. Option C changes nothing in the existing flow and puts the prompt next to the weak topics.
+**Alternatives:** A quiz after every notes upload (adds a step and doubles AI calls); a separate "Test what you know" page (scores don't reach levels or the plan).
+
+## 2026-10-30: Topics first, then notes
+**Decision:** A course's Topics section has two steps: Upload topics (from the saved course profile, or typed in), then Upload notes, which stays locked until the course has topics. Importing topics from a profile no longer touches assessments. Today nudges courses with no topics.
+**Why:** The AI rates notes against a course's topics, so notes uploaded to a course with none produce nothing. The flow was tried in a clickable prototype before it was built.
+**Alternatives:** Fetching the profile by course code (UQ's site returns 403 to the backend); one combined "Add" menu (hid the order the steps must happen in).
+
+## 2026-10-29: Notes analysis finds evidence before it rates
+**Decision:** Claude now lists which courses a file contains and, per topic, where it appears in the notes (pages or headings) before choosing a level. A topic without a location is forced to `none` in our validation, and the location is shown at the start of the reason. One file can score topics in several courses. `EXTRACTOR_VERSION` is 2.
+**Why:** Students upload whole notebooks covering many topics and sometimes several courses; rating straight from the whole file let passing mentions count as coverage and ignored a second course.
+**Alternatives:** Splitting long PDFs into page chunks with one call each: better for very long notebooks, but needs a PDF dependency and multiplies calls against the daily cap. Revisit after the real GoodNotes notebook test.
+
+## 2026-10-28: Code lives in GitHub, not OneDrive
+**Decision:** The working copy moved from `OneDrive\Desktop\Trajectory` to `C:\dev\Trajectory`, a plain git clone. Each machine (laptop, home PC) keeps its own clone outside OneDrive and syncs through GitHub: pull at the start of a session, push at the end. `scripts/setup-windows.ps1` sets up a new clone; `.env` is copied between machines by hand.
+**Why:** OneDrive's Files On-Demand turned `node_modules` and the backend `.venv` into online-only placeholders, breaking installs, builds and git writes.
+**Alternatives:** Keeping OneDrive with "Always keep on this device" (still syncs thousands of generated files and fights git's locks).
+
 ## 2026-10-27: Landing page hosted on Vercel, from main
 **Decision:** Vercel serves `frontend/` as a static site (preset Other, root directory `frontend`, no build), with `frontend/api/waitlist.js` as a serverless function that writes sign-ups to Supabase over REST using `SUPABASE_SECRET_KEY` from Vercel's environment variables. `main` was fast-forwarded to `local-uq-import` so Vercel's production branch has the landing page.
 **Why:** The FastAPI backend only runs locally, so the page's `/api/waitlist` needs its own server-side endpoint where it's hosted. Plain `fetch` to Supabase's REST API keeps the function dependency-free.

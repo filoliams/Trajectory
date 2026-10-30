@@ -6,11 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CompletedToday } from '@/components/completed-today';
 import { HeroProgress, SectionHead, StatCard, StreakCard, WeekChart, WeekStrip, flow } from '@/components/dashboard';
+import { QuizSheet } from '@/components/quiz-sheet';
 import { ProgressBar } from '@/components/study-timer';
 import { TrajectoryView } from '@/components/trajectory-view';
 import { Text } from '@/components/ui/text';
 import { T, WIDE } from '@/constants/trajectory';
-import type { Assessment, Course, Status } from '@/data/courses';
+import type { Assessment, Course, Status, Topic } from '@/data/courses';
+import { confidenceNote } from '@/lib/confidence';
 import { courseColor } from '@/lib/course-colors';
 import { countdown, daysUntil, dueLabel, hoursLabel, shortCountdown, upcoming, urgencyColor, whyLabel } from '@/lib/planning';
 import { dayKey } from '@/lib/day';
@@ -43,6 +45,7 @@ export default function TodayScreen() {
   const examDays = examDates.length ? Math.ceil(Math.min(...examDates)) : null;
 
   const empty = emptyState(courses);
+  const [quizTopic, setQuizTopic] = useState<Topic | null>(null);
   const history = useStudyHistory(dayKey(now), study.totalStudiedMs);
   const soonest = upcoming(courses, now)[0];
   const doneCount = plan.length - todo.length;
@@ -111,6 +114,10 @@ export default function TodayScreen() {
       {todo.map(({ course, assessment, studied, target }, i) => {
         const isActive = active?.assessment.id === assessment.id;
         const block = smartFor.get(assessment.id);
+        const base = block ? block.reason || whyLabel(assessment, now) : i === 0 ? (assessment.why ?? whyLabel(assessment, now)) : null;
+        // The first card also says what moved this week and which topic is shakiest, with a quiz on it.
+        const note = i === 0 ? confidenceNote(course.topics, now) : null;
+        const shakiest = note?.shakiest ?? null;
         return (
           <Animated.View
             key={assessment.id}
@@ -129,8 +136,9 @@ export default function TodayScreen() {
               first={i === 0}
               color={colorOf(course.code)}
               mode={isActive ? study.mode : 'idle'}
-              reason={block ? block.reason || whyLabel(assessment, now) : i === 0 ? (assessment.why ?? whyLabel(assessment, now)) : null}
+              reason={note && base ? `${base} ${note.text}` : base}
               topics={block?.topics ?? []}
+              onQuiz={shakiest && online ? () => setQuizTopic(shakiest) : undefined}
               onTimer={() => (!isActive ? studyOn(assessment.id, assessment.status) : study.mode === 'break' ? study.resume() : study.takeBreak())}
             />
           </Animated.View>
@@ -213,6 +221,8 @@ export default function TodayScreen() {
 
         {nowStudying}
 
+        <NoTopicsNudge courses={courses} />
+
         {threeCols ? (
           <View className="flex-row items-start gap-5">
             <View className="min-w-0 flex-[1.2] gap-5">{planList}</View>
@@ -238,6 +248,7 @@ export default function TodayScreen() {
         )}
         <Text className="text-muted-foreground text-center text-[13px]">Only study time counts towards today. Breaks pause the clock.</Text>
       </ScrollView>
+      {quizTopic ? <QuizSheet topic={quizTopic} onClose={() => setQuizTopic(null)} /> : null}
     </SafeAreaView>
   );
 }
@@ -257,6 +268,8 @@ function PlanCard(p: {
   reason: string | null;
   topics: string[];
   onTimer: () => void;
+  /** Quiz on the course's shakiest topic; only on the first card. */
+  onQuiz?: () => void;
 }) {
   const [open, setOpen] = useState(p.first);
   const days = daysUntil(p.assessment.due, p.now);
@@ -327,6 +340,15 @@ function PlanCard(p: {
               {isActive ? (p.mode === 'break' ? 'Back to it' : 'Take a break') : p.studied > 0 ? 'Resume timer' : 'Start timer'}
             </Text>
           </Pressable>
+          {p.onQuiz ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Quiz me on the shakiest topic"
+              onPress={p.onQuiz}
+              className="border-border bg-card h-11 items-center justify-center rounded-full border px-4 active:bg-accent">
+              <Text className="text-[15px] font-medium">Quiz me</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Open ${p.course.code}`}
@@ -407,6 +429,28 @@ function ComingUp({
         </Animated.View>
       </View>
     </Animated.View>
+  );
+}
+
+/** Notes are checked against a course's topics, so a course without any gets a nudge with a shortcut to add them. */
+function NoTopicsNudge({ courses }: { courses: Course[] }) {
+  const bare = courses.filter((c) => c.topics.length === 0).map((c) => c.code);
+  if (!bare.length) return null;
+  const names = bare.length === 1 ? bare[0] : `${bare.slice(0, -1).join(', ')} and ${bare[bare.length - 1]}`;
+  return (
+    <View className="bg-card flex-row flex-wrap items-center gap-3 rounded-2xl border border-dashed border-[#3A3D46] px-4 py-3.5">
+      <Text className="min-w-[200px] flex-1 text-[13.5px] leading-5 text-[#C9CCD3]">
+        <Text className="font-semibold text-[13.5px]">{names}</Text> {bare.length === 1 ? 'has' : 'have'} no topics yet, so notes can’t be checked
+        against {bare.length === 1 ? 'it' : 'them'}.
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Add topics to ${bare[0]}`}
+        onPress={() => router.push({ pathname: '/course/[code]', params: { code: bare[0] } })}
+        className="border-border bg-card min-h-10 justify-center rounded-full border px-4 active:bg-accent">
+        <Text className="text-primary text-sm font-semibold">Add topics</Text>
+      </Pressable>
+    </View>
   );
 }
 

@@ -5,6 +5,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0';
 
 import { askPlanner } from '../_shared/claude.ts';
+import { topicConfidence } from '../_shared/confidence.ts';
 import { Friendly, asCaller, json, preflight } from '../_shared/http.ts';
 import { brisbaneDay, validatePlan, type PlanBlock, type PlanContext } from '../_shared/plan.ts';
 
@@ -93,9 +94,12 @@ async function planContext(db: SupabaseClient, day: string, hours: number, holid
       .in('course_id', courseIds)
       .neq('status', 'done')
       .gt('due_date', new Date().toISOString()),
-    db.from('topics').select('course_id, name, has_notes, understanding, understanding_reason').in('course_id', courseIds).order('position'),
+    db.from('topics').select('id, course_id, name, has_notes, understanding, understanding_reason').in('course_id', courseIds).order('position'),
     db.from('study_time').select('assessment_id, ms').eq('day', day),
   ]);
+  // Finished quizzes, oldest first. A missing table (migration not run yet) means no quizzes: notes alone.
+  const { data: quizRows } = await db.from('quiz_attempts').select('topic_id, score, total').not('score', 'is', null).order('finished_at');
+  const quizzesOf = (topicId: number) => (quizRows ?? []).filter((q) => q.topic_id === topicId).map((q) => ({ score: q.score, total: q.total }));
 
   const codeOf = new Map(courses.map((c) => [c.id, c.code]));
   const msToday = new Map((studied ?? []).map((s) => [s.assessment_id, Number(s.ms)]));
@@ -108,7 +112,11 @@ async function planContext(db: SupabaseClient, day: string, hours: number, holid
       name: c.name ?? '',
       topics: (topics ?? [])
         .filter((t) => t.course_id === c.id)
-        .map((t) => ({ name: t.name, level: t.understanding ?? null, reason: t.understanding_reason ?? null, hasNotes: !!t.has_notes })),
+        .map((t) => ({
+          name: t.name,
+          confidence: topicConfidence({ understanding: t.understanding ?? null, hasNotes: !!t.has_notes, quizzes: quizzesOf(t.id) }),
+          reason: t.understanding_reason ?? null,
+        })),
     })),
     assessments: (assessments ?? []).map((a) => ({
       id: a.id,

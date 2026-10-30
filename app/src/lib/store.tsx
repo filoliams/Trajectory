@@ -12,9 +12,10 @@ import {
   type Course,
   type CourseRow,
   type Status,
+  type QuizRow,
   type TopicRow,
 } from '@/data/courses';
-import type { ImportedCourse } from '@/lib/api';
+import type { ImportedCourse, ImportedTopic } from '@/lib/api';
 import { dayKey } from '@/lib/day';
 import { supabase } from '@/lib/supabase';
 import { readCache, writeCache, type Profile, type Snapshot, type StudyDay } from '@/lib/sync/cache';
@@ -60,8 +61,13 @@ type Store = {
   updateAssessment: (id: string, input: AssessmentInput) => Promise<void>;
   setStatus: (id: string, status: Status) => Promise<void>;
   deleteAssessment: (id: string) => Promise<void>;
-  addTopic: (courseId: string, name: string) => Promise<void>;
+  /** Topics typed by hand, added in order after the course's existing ones. */
+  addTopics: (courseId: string, names: string[]) => Promise<void>;
+  /** Topics read from a course profile, without touching its assessments. Returns how many were new. */
+  importTopics: (courseId: string, topics: ImportedTopic[]) => Promise<number>;
   setTopicNotes: (id: string, hasNotes: boolean) => Promise<void>;
+  /** Record a finished quiz on its attempt row (made by the quiz-make function). Saved later if offline. */
+  saveQuiz: (topicId: string, attemptId: number, score: number, total: number) => void;
   deleteTopic: (id: string) => Promise<void>;
   addStudyTime: (assessmentId: string, ms: number, at: number) => void;
   signOut: () => Promise<void>;
@@ -91,6 +97,22 @@ class OfflineError extends Error {
 }
 
 /** Unwrap a Supabase result, turning errors into exceptions. */
+/** Add the profile's topics a course doesn't have yet; existing ones keep their notes status. Returns how many were added. */
+async function insertNewTopics(userId: string, courseId: number, topics: ImportedTopic[]): Promise<number> {
+  if (!topics.length) return 0;
+  const existing = check(await supabase.from('topics').select('name').eq('course_id', courseId)) as { name: string }[];
+  const have = new Set(existing.map((t) => t.name.toLowerCase()));
+  const fresh = topics.filter((t) => !have.has(t.name.toLowerCase()));
+  if (fresh.length) {
+    check(
+      await supabase.from('topics').insert(
+        fresh.map((t) => ({ user_id: userId, course_id: courseId, name: t.name, week: t.week, position: topics.indexOf(t), source: 'imported' })),
+      ),
+    );
+  }
+  return fresh.length;
+}
+
 function check<T>(result: { data: T; error: { message: string } | null; status: number }): NonNullable<T> {
   if (result.error) {
     // 401: the login token expired while offline and hasn't been refreshed yet; same as offline.
@@ -151,6 +173,13 @@ async function fetchSnapshot(userId: string): Promise<Snapshot> {
     .order('position')
     .order('id');
   const topics = (topicResult.error ? [] : topicResult.data) as TopicRow[];
+  // Finished quizzes only; an attempt with no score was started but not completed.
+  const quizResult = await supabase
+    .from('quiz_attempts')
+    .select('topic_id, score, total, finished_at')
+    .not('score', 'is', null)
+    .order('finished_at');
+  const quizzes = (quizResult.error ? [] : quizResult.data) as QuizRow[];
 
   const day = dayKey(Date.now());
   const studyResult = await supabase.from('study_time').select('assessment_id, ms').eq('day', day);
@@ -159,7 +188,7 @@ async function fetchSnapshot(userId: string): Promise<Snapshot> {
     study.ms[String(r.assessment_id)] = Number(r.ms);
   }
 
-  return { profile, courses: rows.map((r) => courseFromRow(r, topics)), study };
+  return { profile, courses: rows.map((r) => courseFromRow(r, topics, quizzes)), study };
 }
 
 function mapAssessments(courses: Course[], fn: (a: Assessment) => Assessment | null): Course[] {
@@ -203,7 +232,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [data]);
 
   const subscribePending = useCallback((fn: () => void) => outbox?.subscribe(fn) ?? (() => {}), [outbox]);
-  const pendingCount = useSyncExternalStore(subscribePending, () => outbox?.size ?? 0);
+  const pendingCount = useSyncExternalStore(subscribePending, () => outbox?.size ?? 0, () => 0);
 
   const mine = data;
   const latest = useRef(mine);
@@ -366,17 +395,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 code: imported.code,
                 name: name || imported.code,
                 semester,
-                profile_url: imported.profile_url,
-                semester_start: imported.semester_start,
+                // A tab's PDF may not carry these; keep what an earlier upload saved.
+                ...(imported.profile_url ? { profile_url: imported.profile_url } : {}),
+                ...(imported.semester_start ? { semester_start: imported.semester_start } : {}),
               },
               { onConflict: 'user_id,code,semester' },
             )
             .select('id')
             .single(),
         );
-        // Re-importing replaces earlier imported items but keeps ones you added yourself.
-        check(await supabase.from('assessments').delete().eq('course_id', course.id).eq('source', 'imported'));
+        // Re-importing replaces earlier imported items but keeps ones you added yourself. A file with
+        // no assessments (the Learning activities tab) leaves them alone.
         if (imported.assessments.length) {
+          check(await supabase.from('assessments').delete().eq('course_id', course.id).eq('source', 'imported'));
           check(
             await supabase.from('assessments').insert(
               imported.assessments.map((a) => ({
@@ -394,27 +425,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ),
           );
         }
-        // Add the profile's topics that aren't on the course yet; existing ones keep their notes status.
-        const profileTopics = imported.topics ?? [];
-        if (profileTopics.length) {
-          const existing = check(await supabase.from('topics').select('name').eq('course_id', course.id)) as { name: string }[];
-          const have = new Set(existing.map((t) => t.name.toLowerCase()));
-          const fresh = profileTopics.filter((t) => !have.has(t.name.toLowerCase()));
-          if (fresh.length) {
-            check(
-              await supabase.from('topics').insert(
-                fresh.map((t) => ({
-                  user_id: id,
-                  course_id: course.id,
-                  name: t.name,
-                  week: t.week,
-                  position: profileTopics.indexOf(t),
-                  source: 'imported',
-                })),
-              ),
-            );
-          }
-        }
+        await insertNewTopics(id, course.id, imported.topics ?? []);
         await reload();
         return String(course.id);
       },
@@ -503,25 +514,49 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }));
       },
 
-      async addTopic(courseId, name) {
+      async addTopics(courseId, names) {
         const { id } = requireUser();
-        const topicId = tempId();
-        const course = mine.courses.find((c) => c.id === courseId);
-        const row = { name: name.trim(), position: course?.topics.length ?? 0, source: 'manual' };
-        const shown = topicFromRow({ ...row, id: topicId as never, course_id: courseId as never, week: null, has_notes: false });
-        edit(
-          { kind: 'insert', table: 'topics', tempId: topicId, values: { ...row, user_id: id, course_id: ref(courseId) } },
-          (d) => ({
-            ...d,
-            courses: d.courses.map((c) => (c.id === courseId ? { ...c, topics: [...c.topics, shown] } : c)),
-          }),
-        );
+        const start = mine.courses.find((c) => c.id === courseId)?.topics.length ?? 0;
+        names.forEach((name, i) => {
+          const topicId = tempId();
+          const row = { name: name.trim(), position: start + i, source: 'manual' };
+          const shown = topicFromRow({ ...row, id: topicId as never, course_id: courseId as never, week: null, has_notes: false });
+          edit(
+            { kind: 'insert', table: 'topics', tempId: topicId, values: { ...row, user_id: id, course_id: ref(courseId) } },
+            (d) => ({
+              ...d,
+              courses: d.courses.map((c) => (c.id === courseId ? { ...c, topics: [...c.topics, shown] } : c)),
+            }),
+          );
+        });
+      },
+
+      async importTopics(courseId, topics) {
+        // Like a profile import, this reads from the backend and writes a batch, so it needs the network.
+        const { id, outbox } = requireUser();
+        if (!online) throw new OfflineError();
+        if (isTemp(courseId)) throw new Error('This course is still being saved. Try again in a moment.');
+        await outbox.flush();
+        const added = await insertNewTopics(id, Number(courseId), topics);
+        await reload();
+        return added;
       },
 
       async setTopicNotes(topicId, hasNotes) {
         edit({ kind: 'update', table: 'topics', rowId: topicId, values: { has_notes: hasNotes } }, (d) => ({
           ...d,
           courses: d.courses.map((c) => ({ ...c, topics: c.topics.map((t) => (t.id === topicId ? { ...t, hasNotes } : t)) })),
+        }));
+      },
+
+      saveQuiz(topicId, attemptId, score, total) {
+        const at = new Date().toISOString();
+        edit({ kind: 'update', table: 'quiz_attempts', rowId: String(attemptId), values: { score, finished_at: at } }, (d) => ({
+          ...d,
+          courses: d.courses.map((c) => ({
+            ...c,
+            topics: c.topics.map((t) => (t.id === topicId ? { ...t, quizzes: [...(t.quizzes ?? []), { score, total, at }] } : t)),
+          })),
         }));
       },
 

@@ -57,7 +57,7 @@ export default function LegalScreen() {
             </View>
           </>
         ) : (
-          <Text className="text-muted-foreground px-1 text-[15px]">That page doesn't exist.</Text>
+          <Text className="text-muted-foreground px-1 text-[15px]">That page doesn&apos;t exist.</Text>
         )}
       </ScrollView>
     </SafeAreaView>

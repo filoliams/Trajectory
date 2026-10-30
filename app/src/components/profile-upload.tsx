@@ -13,6 +13,7 @@ type Upload = {
   code?: string;
   count?: number;
   review?: number;
+  topics?: number;
   error?: string;
 };
 
@@ -59,6 +60,7 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
             code: imported.code,
             count: imported.assessments.length,
             review: imported.assessments.filter((a) => a.needs_review).length,
+            topics: imported.topics?.length ?? 0,
           });
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
@@ -123,7 +125,7 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
         </View>
         <Text style={styles.zoneTitle}>{dragging ? 'Drop to upload' : web ? `Drop your ${profileName}s here` : `Upload your ${profileName}s`}</Text>
         <Text style={styles.zoneBody}>
-          {online ? `${web ? 'or click to choose files' : 'Tap to choose files'} · PDF or .html` : OFFLINE_UPLOAD}
+          {online ? `${web ? 'or click to choose files' : 'Tap to choose files'} · PDF or .html · Assessment tab for assessments, Learning activities tab for topics` : OFFLINE_UPLOAD}
         </Text>
       </Pressable>
 
@@ -139,13 +141,22 @@ export function ProfileUpload({ profileName }: { profileName: string }) {
                 ? 'Reading…'
                 : u.status === 'failed'
                   ? u.error
-                  : `${u.count} assessment${u.count === 1 ? '' : 's'} imported${u.review ? ` · ${u.review} to check` : ''}`}
+                  : importedLabel(u)}
             </Text>
           </View>
         </View>
       ))}
     </View>
   );
+}
+
+/** "3 assessments imported · 1 to check · 12 topics": each profile tab brings assessments, topics, or both. */
+function importedLabel(u: Upload): string {
+  const parts: string[] = [];
+  if (u.count) parts.push(`${u.count} assessment${u.count === 1 ? '' : 's'} imported`);
+  if (u.review) parts.push(`${u.review} to check`);
+  if (u.topics) parts.push(`${u.topics} topic${u.topics === 1 ? '' : 's'}${u.count ? '' : ' imported'}`);
+  return parts.join(' · ') || 'Nothing new to import.';
 }
 
 const styles = StyleSheet.create({

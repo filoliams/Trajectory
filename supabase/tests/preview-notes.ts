@@ -81,9 +81,10 @@ for (const path of files) {
     totalCost += cost;
 
     const how = fromPath ? 'from the folder/file name' : `Claude's guess, ${Math.round(result.confidence * 100)}% sure`;
-    console.log(`${name} (${(bytes.length / 1e6).toFixed(1)} MB) → ${result.course?.code ?? 'no matching course'} (${how})`);
+    const found = result.courses.map((m) => m.course.code).join(' + ') || 'no matching course';
+    console.log(`${name} (${(bytes.length / 1e6).toFixed(1)} MB) → ${found} (${how})`);
     for (const r of result.readings) {
-      const topic = result.course!.topics.find((t) => t.id === r.topicId)!;
+      const topic = result.courses.flatMap((m) => m.course.topics).find((t) => t.id === r.topicId)!;
       console.log(`  ${r.level.padEnd(6)}  ${topic.name}: ${r.reason}`);
     }
     console.log(`  ${seconds.toFixed(0)} s · ${reply.inputTokens.toLocaleString()} in / ${reply.outputTokens.toLocaleString()} out tokens · ~US$${cost.toFixed(2)} (${MODEL})\n`);
