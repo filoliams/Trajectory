@@ -32,7 +32,11 @@ export type Topic = {
   /** How well the student's notes cover it, from note analysis; null until analysed. */
   understanding: Understanding | null;
   understandingReason: string | null;
+  /** Finished "Quiz me" results, oldest first. Missing in caches saved before quizzes existed. */
+  quizzes?: QuizResult[];
 };
+
+export type QuizResult = { score: number; total: number; at: string };
 
 export type Course = {
   id: string;
@@ -72,6 +76,8 @@ export type TopicRow = {
   understanding_reason?: string | null;
 };
 
+export type QuizRow = { topic_id: number; score: number; total: number; finished_at: string };
+
 export type CourseRow = {
   id: number;
   code: string;
@@ -109,7 +115,7 @@ export function assessmentFromRow(r: AssessmentRow): Assessment {
   };
 }
 
-export function topicFromRow(r: TopicRow): Topic {
+export function topicFromRow(r: TopicRow, quizzes: QuizRow[] = []): Topic {
   return {
     id: String(r.id),
     courseId: String(r.course_id),
@@ -119,17 +125,18 @@ export function topicFromRow(r: TopicRow): Topic {
     imported: r.source === 'imported',
     understanding: asUnderstanding(r.understanding),
     understandingReason: r.understanding_reason ?? null,
+    quizzes: quizzes.filter((q) => q.topic_id === r.id).map((q) => ({ score: q.score, total: q.total, at: q.finished_at })),
   };
 }
 
-export function courseFromRow(r: CourseRow, topics: TopicRow[] = []): Course {
+export function courseFromRow(r: CourseRow, topics: TopicRow[] = [], quizzes: QuizRow[] = []): Course {
   return {
     id: String(r.id),
     code: r.code,
     name: r.name ?? '',
     semester: r.semester ?? '',
     assessments: (r.assessments ?? []).map(assessmentFromRow),
-    topics: topics.filter((t) => t.course_id === r.id).map(topicFromRow),
+    topics: topics.filter((t) => t.course_id === r.id).map((t) => topicFromRow(t, quizzes)),
   };
 }
 

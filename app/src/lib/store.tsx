@@ -12,6 +12,7 @@ import {
   type Course,
   type CourseRow,
   type Status,
+  type QuizRow,
   type TopicRow,
 } from '@/data/courses';
 import type { ImportedCourse, ImportedTopic } from '@/lib/api';
@@ -65,6 +66,8 @@ type Store = {
   /** Topics read from a course profile, without touching its assessments. Returns how many were new. */
   importTopics: (courseId: string, topics: ImportedTopic[]) => Promise<number>;
   setTopicNotes: (id: string, hasNotes: boolean) => Promise<void>;
+  /** Record a finished quiz on its attempt row (made by the quiz-make function). Saved later if offline. */
+  saveQuiz: (topicId: string, attemptId: number, score: number, total: number) => void;
   deleteTopic: (id: string) => Promise<void>;
   addStudyTime: (assessmentId: string, ms: number, at: number) => void;
   signOut: () => Promise<void>;
@@ -170,6 +173,13 @@ async function fetchSnapshot(userId: string): Promise<Snapshot> {
     .order('position')
     .order('id');
   const topics = (topicResult.error ? [] : topicResult.data) as TopicRow[];
+  // Finished quizzes only; an attempt with no score was started but not completed.
+  const quizResult = await supabase
+    .from('quiz_attempts')
+    .select('topic_id, score, total, finished_at')
+    .not('score', 'is', null)
+    .order('finished_at');
+  const quizzes = (quizResult.error ? [] : quizResult.data) as QuizRow[];
 
   const day = dayKey(Date.now());
   const studyResult = await supabase.from('study_time').select('assessment_id, ms').eq('day', day);
@@ -178,7 +188,7 @@ async function fetchSnapshot(userId: string): Promise<Snapshot> {
     study.ms[String(r.assessment_id)] = Number(r.ms);
   }
 
-  return { profile, courses: rows.map((r) => courseFromRow(r, topics)), study };
+  return { profile, courses: rows.map((r) => courseFromRow(r, topics, quizzes)), study };
 }
 
 function mapAssessments(courses: Course[], fn: (a: Assessment) => Assessment | null): Course[] {
@@ -534,6 +544,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         edit({ kind: 'update', table: 'topics', rowId: topicId, values: { has_notes: hasNotes } }, (d) => ({
           ...d,
           courses: d.courses.map((c) => ({ ...c, topics: c.topics.map((t) => (t.id === topicId ? { ...t, hasNotes } : t)) })),
+        }));
+      },
+
+      saveQuiz(topicId, attemptId, score, total) {
+        const at = new Date().toISOString();
+        edit({ kind: 'update', table: 'quiz_attempts', rowId: String(attemptId), values: { score, finished_at: at } }, (d) => ({
+          ...d,
+          courses: d.courses.map((c) => ({
+            ...c,
+            topics: c.topics.map((t) => (t.id === topicId ? { ...t, quizzes: [...(t.quizzes ?? []), { score, total, at }] } : t)),
+          })),
         }));
       },
 

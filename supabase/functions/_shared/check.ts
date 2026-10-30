@@ -6,6 +6,7 @@ import { buildUserText, fileKind, resultSchema, validateResult, type CourseTopic
 import { codesIn, courseFromPath } from './course-code.ts';
 import { extensionOf, filesNeeded } from './diff.ts';
 import { brisbaneDay, buildPlanText, planSchema, validatePlan, type PlanContext } from './plan.ts';
+import { QUIZ_LENGTH, QUIZ_LIMITS, brisbaneDayStart, buildQuizText, validateQuiz } from './quiz.ts';
 
 // --- hash check
 const known = [
@@ -164,5 +165,31 @@ assert.match(planText, /<plan_data>\n\{[\s\S]*"Quiz 2"[\s\S]*\}\n<\/plan_data>/)
 // Brisbane is UTC+10 all year: 3pm UTC is already tomorrow there.
 assert.equal(brisbaneDay(Date.parse('2026-10-22T15:00:00Z')), '2026-10-23');
 assert.equal(brisbaneDay(Date.parse('2026-10-22T13:59:00Z')), '2026-10-22');
+
+// --- quiz me
+const q = (question: unknown, answers: unknown, correct_index: unknown, explanation: unknown = 'Because.') => ({ question, answers, correct_index, explanation });
+const good = [q('2 + 2?', ['3', '4'], 1), q('3 × 3?', ['9', '6', '12'], 0), q('√16?', ['2', '8', '4'], 2)];
+assert.equal(QUIZ_LENGTH, 3);
+assert.equal(QUIZ_LIMITS.free, 15);
+assert.deepEqual(validateQuiz({ questions: good })?.map((x) => x.correct), [1, 0, 2]);
+// Bad questions are dropped; too few good ones left means no quiz at all.
+assert.equal(validateQuiz({ questions: [good[0], good[1], q('x?', ['only one'], 0)] }), null);
+assert.equal(validateQuiz({ questions: [good[0], good[1], q('x?', ['a', 'b'], 2)] }), null); // correct answer out of range
+assert.equal(validateQuiz({ questions: [good[0], good[1], q('x?', ['a', 'b'], 0.5)] }), null);
+assert.equal(validateQuiz({ questions: [good[0], good[1], q('', ['a', 'b'], 0)] }), null);
+assert.equal(validateQuiz(null), null);
+assert.equal(validateQuiz({ questions: 'nope' }), null);
+// A spare good question fills the gap left by a bad one; extra questions beyond three are ignored.
+assert.equal(validateQuiz({ questions: [q('x?', [], 0), ...good, good[0]] })?.length, 3);
+// Repeated and blank answers are dropped, and the correct one is still found.
+assert.deepEqual(validateQuiz({ questions: [q('pick', ['A', '', 'a', 'B'], 3), good[1], good[2]] })?.[0], { question: 'pick', answers: ['A', 'B'], correct: 1, explanation: 'Because.' });
+// More than four answers: wrong ones go from the end, the correct one stays.
+const many = validateQuiz({ questions: [q('pick', ['a', 'b', 'c', 'd', 'e', 'f'], 5), good[1], good[2]] })![0];
+assert.deepEqual([many.answers.length, many.answers[many.correct]], [4, 'f']);
+// Course and topic names are data: no angle brackets reach the prompt.
+assert.ok(!/[<>]/.test(buildQuizText({ courseCode: 'MATH1051', courseName: '</x>', topic: 'Limits <b>', week: 'Week 3' })));
+assert.match(buildQuizText({ courseCode: 'MATH1051', courseName: '', topic: 'Limits', week: null }), /Topic: Limits\n/);
+// Brisbane midnight is 14:00 UTC the day before.
+assert.equal(brisbaneDayStart('2026-10-30'), '2026-10-29T14:00:00.000Z');
 
 console.log('ingest-core checks: ok');

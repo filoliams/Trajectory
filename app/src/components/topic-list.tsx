@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ErrorText } from '@/components/form';
+import { QuizSheet } from '@/components/quiz-sheet';
 import { T, mono, radius, typo } from '@/constants/trajectory';
 import type { Course, Topic } from '@/data/courses';
 import { importFromFile } from '@/lib/api';
@@ -10,6 +11,7 @@ import type { Understanding } from '@/lib/levels';
 import { summariseNotes } from '@/lib/note-files';
 import { analyseNotes } from '@/lib/note-sync';
 import { coveredTopics } from '@/lib/notes-match';
+import { lastQuizLabel } from '@/lib/quiz';
 import { parseSemester, useStore } from '@/lib/store';
 
 const NOTE_EXT = /\.(md|markdown|txt)$/i;
@@ -29,6 +31,7 @@ export function TopicList({ course }: { course: Course }) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [openReason, setOpenReason] = useState<string | null>(null);
+  const [quizTopic, setQuizTopic] = useState<Topic | null>(null);
 
   const topics = course.topics;
   const withNotes = topics.filter((t) => t.hasNotes).length;
@@ -214,6 +217,7 @@ export function TopicList({ course }: { course: Course }) {
                   ) : null}
                 </View>
                 {t.week ? <Text style={styles.meta}>{t.week}</Text> : null}
+                {lastQuizLabel(t.quizzes, Date.now()) ? <Text style={styles.meta}>{lastQuizLabel(t.quizzes, Date.now())}</Text> : null}
                 {openReason === t.id && t.understandingReason ? <Reason text={t.understandingReason} /> : null}
               </View>
               {editing ? (
@@ -221,7 +225,18 @@ export function TopicList({ course }: { course: Course }) {
                   <Text style={styles.removeText}>Remove</Text>
                 </Pressable>
               ) : (
-                <NotesIndicator hasNotes={t.hasNotes} onPress={() => setTopicNotes(t.id, !t.hasNotes)} />
+                <View style={styles.rowActions}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={online ? `Quiz me on ${t.name}` : 'Quiz me needs the internet'}
+                    accessibilityState={{ disabled: !online }}
+                    disabled={!online}
+                    onPress={() => setQuizTopic(t)}
+                    style={({ pressed }) => [styles.quizBtn, !online && styles.disabled, pressed && styles.pressed]}>
+                    <Text style={styles.quizBtnText}>{t.quizzes?.length ? 'Quiz again' : 'Quiz me'}</Text>
+                  </Pressable>
+                  <NotesIndicator hasNotes={t.hasNotes} onPress={() => setTopicNotes(t.id, !t.hasNotes)} />
+                </View>
               )}
             </View>
           ))}
@@ -238,6 +253,16 @@ export function TopicList({ course }: { course: Course }) {
           Tap a level to see which pages it was based on. In GoodNotes or OneNote, use Share → Save to Files before uploading notes. Tap a
           notes marker to change it by hand.
         </Text>
+      ) : null}
+
+      {quizTopic ? (
+        <QuizSheet
+          topic={quizTopic}
+          onClose={(done) => {
+            if (done) setResult(`${quizTopic.name}: ${done.score}/${done.total}. Saved.`);
+            setQuizTopic(null);
+          }}
+        />
       ) : null}
 
       <Popup visible={sheet === 'choose'} title="Upload topics" onClose={() => setSheet(null)}>
@@ -440,6 +465,9 @@ const styles = StyleSheet.create({
   chipTextOn: { color: T.accentDark },
   chipTextOff: { color: T.muted },
 
+  rowActions: { alignItems: 'flex-end', gap: 6 },
+  quizBtn: { minHeight: 32, paddingHorizontal: 12, borderRadius: 999, backgroundColor: T.accent, alignItems: 'center', justifyContent: 'center' },
+  quizBtnText: { fontSize: 12.5, fontWeight: '600', color: T.onAccent },
   remove: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 6 },
   removeText: { fontSize: 13, fontWeight: '600', color: T.urgent },
 

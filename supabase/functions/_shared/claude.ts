@@ -3,6 +3,7 @@ import Anthropic from 'npm:@anthropic-ai/sdk@0.135.0';
 import { SYSTEM_PROMPT, resultSchema } from './analysis.ts';
 import { Friendly } from './http.ts';
 import { PLAN_SYSTEM_PROMPT, buildPlanText, planSchema, type PlanContext } from './plan.ts';
+import { QUIZ_SYSTEM_PROMPT, buildQuizText, quizSchema, type QuizTopic } from './quiz.ts';
 
 export const MODEL = 'claude-haiku-5-5';
 export const PLAN_MODEL = 'claude-sonnet-5-5';
@@ -19,6 +20,16 @@ export function askClaude(content: Block[], codes: string[]) {
     refusal: 'This file couldn’t be analysed.',
     tooLong: 'This file has too many topics to analyse at once.',
     badShape: 'The analysis came back in an unexpected shape. Try syncing again.',
+  });
+}
+
+/** A three-question quiz on one topic, from Haiku at low effort (owner's choice, 2026-10-30). */
+export function askQuizzer(topic: QuizTopic) {
+  const content: Block[] = [{ type: 'text', text: buildQuizText(topic) }];
+  return structured({ model: MODEL, effort: 'low', fallback: false, system: QUIZ_SYSTEM_PROMPT, content, schema: quizSchema() }, {
+    refusal: 'Couldn’t write a quiz on this topic.',
+    tooLong: 'Couldn’t write a quiz on this topic.',
+    badShape: 'The quiz came back in an unexpected shape. Try again.',
   });
 }
 
