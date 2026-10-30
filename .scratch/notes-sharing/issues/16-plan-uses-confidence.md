@@ -4,10 +4,10 @@
 
 **Blocked by:** 15 (Topic and course confidence)
 
-**Status:** ready-for-agent
+**Status:** built, awaiting the owner: redeploy `plan-day` (after ticket 14 is live)
 
-- [ ] Plan input sends each topic's confidence and band instead of its notes level (confidence already includes the notes level, so the plan has one number to weigh); decided by the owner 2026-10-30
-- [ ] The plan prompt talks about confidence, not notes coverage: favour courses and topics with low confidence, and choose focus topics from the lowest-confidence ones, skipping Confident ones; existing checks (total minutes, 15-minute minimum, at most three topics, own assessments only) still hold
-- [ ] The first plan card's "Why this?" names the biggest improver this week (if any) and the shakiest topic with its %, with a Quiz me button
-- [ ] The on-device fallback plan uses the same confidence numbers when the AI plan isn't available
-- [ ] `_shared/check.ts` covers the new plan input
+- [x] Plan input sends each topic's confidence and band instead of its notes level (confidence already includes the notes level, so the plan has one number to weigh); decided by the owner 2026-10-30
+- [x] The plan prompt talks about confidence, not notes coverage: favour courses and topics with low confidence, and choose focus topics from the lowest-confidence ones, skipping Confident ones; existing checks (total minutes, 15-minute minimum, at most three topics, own assessments only) still hold
+- [x] The first plan card's "Why this?" names the biggest improver this week (if any) and the shakiest topic with its %, with a Quiz me button
+- [x] The on-device fallback plan uses the same confidence numbers when the AI plan isn't available
+- [x] `_shared/check.ts` covers the new plan input

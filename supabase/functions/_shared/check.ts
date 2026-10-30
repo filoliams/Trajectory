@@ -5,7 +5,9 @@ import { bestByTopic } from './aggregate.ts';
 import { buildUserText, fileKind, resultSchema, validateResult, type CourseTopics } from './analysis.ts';
 import { codesIn, courseFromPath } from './course-code.ts';
 import { extensionOf, filesNeeded } from './diff.ts';
-import { brisbaneDay, buildPlanText, planSchema, validatePlan, type PlanContext } from './plan.ts';
+import { topicConfidence as appConfidence } from '../../../app/src/lib/confidence.ts';
+import { band, topicConfidence } from './confidence.ts';
+import { PLAN_SYSTEM_PROMPT, brisbaneDay, buildPlanText, planSchema, validatePlan, type PlanContext } from './plan.ts';
 import { QUIZ_LENGTH, QUIZ_LIMITS, brisbaneDayStart, buildQuizText, validateQuiz } from './quiz.ts';
 
 // --- hash check
@@ -129,7 +131,7 @@ const planCtx: PlanContext = {
   today: '2026-10-22',
   hours: 2,
   holiday: null,
-  courses: [{ code: 'MATH1051', name: 'Calculus', topics: [{ name: 'Limits', level: 'weak', reason: 'Definition only.', hasNotes: true }, { name: 'Derivatives', level: null, reason: null, hasNotes: false }] }],
+  courses: [{ code: 'MATH1051', name: 'Calculus', topics: [{ name: 'Limits', confidence: 20, reason: 'Definition only.' }, { name: 'Derivatives', confidence: 87, reason: null }] }],
   assessments: [
     { id: 10, courseCode: 'MATH1051', name: 'Quiz 2', type: 'quiz', weight: 10, due: '2026-10-25T06:00:00Z', isHurdle: false, hoursLeft: 3, status: 'not_started', studiedMinutesToday: 0 },
     { id: 11, courseCode: 'MATH1051', name: 'Assignment 1', type: 'assignment', weight: 20, due: '2026-11-02T06:00:00Z', isHurdle: false, hoursLeft: 8, status: 'in_progress', studiedMinutesToday: 30 },
@@ -162,9 +164,32 @@ assert.deepEqual(planSchema([10, 11]).properties.blocks.items.properties.assessm
 const planText = buildPlanText(planCtx);
 assert.match(planText, /2 hours/);
 assert.match(planText, /<plan_data>\n\{[\s\S]*"Quiz 2"[\s\S]*\}\n<\/plan_data>/);
+// Topics go in by confidence and band, not notes level.
+assert.match(planText, /"confidence_percent": 20,\s*"band": "shaky"/);
+assert.match(planText, /"confidence_percent": 87,\s*"band": "confident"/);
+assert.ok(!planText.includes('notes_level'));
+assert.match(PLAN_SYSTEM_PROMPT, /lowest-confidence/);
 // Brisbane is UTC+10 all year: 3pm UTC is already tomorrow there.
 assert.equal(brisbaneDay(Date.parse('2026-10-22T15:00:00Z')), '2026-10-23');
 assert.equal(brisbaneDay(Date.parse('2026-10-22T13:59:00Z')), '2026-10-22');
+
+// --- confidence: the plan's copy must match the app's
+const at = (d: number) => `2026-10-${String(d).padStart(2, '0')}T10:00:00Z`;
+const cases = [
+  { understanding: null, hasNotes: false, quizzes: [] },
+  { understanding: null, hasNotes: true, quizzes: [] },
+  { understanding: 'strong', hasNotes: true, quizzes: [] },
+  { understanding: 'okay', hasNotes: true, quizzes: [{ score: 2, total: 3 }] },
+  { understanding: 'weak', hasNotes: true, quizzes: [{ score: 3, total: 3 }, { score: 3, total: 3 }] },
+  { understanding: 'okay', hasNotes: true, quizzes: [{ score: 0, total: 3 }, { score: 1, total: 3 }, { score: 3, total: 3 }] },
+];
+for (const c of cases) {
+  const appTopic = { understanding: c.understanding as 'weak' | null, hasNotes: c.hasNotes, quizzes: c.quizzes.map((q, i) => ({ ...q, at: at(i + 1) })) };
+  assert.equal(topicConfidence(c), appConfidence(appTopic), JSON.stringify(c));
+}
+assert.equal(band(87), 'confident');
+assert.equal(band(40), 'getting there');
+assert.equal(band(39), 'shaky');
 
 // --- quiz me
 const q = (question: unknown, answers: unknown, correct_index: unknown, explanation: unknown = 'Because.') => ({ question, answers, correct_index, explanation });

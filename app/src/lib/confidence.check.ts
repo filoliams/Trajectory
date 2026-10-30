@@ -1,7 +1,7 @@
 // Run: node src/lib/confidence.check.ts
 import assert from 'node:assert/strict';
 
-import { band, courseConfidence, topicConfidence, trend, weekChange, weekStart } from './confidence.ts';
+import { band, confidenceNote, courseConfidence, topicConfidence, trend, weekChange, weekStart } from './confidence.ts';
 import type { Understanding } from './levels.ts';
 
 const quiz = (score: number, at: string) => ({ score, total: 3, at });
@@ -47,6 +47,17 @@ assert.equal(new Date(weekStart(sunday)).getDate(), 26);
 const prob = t('okay', [quiz(1, new Date(2026, 9, 18, 9).toISOString()), quiz(2, new Date(2026, 9, 28, 9).toISOString())]);
 assert.equal(weekChange(prob, fri), 6); // 47 → 53
 assert.equal(weekChange(t('weak'), fri), 0);
+
+// Plan card sentence: biggest improver this week, then the shakiest topic below Confident.
+const named = [
+  { name: 'Probability', ...prob },
+  { name: 'Regression', ...t('none') },
+  { name: 'Descriptive statistics', ...t('strong', [quiz(3, new Date(2026, 9, 20).toISOString()), quiz(3, new Date(2026, 9, 29).toISOString())]) },
+];
+assert.deepEqual(confidenceNote(named, fri)?.text, 'This week: Probability 47% → 53%. Regression is your shakiest topic at 0%.');
+assert.equal(confidenceNote(named, fri)?.shakiest?.name, 'Regression');
+assert.equal(confidenceNote([named[2]], fri), null); // everything Confident and nothing changed this week
+assert.equal(confidenceNote([], fri), null);
 
 // Course: average of its topics.
 assert.equal(courseConfidence([]), null);

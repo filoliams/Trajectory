@@ -50,6 +50,23 @@ export function weekChange(t: ConfidenceTopic, now: number): number {
   return topicConfidence(t) - topicConfidence(t, weekStart(now) - 1);
 }
 
+/**
+ * The confidence sentence for a plan card: this week's biggest improver (if any) and the shakiest topic
+ * that isn't Confident yet, which is also the one "Quiz me" opens. Null when there's nothing to say.
+ */
+export function confidenceNote<T extends ConfidenceTopic & { name: string }>(topics: T[], now: number): { text: string; shakiest: T | null } | null {
+  if (!topics.length) return null;
+  const improver = topics.reduce<T | null>((best, t) => (weekChange(t, now) > (best ? weekChange(best, now) : 0) ? t : best), null);
+  const shakiest = topics.reduce<T | null>((low, t) => {
+    const v = topicConfidence(t);
+    return v < 75 && (!low || v < topicConfidence(low)) ? t : low;
+  }, null);
+  const parts: string[] = [];
+  if (improver) parts.push(`This week: ${improver.name} ${topicConfidence(improver, weekStart(now) - 1)}% → ${topicConfidence(improver)}%.`);
+  if (shakiest) parts.push(`${shakiest.name} is your shakiest topic at ${topicConfidence(shakiest)}%.`);
+  return parts.length ? { text: parts.join(' '), shakiest } : null;
+}
+
 /** A course's confidence: the average of its topics, or null with no topics. */
 export function courseConfidence(topics: ConfidenceTopic[], upTo = Infinity): number | null {
   if (!topics.length) return null;

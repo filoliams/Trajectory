@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Assessment, Course, Level } from '@/data/courses';
+import { band, courseConfidence, type Band } from '@/lib/confidence';
 import { courseLevel } from '@/lib/levels';
 import { T } from '@/constants/trajectory';
 
@@ -76,8 +77,8 @@ export function notesLevel(course: Course): Level {
   return courseLevel(course.topics);
 }
 
-/** Most hours a day one item gets, by notes level: weaker courses get more time. */
-const DAILY_CAP: Record<Level, number> = { weak: 2, none: 1.5, okay: 1.5, strong: 1 };
+/** Most hours a day one item gets, by how confident the student is in the course: shakier courses get more time. */
+const DAILY_CAP: Record<Band | 'no-topics', number> = { shaky: 2, 'getting-there': 1.5, confident: 1, 'no-topics': 1.5 };
 
 export function urgencyColor(days: number): string {
   if (days < 2) return T.urgent;
@@ -105,9 +106,10 @@ export function whyLabel(a: Assessment, now: number): string {
 
 export type PlanItem = { course: Course; assessment: Assessment };
 
-/** Hours of an assessment scheduled for today (1–2h per item, more for courses with weaker notes). */
+/** Hours of an assessment scheduled for today (1–2h per item, more for courses the student is less confident in). */
 export function todayHours(a: Assessment, course: Course): number {
-  return Math.min(a.hoursLeft, DAILY_CAP[notesLevel(course)]);
+  const confidence = courseConfidence(course.topics);
+  return Math.min(a.hoursLeft, DAILY_CAP[confidence === null ? 'no-topics' : band(confidence)]);
 }
 
 /** Today's plan: highest-priority items across all courses that fit in the hours available. */
