@@ -213,6 +213,8 @@ export default function TodayScreen() {
 
         {nowStudying}
 
+        <NoTopicsNudge courses={courses} />
+
         {threeCols ? (
           <View className="flex-row items-start gap-5">
             <View className="min-w-0 flex-[1.2] gap-5">{planList}</View>
@@ -407,6 +409,28 @@ function ComingUp({
         </Animated.View>
       </View>
     </Animated.View>
+  );
+}
+
+/** Notes are checked against a course's topics, so a course without any gets a nudge with a shortcut to add them. */
+function NoTopicsNudge({ courses }: { courses: Course[] }) {
+  const bare = courses.filter((c) => c.topics.length === 0).map((c) => c.code);
+  if (!bare.length) return null;
+  const names = bare.length === 1 ? bare[0] : `${bare.slice(0, -1).join(', ')} and ${bare[bare.length - 1]}`;
+  return (
+    <View className="bg-card flex-row flex-wrap items-center gap-3 rounded-2xl border border-dashed border-[#3A3D46] px-4 py-3.5">
+      <Text className="min-w-[200px] flex-1 text-[13.5px] leading-5 text-[#C9CCD3]">
+        <Text className="font-semibold text-[13.5px]">{names}</Text> {bare.length === 1 ? 'has' : 'have'} no topics yet, so notes can’t be checked
+        against {bare.length === 1 ? 'it' : 'them'}.
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Add topics to ${bare[0]}`}
+        onPress={() => router.push({ pathname: '/course/[code]', params: { code: bare[0] } })}
+        className="border-border bg-card min-h-10 justify-center rounded-full border px-4 active:bg-accent">
+        <Text className="text-primary text-sm font-semibold">Add topics</Text>
+      </Pressable>
+    </View>
   );
 }
 

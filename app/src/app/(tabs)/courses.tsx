@@ -174,7 +174,8 @@ function CourseCard({ course, now, color }: { course: Course; now: number; color
           </View>
           <View className="flex-row justify-between">
             <Text className="text-muted-foreground text-xs">
-              {course.assessments.length} assessment{course.assessments.length === 1 ? '' : 's'}
+              {course.assessments.length} assessment{course.assessments.length === 1 ? '' : 's'} · {course.topics.length} topic
+              {course.topics.length === 1 ? '' : 's'}
             </Text>
             <Text className="font-mono text-xs text-[#C9CCD3]">{percentToGo(course)}% to go</Text>
           </View>

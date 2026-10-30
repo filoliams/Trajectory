@@ -14,6 +14,16 @@ Format:
 
 ---
 
+## 2026-10-30: Topics first, then notes
+**Decision:** A course's Topics section has two steps: Upload topics (from the saved course profile, or typed in), then Upload notes, which stays locked until the course has topics. Importing topics from a profile no longer touches assessments. Today nudges courses with no topics.
+**Why:** The AI rates notes against a course's topics, so notes uploaded to a course with none produce nothing. The flow was tried in a clickable prototype before it was built.
+**Alternatives:** Fetching the profile by course code (UQ's site returns 403 to the backend); one combined "Add" menu (hid the order the steps must happen in).
+
+## 2026-10-29: Notes analysis finds evidence before it rates
+**Decision:** Claude now lists which courses a file contains and, per topic, where it appears in the notes (pages or headings) before choosing a level. A topic without a location is forced to `none` in our validation, and the location is shown at the start of the reason. One file can score topics in several courses. `EXTRACTOR_VERSION` is 2.
+**Why:** Students upload whole notebooks covering many topics and sometimes several courses; rating straight from the whole file let passing mentions count as coverage and ignored a second course.
+**Alternatives:** Splitting long PDFs into page chunks with one call each: better for very long notebooks, but needs a PDF dependency and multiplies calls against the daily cap. Revisit after the real GoodNotes notebook test.
+
 ## 2026-10-28: Code lives in GitHub, not OneDrive
 **Decision:** The working copy moved from `OneDrive\Desktop\Trajectory` to `C:\dev\Trajectory`, a plain git clone. Each machine (laptop, home PC) keeps its own clone outside OneDrive and syncs through GitHub: pull at the start of a session, push at the end. `scripts/setup-windows.ps1` sets up a new clone; `.env` is copied between machines by hand.
 **Why:** OneDrive's Files On-Demand turned `node_modules` and the backend `.venv` into online-only placeholders, breaking installs, builds and git writes.

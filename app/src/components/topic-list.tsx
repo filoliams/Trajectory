@@ -1,39 +1,56 @@
 import * as DocumentPicker from 'expo-document-picker';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ErrorText } from '@/components/form';
-import { T, radius, typo } from '@/constants/trajectory';
+import { T, mono, radius, typo } from '@/constants/trajectory';
 import type { Course, Topic } from '@/data/courses';
+import { importFromFile } from '@/lib/api';
 import type { Understanding } from '@/lib/levels';
 import { summariseNotes } from '@/lib/note-files';
 import { analyseNotes } from '@/lib/note-sync';
 import { coveredTopics } from '@/lib/notes-match';
-import { useStore } from '@/lib/store';
+import { parseSemester, useStore } from '@/lib/store';
 
 const NOTE_EXT = /\.(md|markdown|txt)$/i;
 
-/** Every topic in a course, each marked with whether the student has notes for it. */
+/**
+ * A course's topics in two steps: upload the semester's topics (from the course profile or typed in),
+ * then upload notes, which the AI checks against those topics. Notes stay locked until there are topics.
+ */
 export function TopicList({ course }: { course: Course }) {
-  const { addTopic, setTopicNotes, deleteTopic, reload } = useStore();
+  const { addTopics, importTopics, setTopicNotes, deleteTopic, reload, profile, online } = useStore();
   const [editing, setEditing] = useState(false);
+  const [sheet, setSheet] = useState<'choose' | 'type' | null>(null);
+  const [typed, setTyped] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [typeError, setTypeError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<'topics' | 'notes' | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const [importResult, setImportResult] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
   const [openReason, setOpenReason] = useState<string | null>(null);
 
   const topics = course.topics;
   const withNotes = topics.filter((t) => t.hasNotes).length;
+  const noTopics = topics.length === 0;
+  const draftName = draft.trim();
+  const toSave = draftName && !isTaken(draftName) ? [...typed, draftName] : typed;
+
+  function isTaken(name: string) {
+    return [...topics.map((t) => t.name), ...typed].some((n) => n.toLowerCase() === name.toLowerCase());
+  }
+
+  function begin() {
+    setError(null);
+    setResult(null);
+  }
 
   /** Add notes saved to Files (GoodNotes/OneNote: Share → Save to Files): AI levels per topic, word matching as the fallback. */
   async function addNotes() {
-    setError(null);
-    setImportResult(null);
+    begin();
     const picked = await DocumentPicker.getDocumentAsync({ multiple: true, type: '*/*', copyToCacheDirectory: true });
     if (picked.canceled) return;
-    setBusy(true);
+    setBusy('notes');
     try {
       const lines: string[] = [];
       // Word matching first: it works offline, so Markdown/text notes count even if the analysis can't run.
@@ -54,27 +71,69 @@ export function TopicList({ course }: { course: Course }) {
       } catch (e) {
         lines.push(`Deeper analysis didn’t run: ${e instanceof Error ? e.message : String(e)}`);
       }
-      setImportResult(lines.join('\n'));
+      setResult(lines.join('\n'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
-  async function add() {
-    const name = draft.trim();
-    if (!name) return;
-    if (topics.some((t) => t.name.toLowerCase() === name.toLowerCase())) return setError(`"${name}" is already a topic.`);
-    setBusy(true);
-    setError(null);
+  /** Topics from the course profile the student saved; UQ's site blocks fetching it for them. Assessments are left alone. */
+  async function fromProfile() {
+    setSheet(null);
+    begin();
+    const picked = await DocumentPicker.getDocumentAsync({ type: ['text/html', 'application/pdf'], copyToCacheDirectory: true });
+    if (picked.canceled) return;
+    const file = picked.assets[0];
+    setBusy('topics');
     try {
-      await addTopic(course.id, name);
-      setDraft('');
+      const { year, semester } = parseSemester(profile?.semester ?? '2026 S2');
+      const imported = await importFromFile({ name: file.name, uri: file.uri, mimeType: file.mimeType, file: file.file }, year, semester);
+      if (imported.code !== course.code) throw new Error(`That profile is for ${imported.code}, not ${course.code}. Upload ${course.code}’s profile instead.`);
+      const listed = imported.topics ?? [];
+      if (!listed.length) {
+        throw new Error(
+          'This profile doesn’t list weekly topics we can read. PDF profiles don’t include them yet: save the profile’s web page as .html and upload that, or type the topics in.',
+        );
+      }
+      const added = await importTopics(course.id, listed);
+      setResult(
+        added
+          ? `Added ${added} topic${added === 1 ? '' : 's'} from the ${course.code} course profile. Next, upload your notes.`
+          : `All ${listed.length} topics in the profile are already here.`,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  }
+
+  function openTyping() {
+    setTyped([]);
+    setDraft('');
+    setTypeError(null);
+    setSheet('type');
+  }
+
+  function queueTyped() {
+    if (!draftName) return;
+    if (isTaken(draftName)) return setTypeError(`"${draftName}" is already a topic.`);
+    setTyped((list) => [...list, draftName]);
+    setDraft('');
+    setTypeError(null);
+  }
+
+  async function saveTyped() {
+    if (!toSave.length) return;
+    setSheet(null);
+    begin();
+    try {
+      await addTopics(course.id, toSave);
+      setResult(`Added ${toSave.length} topic${toSave.length === 1 ? '' : 's'}. Next, upload your notes.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   }
 
@@ -87,6 +146,12 @@ export function TopicList({ course }: { course: Course }) {
     }
   }
 
+  const notesHint = noTopics
+    ? 'Add this course’s topics first.'
+    : !online
+      ? 'Connect to the internet to upload notes.'
+      : 'PDFs, images, Markdown or text. The AI checks them against your topics.';
+
   return (
     <View style={styles.section}>
       <View style={styles.head}>
@@ -98,18 +163,36 @@ export function TopicList({ course }: { course: Course }) {
             </Text>
           ) : null}
         </View>
-        <View style={styles.headActions}>
-          {topics.length > 0 && !editing ? (
-            <Pressable accessibilityRole="button" disabled={busy} style={styles.textBtn} onPress={addNotes}>
-              <Text style={styles.textBtnLabel}>{busy ? 'Analysing…' : 'Add notes'}</Text>
-            </Pressable>
-          ) : null}
+        {topics.length > 0 ? (
           <Pressable accessibilityRole="button" style={styles.textBtn} onPress={() => setEditing((e) => !e)}>
-            <Text style={styles.textBtnLabel}>{editing ? 'Done' : topics.length ? 'Edit' : '+ Add'}</Text>
+            <Text style={styles.textBtnLabel}>{editing ? 'Done' : 'Edit'}</Text>
           </Pressable>
-        </View>
+        ) : null}
       </View>
-      {importResult ? <Text style={styles.result}>{importResult}</Text> : null}
+
+      <View style={styles.actions}>
+        <StepButton
+          step={1}
+          icon="≡"
+          title={busy === 'topics' ? 'Reading profile…' : 'Upload topics'}
+          hint={noTopics ? 'From your course profile, or type them in.' : `${topics.length} topics. Add more from the profile or by hand.`}
+          primary={noTopics}
+          disabled={busy !== null}
+          onPress={() => setSheet('choose')}
+        />
+        <StepButton
+          step={2}
+          icon="↑"
+          title={busy === 'notes' ? 'Analysing…' : 'Upload notes'}
+          hint={notesHint}
+          primary={!noTopics}
+          disabled={noTopics || !online || busy !== null}
+          onPress={addNotes}
+        />
+      </View>
+
+      {result ? <Text style={styles.result}>{result}</Text> : null}
+      <ErrorText>{error}</ErrorText>
 
       {topics.length > 0 ? (
         <View style={styles.list}>
@@ -131,7 +214,7 @@ export function TopicList({ course }: { course: Course }) {
                   ) : null}
                 </View>
                 {t.week ? <Text style={styles.meta}>{t.week}</Text> : null}
-                {openReason === t.id && t.understandingReason ? <Text style={styles.reason}>{t.understandingReason}</Text> : null}
+                {openReason === t.id && t.understandingReason ? <Reason text={t.understandingReason} /> : null}
               </View>
               {editing ? (
                 <Pressable accessibilityRole="button" onPress={() => remove(t)} style={styles.remove}>
@@ -143,45 +226,157 @@ export function TopicList({ course }: { course: Course }) {
             </View>
           ))}
         </View>
-      ) : !editing ? (
+      ) : (
         <View style={styles.empty}>
           <Text style={styles.name}>No topics yet</Text>
-          <Text style={styles.meta}>
-            This course profile doesn’t list weekly topics. Add them from your lecture schedule with + Add, then tap
-            each one’s notes marker once you’ve written notes for it.
-          </Text>
+          <EmptyStep n={1}>Upload topics: bring in the semester’s weekly topics from the course profile, or type them from your lecture schedule.</EmptyStep>
+          <EmptyStep n={2}>Upload notes: the AI finds where each topic appears in your notes, then rates how well you’ve covered it.</EmptyStep>
         </View>
+      )}
+      {topics.length > 0 ? (
+        <Text style={styles.hint}>
+          Tap a level to see which pages it was based on. In GoodNotes or OneNote, use Share → Save to Files before uploading notes. Tap a
+          notes marker to change it by hand.
+        </Text>
       ) : null}
 
-      {editing ? (
+      <Popup visible={sheet === 'choose'} title="Upload topics" onClose={() => setSheet(null)}>
+        <Text style={styles.sheetBody}>Choose how to add {course.code}’s topics for the semester.</Text>
+        <Choice
+          title="From course profile"
+          body={
+            online
+              ? 'Upload the profile page you saved from the UQ course profile site. Only topics are added; your assessments stay as they are.'
+              : 'Connect to the internet to read a profile.'
+          }
+          disabled={!online}
+          onPress={fromProfile}
+        />
+        <Choice title="Type them in" body="Add topics one at a time from your lecture schedule." onPress={openTyping} />
+      </Popup>
+
+      <Popup visible={sheet === 'type'} title="Type them in" onClose={() => setSheet(null)}>
+        <Text style={styles.sheetBody}>Press Enter after each topic. They’re added when you tap Save.</Text>
         <View style={styles.addRow}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="Add a topic, e.g. Hypothesis testing"
+            placeholder="e.g. Hypothesis testing"
             placeholderTextColor={T.placeholder}
+            accessibilityLabel="Topic name"
             style={styles.input}
-            onSubmitEditing={add}
-            returnKeyType="done"
-            autoFocus={topics.length === 0}
+            onSubmitEditing={queueTyped}
+            submitBehavior="submit"
+            returnKeyType="next"
+            autoFocus
           />
           <Pressable
             accessibilityRole="button"
-            disabled={busy || !draft.trim()}
-            onPress={add}
-            style={({ pressed }) => [styles.addBtn, (busy || !draft.trim()) && styles.disabled, pressed && styles.pressed]}>
+            disabled={!draftName}
+            onPress={queueTyped}
+            style={({ pressed }) => [styles.addBtn, !draftName && styles.disabled, pressed && styles.pressed]}>
             <Text style={styles.addBtnText}>Add</Text>
           </Pressable>
         </View>
-      ) : null}
-      <ErrorText>{error}</ErrorText>
-      {topics.length > 0 && !editing ? (
-        <Text style={styles.hint}>
-          Add notes reads PDFs, images, Markdown and text. In GoodNotes or OneNote, use Share → Save to Files first. Tap a
-          notes marker to change it by hand.
-        </Text>
-      ) : null}
+        {typed.length ? (
+          <View style={styles.typed}>
+            {typed.map((n) => (
+              <Text key={n} style={styles.typedTag}>
+                {n}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+        <ErrorText>{typeError}</ErrorText>
+        <Pressable
+          accessibilityRole="button"
+          disabled={!toSave.length}
+          onPress={saveTyped}
+          style={({ pressed }) => [styles.saveBtn, !toSave.length && styles.disabled, pressed && styles.pressed]}>
+          <Text style={styles.addBtnText}>
+            Save {toSave.length || ''} topic{toSave.length === 1 ? '' : 's'}
+          </Text>
+        </Pressable>
+      </Popup>
     </View>
+  );
+}
+
+/** One of the two steps; the step to do next is filled in. */
+function StepButton(p: { step: number; icon: string; title: string; hint: string; primary: boolean; disabled: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Step ${p.step}: ${p.title}. ${p.hint}`}
+      accessibilityState={{ disabled: p.disabled }}
+      disabled={p.disabled}
+      onPress={p.onPress}
+      style={({ pressed }) => [styles.step, p.primary && styles.stepPrimary, p.disabled && styles.disabled, pressed && styles.pressed]}>
+      <View style={[styles.stepIcon, p.primary && styles.stepIconPrimary]}>
+        <Text style={[styles.stepIconText, p.primary && styles.onAccent]}>{p.icon}</Text>
+      </View>
+      <View style={styles.stepText}>
+        <Text style={[styles.stepNo, p.primary && styles.onAccent]}>STEP {p.step}</Text>
+        <Text style={[styles.stepTitle, p.primary && styles.onAccent]}>{p.title}</Text>
+        <Text style={[styles.stepHint, p.primary && styles.stepHintPrimary]}>{p.hint}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function EmptyStep({ n, children }: { n: number; children: ReactNode }) {
+  return (
+    <View style={styles.emptyStep}>
+      <Text style={styles.emptyStepNo}>{n}</Text>
+      <Text style={styles.emptyStepText}>{children}</Text>
+    </View>
+  );
+}
+
+/** An analysis reason reads "pp. 12-15 · Explained with one example."; the location is set apart. */
+function Reason({ text }: { text: string }) {
+  const [where, ...rest] = text.split(' · ');
+  return rest.length ? (
+    <Text style={styles.reason}>
+      <Text style={styles.where}>{where}</Text> · {rest.join(' · ')}
+    </Text>
+  ) : (
+    <Text style={styles.reason}>{text}</Text>
+  );
+}
+
+function Popup({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={styles.scrim} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet} accessibilityViewIsModal>
+          <View style={styles.sheetHead}>
+            <Text style={styles.title}>{title}</Text>
+            <Pressable accessibilityRole="button" onPress={onClose} style={styles.textBtn}>
+              <Text style={styles.textBtnLabel}>Cancel</Text>
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={styles.sheetContent} keyboardShouldPersistTaps="handled">
+            {children}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function Choice({ title, body, disabled, onPress }: { title: string; body: string; disabled?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.choice, disabled && styles.disabled, pressed && styles.pressed]}>
+      <Text style={styles.choiceTitle}>{title}</Text>
+      <Text style={styles.meta}>{body}</Text>
+    </Pressable>
   );
 }
 
@@ -202,15 +397,27 @@ function NotesIndicator({ hasNotes, onPress }: { hasNotes: boolean; onPress: () 
 }
 
 const styles = StyleSheet.create({
-  section: { gap: 8 },
+  section: { gap: 10 },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4 },
   headText: { flexDirection: 'row', alignItems: 'baseline', gap: 10, paddingHorizontal: 4 },
   title: typo.heading,
   meta: { fontSize: 12, color: T.muted },
-  headActions: { flexDirection: 'row', gap: 12 },
   result: { fontSize: 13, fontWeight: '600', color: T.accentDark, backgroundColor: T.accentSoft, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, overflow: 'hidden' },
   textBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   textBtnLabel: { fontSize: 17, fontWeight: '600', color: T.accent },
+
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  step: { flexGrow: 1, flexBasis: 220, flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 76, padding: 14, borderRadius: radius.md, borderWidth: 1, borderColor: T.line, backgroundColor: T.surface },
+  stepPrimary: { backgroundColor: T.accent, borderColor: T.accent },
+  stepIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: T.accentSoft },
+  stepIconPrimary: { backgroundColor: 'rgba(11,11,15,0.12)' },
+  stepIconText: { fontSize: 17, fontWeight: '700', color: T.accent },
+  stepText: { flex: 1, gap: 2 },
+  stepNo: { fontFamily: mono, fontSize: 11, letterSpacing: 0.6, color: T.muted },
+  stepTitle: { fontSize: 15.5, fontWeight: '700', color: T.ink },
+  stepHint: { fontSize: 13, color: T.muted },
+  stepHintPrimary: { color: '#2C3410' },
+  onAccent: { color: T.onAccent },
 
   list: { backgroundColor: T.surface, borderWidth: 1, borderColor: 'transparent', borderRadius: radius.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, paddingVertical: 9, paddingHorizontal: 14 },
@@ -223,6 +430,7 @@ const styles = StyleSheet.create({
   level: { borderRadius: radius.sm, paddingHorizontal: 7, paddingVertical: 2 },
   levelText: { fontSize: 11, fontWeight: '700' },
   reason: { fontSize: 13, lineHeight: 18, color: T.inkSoft, marginTop: 4 },
+  where: { fontFamily: mono, fontSize: 12, color: T.accent },
   name: { fontSize: 15, fontWeight: '600', color: T.ink },
 
   chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, minWidth: 74, alignItems: 'center' },
@@ -235,12 +443,27 @@ const styles = StyleSheet.create({
   remove: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 6 },
   removeText: { fontSize: 13, fontWeight: '600', color: T.urgent },
 
-  empty: { backgroundColor: T.surface, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong, borderRadius: radius.lg, padding: 16, gap: 4 },
+  empty: { backgroundColor: T.surface, borderWidth: 1, borderStyle: 'dashed', borderColor: T.lineStrong, borderRadius: radius.lg, padding: 16, gap: 8 },
+  emptyStep: { flexDirection: 'row', gap: 10 },
+  emptyStepNo: { fontFamily: mono, fontSize: 13, color: T.accent },
+  emptyStepText: { flex: 1, fontSize: 13.5, lineHeight: 19, color: T.inkSoft },
+  hint: { fontSize: 12, lineHeight: 17, color: T.muted, paddingHorizontal: 4 },
+
+  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.62)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  sheet: { width: '100%', maxWidth: 520, maxHeight: '85%', backgroundColor: T.surface, borderWidth: 1, borderColor: T.line, borderRadius: radius.lg, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 18 },
+  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sheetContent: { gap: 12 },
+  sheetBody: { fontSize: 14, lineHeight: 20, color: T.muted },
+  choice: { gap: 3, padding: 14, borderRadius: radius.md, borderWidth: 1, borderColor: T.line, backgroundColor: T.ground },
+  choiceTitle: { fontSize: 15, fontWeight: '700', color: T.accent },
+  typed: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  typedTag: { fontFamily: mono, fontSize: 12, color: T.ink, backgroundColor: T.elevated, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
+
   addRow: { flexDirection: 'row', gap: 8 },
   input: {
     flex: 1,
     minHeight: 44,
-    backgroundColor: T.surface,
+    backgroundColor: T.ground,
     borderWidth: 1,
     borderColor: T.line,
     borderRadius: radius.md,
@@ -250,9 +473,9 @@ const styles = StyleSheet.create({
   },
   addBtn: { minHeight: 44, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: T.accent, alignItems: 'center', justifyContent: 'center' },
   addBtnText: { fontSize: 15, fontWeight: '600', color: T.onAccent },
+  saveBtn: { minHeight: 44, borderRadius: 999, backgroundColor: T.accent, alignItems: 'center', justifyContent: 'center' },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.7 },
-  hint: { fontSize: 12, lineHeight: 17, color: T.muted, paddingHorizontal: 4 },
 });
 
 /** Labels and colours for a topic's analysed level, matching the course chip's scale. */
