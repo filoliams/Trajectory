@@ -4,7 +4,7 @@
 
 **Blocked by:** 14 (Quiz me on a topic, scores saved)
 
-**Status:** ready-for-agent
+**Status:** built (shows once ticket 14 is live)
 
 Confidence, decided by the owner 2026-10-30 (from the prototype):
 
@@ -17,8 +17,8 @@ bands        Confident ≥ 75 · Getting there 40–74 · Shaky < 40
 bubble       confidence now vs. before the latest quiz → ↑ / ↓ / –
 ```
 
-- [ ] Confidence is one pure module with a `*.check.ts` covering no quiz, one quiz, two or more, the bands and the bubble direction
-- [ ] Each topic row shows the confidence bar, the bubble (with a spoken label) and "+N this week"
-- [ ] After a quiz, the row updates and a short confirmation names the new score; no result screen
-- [ ] The course summary and the course card are worked out from the same per-topic numbers
-- [ ] Bubble colours meet contrast on the dark theme and don't rely on colour alone (the arrow carries the meaning)
+- [x] Confidence is one pure module with a `*.check.ts` covering no quiz, one quiz, two or more, the bands and the bubble direction
+- [x] Each topic row shows the confidence bar, the bubble (with a spoken label) and "+N this week"
+- [x] After a quiz, the row updates and a short confirmation names the new score; no result screen
+- [x] The course summary and the course card are worked out from the same per-topic numbers
+- [x] Bubble colours meet contrast on the dark theme and don't rely on colour alone (the arrow carries the meaning)

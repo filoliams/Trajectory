@@ -2,6 +2,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { ConfidenceLine, CourseConfidence } from '@/components/confidence';
 import { ErrorText } from '@/components/form';
 import { QuizSheet } from '@/components/quiz-sheet';
 import { T, mono, radius, typo } from '@/constants/trajectory';
@@ -11,6 +12,7 @@ import type { Understanding } from '@/lib/levels';
 import { summariseNotes } from '@/lib/note-files';
 import { analyseNotes } from '@/lib/note-sync';
 import { coveredTopics } from '@/lib/notes-match';
+import { topicConfidence } from '@/lib/confidence';
 import { lastQuizLabel } from '@/lib/quiz';
 import { parseSemester, useStore } from '@/lib/store';
 
@@ -197,6 +199,8 @@ export function TopicList({ course }: { course: Course }) {
       {result ? <Text style={styles.result}>{result}</Text> : null}
       <ErrorText>{error}</ErrorText>
 
+      {topics.length > 0 ? <CourseConfidence code={course.code} topics={topics} now={Date.now()} /> : null}
+
       {topics.length > 0 ? (
         <View style={styles.list}>
           {topics.map((t, i) => (
@@ -217,6 +221,7 @@ export function TopicList({ course }: { course: Course }) {
                   ) : null}
                 </View>
                 {t.week ? <Text style={styles.meta}>{t.week}</Text> : null}
+                <ConfidenceLine topic={t} now={Date.now()} />
                 {lastQuizLabel(t.quizzes, Date.now()) ? <Text style={styles.meta}>{lastQuizLabel(t.quizzes, Date.now())}</Text> : null}
                 {openReason === t.id && t.understandingReason ? <Reason text={t.understandingReason} /> : null}
               </View>
@@ -259,7 +264,13 @@ export function TopicList({ course }: { course: Course }) {
         <QuizSheet
           topic={quizTopic}
           onClose={(done) => {
-            if (done) setResult(`${quizTopic.name}: ${done.score}/${done.total}. Saved.`);
+            if (done) {
+              // The row updates from the store; this one line confirms the change. No result screen.
+              const before = topicConfidence(quizTopic);
+              const after = topicConfidence({ ...quizTopic, quizzes: [...(quizTopic.quizzes ?? []), { ...done, at: new Date().toISOString() }] });
+              const d = after - before;
+              setResult(`${quizTopic.name}: ${done.score}/${done.total}. Confidence ${after}% (${d > 0 ? `+${d}` : d < 0 ? d : 'no change'}).`);
+            }
             setQuizTopic(null);
           }}
         />
