@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Trajectory: know what to study next, and prove you've learned it</title>
-  <meta name="description" content="Trajectory checks what you actually know with quick quizzes, weighs it against your assessments and deadlines, and tells you exactly what to study next. Join the waitlist.">
+  <meta name="description" content="Trajectory reads your course profiles and your notes, checks what you know with quick quizzes, and plans each day's study around what's shaky, what it's worth and when it's due. Join the waitlist.">
   <meta property="og:title" content="Trajectory: know what to study next">
   <meta property="og:description" content="Your courses, assessments and notes in one place, with a daily study plan that adapts to where you actually are.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -464,7 +464,7 @@
       <div class="signup-block">
         <span class="eyebrow"><i></i>Early access opening soon</span>
         <h1>Tells you exactly what to study <span class="next">next<svg viewBox="0 0 140 24" aria-hidden="true"><path d="M6 20 C30 19 44 15 58 12 C76 8 92 9 110 6 L124 4"/><circle class="node n1" cx="58" cy="12" r="4.5"/><circle class="node n2" cx="94" cy="8" r="4.5"/><circle class="goal" cx="128" cy="4" r="9"/><path class="tick" d="M123.5 4.5 L127 8 L133 0.5" style="stroke-width: 2.4; fill: none"/></svg></span> — and proves you've learned it.</h1>
-        <p class="lede">Quick check-in quizzes show what you really know. Trajectory weighs that against what each assessment is worth and when it's due, then gives you specific, time-boxed next steps.</p>
+        <p class="lede">Add your course profiles and your notes. Trajectory finds where each topic shows up in your notes, quick quizzes confirm what you really know, and every day you get a plan that puts the shakiest topics in your closest, biggest assessments first.</p>
         <form class="waitlist" novalidate>
           <div class="row">
             <input type="email" id="email-top" name="email" placeholder="you@university.edu" autocomplete="email" required aria-label="Email address">
@@ -481,27 +481,27 @@
         </div>
       </div>
 
-      <div class="card today boot" role="img" aria-label="Example of Trajectory's Today screen: three specific study steps with the reason the first one was chosen">
+      <div class="card today boot" role="img" aria-label="Example of Trajectory's Today screen: three timed study blocks with focus topics and the reason the first one was chosen">
         <div class="today-head" style="--i:0">
           <div><small id="today-date">Thursday 15 October · Week 12</small><h3>Today</h3></div>
-          <div class="free"><b>1h</b> · 3 steps</div>
+          <div class="free"><b>1h</b> · 3 blocks</div>
         </div>
         <div class="meter" style="--i:1"><i id="m1" style="background: var(--accent)"></i><i id="m2" style="background: var(--warn-bar)"></i><i id="m3" style="background: var(--done)"></i></div>
         <div class="card task top" style="--i:2">
-          <div class="task-row"><span class="kicker">1 · STAT2201 · 20 min</span><span class="chip warn">Problem Set · 25% · 4 days</span></div>
-          <b>Do 5 questions on linear regression</b>
+          <div class="task-row"><span class="kicker">1 · STAT2201 · 25 min</span><span class="chip warn">Problem Set · 25% · 4 days</span></div>
+          <b>Problem Set: linear regression, hypothesis testing</b>
           <div class="why"><strong>Why this?</strong> <span id="why-type"></span><span class="caret"></span></div>
-          <div class="task-actions"><span class="mini-btn primary" style="display:inline-flex;align-items:center">Start questions</span><span class="mini-btn" style="display:inline-flex;align-items:center">Skip today</span></div>
+          <div class="task-actions"><span class="mini-btn primary" style="display:inline-flex;align-items:center">Start timer</span><span class="mini-btn" style="display:inline-flex;align-items:center">Quiz me</span></div>
         </div>
         <div class="card task" style="--i:3">
-          <div class="task-row"><span class="kicker">2 · MATH2010 · 10 min</span></div>
-          <b>Take a 4-question check-in on phase-line stability</b>
-          <p>No results on this topic yet. A quick check shows where you stand.</p>
+          <div class="task-row"><span class="kicker">2 · MATH2010 · 15 min</span></div>
+          <b>Assignment 2: phase-plane stability</b>
+          <p>Only a heading in your notes so far, and no quiz yet. Start here.</p>
         </div>
         <div class="card task" style="--i:4">
-          <div class="task-row"><span class="kicker">3 · ELEC2004 · 30 min</span></div>
-          <b>Work through 3 op-amp circuit problems</b>
-          <p>Up from weak to okay. One more round before the exam in 12 days.</p>
+          <div class="task-row"><span class="kicker">3 · ELEC2004 · 20 min</span></div>
+          <b>Lab report: op-amp circuits</b>
+          <p>Up from 58% to 71% this week. One more good quiz makes it Confident.</p>
         </div>
       </div>
     </header>
@@ -512,13 +512,13 @@
     <div class="wrap">
       <div class="section-head reveal">
         <p class="label">How it works</p>
-        <h2>Set up once. Then just answer a few questions.</h2>
-        <p class="section-lede">Sign in and add your courses. After that, short check-ins are the only thing you do regularly. Adding your notes is optional.</p>
+        <h2>Set up once. Then open Today.</h2>
+        <p class="section-lede">Add your courses, their topics and your notes. After that, each day's plan says what to study, for how long, and why.</p>
       </div>
       <div class="steps">
-        <div class="card step reveal" style="--d:0"><span class="step-num">1</span><h3>Add your courses</h3><p>Upload or share each course profile. Trajectory reads every assessment, weighting, due date and topic, then asks "is this right?"</p></div>
-        <div class="card step reveal" style="--d:1"><span class="step-num">2</span><h3>Take a quick check-in</h3><p>3 to 5 questions on your course's topics, about five minutes. Add your notes if you like, and the questions follow what you've studied.</p></div>
-        <div class="card step reveal" style="--d:2"><span class="step-num">3</span><h3>Do the next thing</h3><p>A short ranked list of specific steps, like "Do 5 questions on thermodynamics, 20 min", picked by what's weak, what it's worth and when it's due.</p></div>
+        <div class="card step reveal" style="--d:0"><span class="step-num">1</span><h3>Add your courses</h3><p>Upload each course profile: the Assessment tab for every assessment, weighting and due date, and the Learning activities tab for the weekly topics. Or type the topics in.</p></div>
+        <div class="card step reveal" style="--d:1"><span class="step-num">2</span><h3>Add your notes</h3><p>Export from GoodNotes or OneNote, or upload PDFs, photos and text files. The AI finds where each topic appears, page by page, and rates how well your notes cover it.</p></div>
+        <div class="card step reveal" style="--d:2"><span class="step-num">3</span><h3>Quiz yourself, then follow the plan</h3><p>Three quick questions on any topic show what you really know. Today's plan gives the shakiest topics in your closest, heaviest assessments the most time.</p></div>
       </div>
     </div>
   </section>
@@ -528,15 +528,15 @@
       <div class="section-head reveal">
         <p class="label">See it work</p>
         <h2>Built on evidence, not guesswork.</h2>
-        <p class="section-lede">Trajectory works from your real assessments and your real results, so you always know why something is at the top of the list.</p>
+        <p class="section-lede">Trajectory works from your real assessments, your real notes and your real quiz results, so you always know why something is at the top of the list.</p>
       </div>
 
       <!-- Feature 1: assessment import -->
       <div class="feature">
         <div class="copy reveal">
           <h3>Your assessments, read for you</h3>
-          <p>Upload or share a course profile and Trajectory pulls out every assessment, its weighting, its due date and the weekly topics. You check it once, and you're set.</p>
-          <ul><li>A quick "is this right?" check after every import</li><li>Weightings and due dates set your priorities</li><li>Works from the file you share. No logins needed</li></ul>
+          <p>Upload a course profile and Trajectory pulls out every assessment, its weighting and its due date. Its Learning activities tab adds the weekly topics. You check it once, and you're set.</p>
+          <ul><li>Dates that need a second look are flagged "Check date"</li><li>Weightings and due dates set your priorities</li><li>Works from the files you save. No logins needed</li></ul>
         </div>
         <div class="stage reveal" style="--d:1" data-demo="import" role="img" aria-label="Animation: Trajectory scans a STAT2201 course profile and adds each assessment to a list with a live countdown">
           <span class="stage-tag"><i></i>Importing</span>
@@ -563,15 +563,15 @@
       <!-- Feature 2: check-in -->
       <div class="feature flip">
         <div class="copy reveal">
-          <h3>Measures what you know, not what you've written</h3>
-          <p>Short check-ins built from your course's topics show where you're actually strong and where you're not. Add your notes and the questions get more specific, but you don't have to.</p>
-          <ul><li>3 to 5 questions, about five minutes</li><li>Every topic rated Weak, Okay or Strong from your answers</li><li>Works with just your courses. Notes are optional</li></ul>
+          <h3>Knows what's in your notes, and what's in your head</h3>
+          <p>Upload a notebook and the AI finds where each topic appears, page by page, and rates how well your notes cover it. Then tap Quiz me on any topic for three quick questions. Your notes and your answers together set its confidence.</p>
+          <ul><li>Every rating says where it came from, like "pp. 12–15"</li><li>Three questions per quiz, about two minutes</li><li>A green, red or yellow arrow shows which way your last quiz moved it</li></ul>
         </div>
-        <div class="stage reveal" style="--d:1" data-demo="check" role="img" aria-label="Animation: a five-question STAT2201 check-in is marked, and each topic is rated Weak, Okay or Strong from the answers">
-          <span class="stage-tag"><i></i>Check-in</span>
+        <div class="stage reveal" style="--d:1" data-demo="check" role="img" aria-label="Animation: quick STAT2201 quiz questions are marked, and each topic's confidence is set from the student's notes and answers">
+          <span class="stage-tag"><i></i>Quiz me</span>
           <div class="notes">
             <div class="card check">
-              <div class="topics-head">STAT2201 check-in <span>5 questions</span></div>
+              <div class="topics-head">STAT2201 quizzes <span>5 questions</span></div>
               <div class="q" data-t="0" data-ok="0"><span class="qn">Q1</span><span class="qt">Which line minimises the squared residuals?</span><span class="mark"></span></div>
               <div class="q" data-t="1" data-ok="0"><span class="qn">Q2</span><span class="qt">What does a 95% confidence interval mean?</span><span class="mark"></span></div>
               <div class="q" data-t="0" data-ok="1"><span class="qn">Q3</span><span class="qt">Interpret the slope β₁ in context</span><span class="mark"></span></div>
@@ -579,11 +579,11 @@
               <div class="q" data-t="3" data-ok="1"><span class="qn">Q5</span><span class="qt">When do you reject H₀ at α = 0.05?</span><span class="mark"></span></div>
             </div>
             <div class="card topics">
-              <div class="topics-head">Topics <span>From your answers</span></div>
-              <div class="topic"><div><b>Linear regression</b><small data-detail="1 of 2 right"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Marking</span></div>
-              <div class="topic"><div><b>Confidence intervals</b><small data-detail="0 of 1 right"></small></div><span class="chip reading" data-level="warn" data-label="Weak">Marking</span></div>
-              <div class="topic"><div><b>Residual analysis</b><small data-detail="1 of 1 right, first check-in"></small></div><span class="chip reading" data-level="okay" data-label="Okay">Marking</span></div>
-              <div class="topic"><div><b>Hypothesis testing</b><small data-detail="Right 3 check-ins running"></small></div><span class="chip reading" data-level="strong" data-label="Strong">Marking</span></div>
+              <div class="topics-head">Confidence <span>Notes + quizzes</span></div>
+              <div class="topic"><div><b>Linear regression</b><small data-detail="Notes pp. 4–9 · 1 of 2 right"></small></div><span class="chip reading" data-level="warn" data-label="Shaky">Marking</span></div>
+              <div class="topic"><div><b>Confidence intervals</b><small data-detail="Not in your notes · 0 of 1 right"></small></div><span class="chip reading" data-level="warn" data-label="Shaky">Marking</span></div>
+              <div class="topic"><div><b>Residual analysis</b><small data-detail="Notes p. 11 · 1 of 1 right"></small></div><span class="chip reading" data-level="okay" data-label="Getting there">Marking</span></div>
+              <div class="topic"><div><b>Hypothesis testing</b><small data-detail="Notes pp. 14–20 · right 3 quizzes running"></small></div><span class="chip reading" data-level="strong" data-label="Confident">Marking</span></div>
             </div>
           </div>
         </div>
@@ -593,17 +593,17 @@
       <div class="feature">
         <div class="copy reveal">
           <h3>Ranked by what's at stake</h3>
-          <p>Priority is how weak a topic is, times what its assessment is worth, times how soon it's due. When a result or a deadline changes, the order changes with it, and Trajectory tells you why.</p>
-          <ul><li>Weak topics in big, close assessments come first</li><li>A good check-in result moves a topic down</li><li>A plain-English reason for every pick</li></ul>
+          <p>Priority is how unsure you are of a topic, times what its assessment is worth, times how soon it's due. When a quiz result or a deadline changes, the order changes with it, and Trajectory tells you why.</p>
+          <ul><li>Shaky topics in big, close assessments come first</li><li>A good quiz result moves a topic down</li><li>A plain-English reason for every pick</li></ul>
         </div>
-        <div class="stage prio reveal" style="--d:1" data-demo="prio" role="img" aria-label="Animation: a ranked list of study steps reorders when a quiz moves to tomorrow, then again after a strong check-in result">
+        <div class="stage prio reveal" style="--d:1" data-demo="prio" role="img" aria-label="Animation: a ranked list of study blocks reorders when a quiz moves to tomorrow, then again after a good Quiz me result">
           <span class="stage-tag"><i></i>Re-ranking</span>
           <div class="prio-event hide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="ev-text">Course profile updated</span></div>
           <div class="ranks">
-            <div class="card rcard" data-id="ps"><span class="rank">1</span><div class="info"><b>5 questions: linear regression</b><small>STAT2201 · Problem Set 25%</small></div><span class="chip warn">4 days</span></div>
-            <div class="card rcard" data-id="lab"><span class="rank">2</span><div class="info"><b>3 problems: op-amp circuits</b><small>ELEC2004 · Lab report 15%</small></div><span class="chip okay">8 days</span></div>
-            <div class="card rcard" data-id="ode"><span class="rank">3</span><div class="info"><b>Check-in: phase-line stability</b><small>MATH2010 · Final exam 50%</small></div><span class="chip okay">26 days</span></div>
-            <div class="card rcard" data-id="quiz"><span class="rank">4</span><div class="info"><b>4 questions: confidence intervals</b><small>STAT2201 · Quiz 2.5%</small></div><span class="chip okay">6 days</span></div>
+            <div class="card rcard" data-id="ps"><span class="rank">1</span><div class="info"><b>Problem Set: linear regression</b><small>STAT2201 · 25% · regression at 33%</small></div><span class="chip warn">4 days</span></div>
+            <div class="card rcard" data-id="lab"><span class="rank">2</span><div class="info"><b>Lab report: op-amp circuits</b><small>ELEC2004 · 15% · circuits at 58%</small></div><span class="chip okay">8 days</span></div>
+            <div class="card rcard" data-id="ode"><span class="rank">3</span><div class="info"><b>Assignment 2: phase-plane stability</b><small>MATH2010 · 20% · no quiz yet</small></div><span class="chip okay">26 days</span></div>
+            <div class="card rcard" data-id="quiz"><span class="rank">4</span><div class="info"><b>Quiz: confidence intervals</b><small>STAT2201 · 2.5% · not in your notes</small></div><span class="chip okay">6 days</span></div>
           </div>
           <div class="why"><strong>Why this?</strong> <span class="why-text"></span></div>
         </div>
@@ -612,19 +612,19 @@
       <!-- Feature 4: time -->
       <div class="feature flip">
         <div class="copy reveal">
-          <h3>Specific steps, never "revise everything"</h3>
-          <p>Every recommendation says exactly what to do and for how long, like "Do 5 questions on thermodynamics, 20 min". Finish it and your results update straight away.</p>
-          <ul><li>Time-boxed steps, 10 to 30 minutes each</li><li>A clear finish line, so you know when you're done</li><li>Every result feeds back into your priorities</li></ul>
+          <h3>Specific blocks, never "revise everything"</h3>
+          <p>Every block names the assessment, the topics to focus on and how long to spend, sized to the hours you have today. The study timer keeps you on it, and your quiz results shape tomorrow's plan.</p>
+          <ul><li>Blocks of 15 minutes or more, within your daily hours</li><li>A study timer with breaks, so you know when you're done</li><li>Quiz results feed back into the next plan</li></ul>
         </div>
-        <div class="stage reveal" style="--d:1" data-demo="time" aria-label="Demo: three specific, time-boxed study steps, with a toggle to compare them with a vague to-do list">
+        <div class="stage reveal" style="--d:1" data-demo="time" aria-label="Demo: three specific, timed study blocks, with a toggle to compare them with a vague to-do list">
           <span class="stage-tag"><i></i>Try it</span>
-          <div class="time-head"><b id="time-total">Today · 1h, 3 steps</b><button class="toggle" type="button" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Show a typical to-do list</button></div>
+          <div class="time-head"><b id="time-total">Today · 1h, 3 blocks</b><button class="toggle" type="button" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Show a typical to-do list</button></div>
           <div class="track" aria-hidden="true"><i data-b="0" style="background: var(--accent)"></i><i data-b="1" style="background: var(--warn-bar)"></i><i data-b="2" style="background: var(--done)"></i></div>
           <div class="scale" aria-hidden="true"><span>0</span><span>15m</span><span>30m</span><span>45m</span><span>1h</span></div>
           <div class="blocks">
-            <div class="card block"><span class="dot" style="background: var(--accent)"></span><div class="info"><b data-v="Revise STAT2201">Do 5 questions on linear regression</b><small data-v="Sometime this week">STAT2201 · weakest topic, Problem Set in 4 days</small></div><span class="t" data-t="0">20m</span></div>
-            <div class="card block"><span class="dot" style="background: var(--warn-bar)"></span><div class="info"><b data-v="Study for MATH2010">4-question check-in: phase-line stability</b><small data-v="When you get a chance">MATH2010 · no results yet</small></div><span class="t" data-t="1">10m</span></div>
-            <div class="card block"><span class="dot" style="background: var(--done)"></span><div class="info"><b data-v="Work on ELEC2004">Work through 3 op-amp circuit problems</b><small data-v="Before the exam">ELEC2004 · okay, exam in 12 days</small></div><span class="t" data-t="2">30m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--accent)"></span><div class="info"><b data-v="Revise STAT2201">Problem Set: linear regression</b><small data-v="Sometime this week">STAT2201 · shakiest topic, due in 4 days</small></div><span class="t" data-t="0">25m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--warn-bar)"></span><div class="info"><b data-v="Study for MATH2010">Assignment 2: phase-plane stability</b><small data-v="When you get a chance">MATH2010 · no quiz yet</small></div><span class="t" data-t="1">15m</span></div>
+            <div class="card block"><span class="dot" style="background: var(--done)"></span><div class="info"><b data-v="Work on ELEC2004">Lab report: op-amp circuits</b><small data-v="Before the exam">ELEC2004 · up to 71% this week</small></div><span class="t" data-t="2">20m</span></div>
           </div>
           <p class="time-note" aria-live="polite"></p>
         </div>
@@ -634,14 +634,14 @@
       <div class="exams reveal" style="margin-top: 44px">
         <div>
           <p class="label" style="color: var(--on-inverse-muted)">Progress</p>
-          <h3>Watch weak topics turn into strong ones.</h3>
-          <p>Each course shows every topic's strength and how it's changed since your first check-in, so you can see the work paying off before the exam.</p>
+          <h3>Watch your confidence climb.</h3>
+          <p>Every topic shows its confidence from your notes and quizzes, how it's changed this week, and an arrow for which way your last quiz moved it. You can see the work paying off before the exam.</p>
         </div>
-        <div class="exam-list" aria-label="Example STAT2201 topic progress since the first check-in">
-          <div class="exam"><span>Regression</span><span class="bar"><i style="--from: 24%; --w: 58%; background: var(--on-inverse-muted)"></i></span><span class="lvl"><s>Weak</s> → <b style="color: var(--on-inverse-muted)">Okay</b></span></div>
-          <div class="exam"><span>Conf. intervals</span><span class="bar"><i style="--from: 18%; --w: 81%; background: var(--on-inverse-strong)"></i></span><span class="lvl"><s>Weak</s> → <b style="color: var(--on-inverse-strong)">Strong</b></span></div>
-          <div class="exam"><span>Residuals</span><span class="bar"><i style="--from: 52%; --w: 86%; background: var(--on-inverse-strong)"></i></span><span class="lvl"><s>Okay</s> → <b style="color: var(--on-inverse-strong)">Strong</b></span></div>
-          <div class="exam"><span>Hypothesis tests</span><span class="bar"><i style="--from: 30%; --w: 34%; background: var(--on-inverse-weak)"></i></span><span class="lvl"><s>Weak</s> → <b style="color: var(--on-inverse-weak)">Weak</b></span></div>
+        <div class="exam-list" aria-label="Example STAT2201 topic confidence, from the start of semester to now">
+          <div class="exam"><span>Regression</span><span class="bar"><i style="--from: 24%; --w: 58%; background: var(--on-inverse-muted)"></i></span><span class="lvl"><s>24%</s> → <b style="color: var(--on-inverse-muted)">58% ↑</b></span></div>
+          <div class="exam"><span>Conf. intervals</span><span class="bar"><i style="--from: 18%; --w: 81%; background: var(--on-inverse-strong)"></i></span><span class="lvl"><s>18%</s> → <b style="color: var(--on-inverse-strong)">81% ↑</b></span></div>
+          <div class="exam"><span>Residuals</span><span class="bar"><i style="--from: 52%; --w: 86%; background: var(--on-inverse-strong)"></i></span><span class="lvl"><s>52%</s> → <b style="color: var(--on-inverse-strong)">86% ↑</b></span></div>
+          <div class="exam"><span>Hypothesis tests</span><span class="bar"><i style="--from: 30%; --w: 34%; background: var(--on-inverse-weak)"></i></span><span class="lvl"><s>30%</s> → <b style="color: var(--on-inverse-weak)">34% –</b></span></div>
         </div>
       </div>
     </div>
@@ -654,8 +654,9 @@
         <details class="reveal" style="--d:0"><summary>When can I start using it?</summary><p>We're opening early access in small groups. Join the waitlist and we'll email you as soon as your spot is ready.</p></details>
         <details class="reveal" style="--d:1"><summary>Does it cost anything?</summary><p>Early access is free. If we introduce paid plans later, waitlist members will hear about it first.</p></details>
         <details class="reveal" style="--d:2"><summary>Is my university supported?</summary><p>Trajectory reads the course profile you upload or share, so it never needs to log in to your university's systems. We're starting with The University of Queensland, then adding the universities our waitlist asks for most.</p></details>
-        <details class="reveal" style="--d:3"><summary>Do I have to add my notes?</summary><p>No. Trajectory works with just your courses and your check-in results. Adding notes makes the questions more specific to what you've studied.</p></details>
-        <details class="reveal" style="--d:4"><summary>What happens to my notes?</summary><p>If you add notes, they're read to tailor your questions and then deleted. We keep only a result for each topic, never the text of your notes, and we never sell or share them. See our <a href="privacy.html">Privacy Policy</a>.</p></details>
+        <details class="reveal" style="--d:3"><summary>Do I have to add my notes?</summary><p>No, but it helps. Without notes, Trajectory works from your course's topics and your quiz results. With notes, it can see what you've already covered, page by page, and plan around the gaps.</p></details>
+        <details class="reveal" style="--d:4"><summary>Which notes can I add?</summary><p>PDFs (including GoodNotes and OneNote exports: Share, then Save to Files), photos of handwritten pages, and Markdown or text files, up to 20 MB each. A whole semester's notebook is fine, even one that covers more than one course.</p></details>
+        <details class="reveal" style="--d:5"><summary>What happens to my notes?</summary><p>They're read once to find and rate each topic, then deleted. We keep only a level for each topic, a one-line reason and where it appeared (like "pp. 12–15"), never the text of your notes, and we never sell or share them. See our <a href="privacy.html">Privacy Policy</a>.</p></details>
       </div>
     </div>
   </section>
@@ -733,12 +734,12 @@
       const today = new Date();
       $("#today-date").textContent = today.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
       await sleep(900);
-      $("#m1").style.width = "33.3%";
+      $("#m1").style.width = "41.7%";
       await sleep(250);
-      $("#m2").style.width = "16.7%";
+      $("#m2").style.width = "25%";
       await sleep(250);
-      $("#m3").style.width = "50%";
-      const text = "Linear regression is your weakest STAT2201 topic (1 of 2 right last check-in), and it's in the Problem Set: worth 25%, due in 4 days.";
+      $("#m3").style.width = "33.3%";
+      const text = "Due in 4 days and worth 25%. STAT2201 is at 41%; linear regression (33%) and hypothesis testing (38%) need the most work.";
       const out = $("#why-type");
       await sleep(500);
       if (reduceMotion) { out.textContent = text; return; }
@@ -846,20 +847,20 @@
       const states = [
         {
           order: ["ps", "lab", "ode", "quiz"],
-          why: "Linear regression is your weakest topic, and the Problem Set it's in is worth 25% and due in 4 days.",
+          why: "Linear regression is your shakiest topic at 33%, and the Problem Set it's in is worth 25% and due in 4 days.",
           quiz: ["okay", "6 days"],
         },
         {
           event: "Quiz (Wk 12) moved to tomorrow",
           order: ["quiz", "ps", "lab", "ode"],
-          why: "The quiz is tomorrow and covers confidence intervals, where you got 0 of 1 right last time. 15 minutes now, then back to regression.",
+          why: "The quiz is tomorrow and covers confidence intervals, which isn't in your notes yet. 15 minutes now, then back to regression.",
           quiz: ["urgent", "Tomorrow"],
         },
         {
-          event: "Check-in: confidence intervals 4 of 4",
+          event: "Quiz me: confidence intervals 3 of 3",
           order: ["ps", "lab", "ode", "quiz"],
-          why: "Confidence intervals is now strong, so it drops down. Regression is back on top: your weakest topic in the biggest piece of work left.",
-          quiz: ["good", "Strong"],
+          why: "Confidence intervals is now Confident, so it drops down. Regression is back on top: your shakiest topic in the biggest piece of work left.",
+          quiz: ["good", "Confident"],
           done: true,
         },
       ];
@@ -902,16 +903,16 @@
       const btn = $(".toggle", stage), bars = $$("[data-b]", stage), times = $$("[data-t]", stage);
       const labels = $$("[data-v]", stage), note = $(".time-note", stage), total = $("#time-total");
       labels.forEach((el) => { el.dataset.s = el.textContent; });
-      const mins = [20, 10, 30];
+      const mins = [25, 15, 20];
       const show = (vague) => {
         btn.setAttribute("aria-pressed", vague);
         labels.forEach((el) => { el.textContent = vague ? el.dataset.v : el.dataset.s; });
         bars.forEach((b, i) => { b.style.width = vague ? "0" : (mins[i] / 60) * 100 + "%"; });
         times.forEach((el, i) => { el.textContent = vague ? "?" : mins[i] + "m"; });
-        total.textContent = vague ? "To-do · no end in sight" : "Today · 1h, 3 steps";
+        total.textContent = vague ? "To-do · no end in sight" : "Today · 1h, 3 blocks";
         note.textContent = vague
           ? "\u201cRevise STAT2201\u201d doesn't say where to start, how long to spend, or when you're done."
-          : "Each step is small enough to start now, and ends with a result that updates your progress.";
+          : "Each block names the topics to focus on and fits the time you have. The timer tells you when you're done.";
       };
       show(false);
       let auto = true;
