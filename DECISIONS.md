@@ -14,6 +14,11 @@ Format:
 
 ---
 
+## 2026-10-30: "Quiz me" per topic, with confidence
+**Decision:** Students check what they know with an optional "Quiz me" on each topic (option C of three prototyped). Questions come from Haiku 5.5 at low effort, written from the course and topic name. 15 quizzes per student per day, set in one place by plan tier. Confidence = notes 40% and quizzes 60% after one quiz, notes 20% and quizzes 80% after two; a round green ↑ / red ↓ / yellow – bubble shows which way the latest quiz moved it. No result screen and no legend. The daily plan will use confidence (tickets 14-16).
+**Why:** Notes levels say what the notes cover, not what the student knows; students drop tools that don't show them improving. Option C changes nothing in the existing flow and puts the prompt next to the weak topics.
+**Alternatives:** A quiz after every notes upload (adds a step and doubles AI calls); a separate "Test what you know" page (scores don't reach levels or the plan).
+
 ## 2026-10-30: Topics first, then notes
 **Decision:** A course's Topics section has two steps: Upload topics (from the saved course profile, or typed in), then Upload notes, which stays locked until the course has topics. Importing topics from a profile no longer touches assessments. Today nudges courses with no topics.
 **Why:** The AI rates notes against a course's topics, so notes uploaded to a course with none produce nothing. The flow was tried in a clickable prototype before it was built.

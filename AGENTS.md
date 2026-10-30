@@ -4,6 +4,7 @@ Map and rules for AI coding agents in this repo. Work under `app/` also follows 
 
 - **[CONTEXT.md](CONTEXT.md):** read when a change touches what the app does, who it's for, or MVP scope.
 - **[DECISIONS.md](DECISIONS.md):** read before reversing an earlier choice; append a dated entry when you make a choice someone would later ask "why?" about.
+- **[LIMITATIONS.md](LIMITATIONS.md):** known limits and inconsistencies still to resolve; read before building on notes, topics or quizzes, and remove an entry when you resolve it.
 - **Tickets:** `.scratch/notes-sharing/issues/`. Work the frontier (tickets whose blockers are done); tick acceptance criteria and set **Status** as you go.
 - **Specs:** [SPEC.md](SPEC.md) (note-ingestion map) and [SPEC-ingest-core.md](SPEC-ingest-core.md) (models, caps, privacy boundaries). The caps live there; quote them from there.
 
