@@ -395,17 +395,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 code: imported.code,
                 name: name || imported.code,
                 semester,
-                profile_url: imported.profile_url,
-                semester_start: imported.semester_start,
+                // A tab's PDF may not carry these; keep what an earlier upload saved.
+                ...(imported.profile_url ? { profile_url: imported.profile_url } : {}),
+                ...(imported.semester_start ? { semester_start: imported.semester_start } : {}),
               },
               { onConflict: 'user_id,code,semester' },
             )
             .select('id')
             .single(),
         );
-        // Re-importing replaces earlier imported items but keeps ones you added yourself.
-        check(await supabase.from('assessments').delete().eq('course_id', course.id).eq('source', 'imported'));
+        // Re-importing replaces earlier imported items but keeps ones you added yourself. A file with
+        // no assessments (the Learning activities tab) leaves them alone.
         if (imported.assessments.length) {
+          check(await supabase.from('assessments').delete().eq('course_id', course.id).eq('source', 'imported'));
           check(
             await supabase.from('assessments').insert(
               imported.assessments.map((a) => ({

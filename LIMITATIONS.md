@@ -49,10 +49,10 @@ Last reviewed: 2026-10-30.
 - **What:** UQ's course profile site returns 403 to the backend, so students must save the profile page themselves and upload it.
 - **Ways out:** None on our side short of an official UQ data source. Keep the "save the page" guidance clear.
 
-### L9. Only the saved `.html` profile gives topics; PDFs don't
-- **What:** The PDF reader extracts assessments only.
-- **Affects:** "From course profile" with a PDF always says no topics were found.
-- **Ways out:** Ticket 13.
+### L9. Topics come from one tab, and some profiles list none
+- **What:** UQ shows each part of a profile on its own tab, and a printed PDF holds only the open one, so students save the Assessment tab and the Learning activities tab separately. Some courses (e.g. MATH2010) list only classes that run over several weeks, not weekly topics, so they have none to import.
+- **Affects:** Students who want both assessments and topics upload two files. Courses without weekly topics need topics typed in.
+- **Ways out:** Check the PDF weekly-row reader against a real profile that has weekly topics (ticket 13's last box). For courses without weekly topics, consider offering the learning outcomes (Aims and outcomes tab) as topics.
 
 ### L10. Profile import needs the local backend
 - **What:** Reading a profile (for assessments or topics) goes to the FastAPI backend, which only runs locally (see DECISIONS.md, 2026-10-27).

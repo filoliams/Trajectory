@@ -30,9 +30,10 @@ export type PickedFile = { name: string; uri?: string; mimeType?: string; file?:
 /**
  * Upload a course profile the user downloaded (PDF or saved web page). The
  * backend works out the course from the file and turns away a profile for a
- * different semester.
+ * different semester. UQ shows assessments and weekly topics on separate tabs,
+ * so a file may bring either; `want: 'topics'` asks for the Learning activities tab.
  */
-export function importFromFile(picked: PickedFile, year: number, semester: number): Promise<ImportedCourse> {
+export function importFromFile(picked: PickedFile, year: number, semester: number, want: 'any' | 'topics' = 'any'): Promise<ImportedCourse> {
   const form = new FormData();
   if (picked.file) {
     form.append('file', picked.file, picked.name);
@@ -42,6 +43,7 @@ export function importFromFile(picked: PickedFile, year: number, semester: numbe
   }
   form.append('year', String(year));
   form.append('semester', String(semester));
+  form.append('want', want);
   return send('/import-file', { method: 'POST', body: form });
 }
 

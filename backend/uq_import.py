@@ -68,6 +68,11 @@ class ImportedCourse:
     semester_end: str | None
     assessments: list[ImportedAssessment] = field(default_factory=list)
     topics: list[ImportedTopic] = field(default_factory=list)
+    # The profile tab a PDF was printed from (e.g. "assessment", "learning-activities"), from the
+    # browser's print footer; None for saved web pages, which can hold several tabs.
+    tab: str | None = None
+    # True when the file has a Learning activities table, even if it lists no weekly topics.
+    has_activities: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -262,7 +267,9 @@ def _learning_topics(soup: BeautifulSoup) -> list[ImportedTopic]:
     return topics
 
 
-def parse_profile(html: str, url: str) -> ImportedCourse:
+def parse_profile(html: str, url: str, require_assessments: bool = True) -> ImportedCourse:
+    """Read a profile page. With `require_assessments` off, a page with only the Learning
+    activities tab comes back with no assessments instead of failing (the caller decides)."""
     soup = BeautifulSoup(html, "html.parser")
     code_match = PROFILE_LINK.search(url)
     code = code_match.group(1) if code_match else ""
@@ -272,10 +279,10 @@ def parse_profile(html: str, url: str) -> ImportedCourse:
     sem_start, sem_end = _semester_dates(soup)
 
     table = _find_summary_table(soup)
-    if table is None:
+    if table is None and require_assessments:
         raise ImportFailed("Couldn't find the assessment table in this course profile.")
 
-    rows = table.find_all("tr")
+    rows = table.find_all("tr") if table is not None else []
     header_cells = [c.get_text(" ", strip=True).lower() for c in rows[0].find_all(["th", "td"])] if rows else []
 
     def col(*names: str, default: int) -> int:
@@ -299,7 +306,7 @@ def parse_profile(html: str, url: str) -> ImportedCourse:
         due_text = " ".join(_cell_lines(cells[i_due]))
         assessments.extend(_expand_row(name, category, weight, due_text, is_hurdle, sem_start))
 
-    if not assessments:
+    if not assessments and require_assessments:
         raise ImportFailed("The assessment table in this profile was empty.")
 
     return ImportedCourse(
@@ -310,6 +317,7 @@ def parse_profile(html: str, url: str) -> ImportedCourse:
         semester_end=sem_end.isoformat() if sem_end else None,
         assessments=assessments,
         topics=_learning_topics(soup),
+        has_activities=soup.find(id="learning-activities") is not None,
     )
 
 
@@ -440,6 +448,108 @@ def _pdf_lines(data: bytes) -> list[str]:
     return [line.replace("\xa0", " ").strip() for line in text.split("\n") if line.strip()]
 
 
+# The browser prints a header and footer on every page, e.g.
+#   "10/30/26, 2:44 PM MATH2010-61978-7660 - Course profiles - The University of Queensland"
+#   "https://course-profiles.uq.edu.au/course-profiles/MATH2010-61978-7660#assessment 3/11"
+# They land mid-text (even inside an assessment's name), so they're removed; the footer's #tab says
+# which profile tab was printed.
+PRINT_HEADER = re.compile(r"^\d{1,2}/\d{1,2}/\d{2,4},\s+\d{1,2}:\d{2}\s*[AP]M\b.*Course profiles", re.IGNORECASE)
+PRINT_FOOTER = re.compile(r"^https?://course-profiles\.uq\.edu\.au/\S*?(?:#([a-z-]+))?\s+\d+/\d+$")
+TAB_NAMES = {
+    "course-overview": "Course overview",
+    "aim-and-outcomes": "Aims and outcomes",
+    "assessment": "Assessment",
+    "learning-resources": "Learning resources",
+    "learning-activities": "Learning activities",
+    "policies-and-procedures": "Policies and procedures",
+}
+
+
+def _strip_print_marks(lines: list[str]) -> tuple[list[str], str | None]:
+    kept, tab = [], None
+    for line in lines:
+        footer = PRINT_FOOTER.match(line)
+        if footer:
+            tab = tab or footer.group(1)
+            continue
+        if not PRINT_HEADER.match(line):
+            kept.append(line)
+    return kept, tab
+
+
+def _tab_name(tab: str) -> str:
+    return TAB_NAMES.get(tab, tab.replace("-", " ").capitalize())
+
+
+# Activity types UQ uses in the Learning activities table; they come before the topic in the text.
+ACTIVITY_TYPES = sorted(
+    ["Lecture", "Tutorial", "Practical", "Applied Class", "Workshop", "Seminar", "Laboratory", "Lab",
+     "Problem-based learning", "Studio", "Fieldwork", "Contact", "Clinical practice", "Discussion group",
+     "Online activity", "Self-directed learning", "Independent study", "Case-based learning"],
+    key=len, reverse=True,
+)
+PDF_WEEK = re.compile(r"^Week\s+(\d{1,2})\b(.*)$", re.IGNORECASE)
+
+
+def _split_activity(text: str) -> tuple[str, str] | None:
+    """('Applied Class', 'Problem Solving') from 'Applied Class Problem Solving'; None if no known type leads."""
+    for kind in ACTIVITY_TYPES:
+        if text.lower() == kind.lower() or text.lower().startswith(kind.lower() + " "):
+            return kind, text[len(kind):].strip()
+    return None
+
+
+def _pdf_learning_topics(lines: list[str]) -> tuple[list[ImportedTopic], bool]:
+    """Weekly topics from a printed Learning activities tab, and whether the table was there at all.
+
+    Each row reads: learning period ("Week 3", maybe "(10 Aug - 16 Aug)", or "Multiple weeks From
+    Week 1 To Week 6"), then the activity type (sometimes on the same line as the topic), then the
+    topic's title, its description, and a closing "Learning outcomes: …" line. Rows without their own
+    period belong to the week above. "Multiple weeks" rows describe kinds of class, so they're skipped.
+    shortcut: built from a real profile that only had multi-week rows plus the saved-page layout;
+    check against a profile PDF with weekly rows when one turns up.
+    """
+    try:
+        header = next(i for i in range(len(lines) - 4) if lines[i:i + 5] == ["Learning", "period", "Activity", "type", "Topic"])
+    except StopIteration:
+        return [], False
+    rows: list[list[str]] = []
+    current: list[str] = []
+    for line in lines[header + 5:]:
+        current.append(line)
+        if line.startswith("Learning outcomes"):
+            rows.append(current)
+            current = []
+    topics: list[ImportedTopic] = []
+    seen: set[str] = set()
+    week: str | None = None
+    for row in rows:
+        i = 0
+        if row[0].lower().startswith("multiple"):
+            week = None
+            continue
+        wm = PDF_WEEK.match(row[0])
+        if wm:
+            week, rest = f"Week {int(wm.group(1))}", wm.group(2).strip()
+            row = ([rest] if rest else []) + row[1:]
+            while row and re.fullmatch(r"\(.*\)", row[0]):  # the week's dates
+                row = row[1:]
+        if week is None or not row:
+            continue
+        # The activity type may wrap over two lines ("Applied" / "Class") or share a line with the topic.
+        split = _split_activity(row[0]) or (_split_activity(f"{row[0]} {row[1]}") if len(row) > 1 else None)
+        if split is None:
+            continue
+        kind, after = split
+        i = 1 if _split_activity(row[0]) else 2
+        name = after or (row[i] if i < len(row) and not row[i].startswith("Learning outcomes") else "")
+        name = re.sub(r"\s+", " ", name).strip(" :-–")
+        if name and name.lower() not in seen:
+            seen.add(name.lower())
+            topics.append(ImportedTopic(name=name, week=week))
+    return topics, True
+
+
 def _pdf_title(lines: list[str], code: str) -> str | None:
     """The heading is 'COURSE PROFILE', then the name, ending '(STAT2201)'; it may wrap."""
     for i, line in enumerate(lines):
@@ -451,11 +561,24 @@ def _pdf_title(lines: list[str], code: str) -> str | None:
     return None
 
 
+def _prose(line: str) -> bool:
+    """A line of running text rather than a task name: ends a sentence or fills the column."""
+    return line.endswith((".", ",", ";", ":")) or len(line) > 70
+
+
 def _pdf_name_start(lines: list[str], mode: int) -> int:
     """Where a task's name starts: the line above "Mode", plus the line before
     that when the name wrapped (it then starts lowercase or with "(", or the
-    line above leaves a bracket open)."""
+    line above leaves a bracket open).
+
+    A two-column layout can push part of the previous task's description in
+    between the name and "Mode"; then the name is the nearest short line above
+    that paragraph."""
     start = mode - 1
+    if _prose(lines[start]):
+        for j in range(mode - 2, max(0, mode - 12), -1):
+            if not _prose(lines[j]) and lines[j][:1].isupper():
+                return j
     while start > 0 and mode - start < 3:
         name, above = lines[start], lines[start - 1]
         wrapped = name[:1].islower() or name.startswith("(") or above.count("(") > above.count(")")
@@ -496,10 +619,11 @@ def parse_profile_pdf(data: bytes) -> ImportedCourse:
     task is laid out as:
         <task name> / Mode … / Category … / Weight 25% / Due date … / Task description
     """
-    lines = _pdf_lines(data)
+    lines, tab = _strip_print_marks(_pdf_lines(data))
     if not lines:
         raise ImportFailed("That PDF has no readable text. Save the course profile from your browser as a PDF instead of scanning it.")
     text = "\n".join(lines)
+    topics, has_activities = _pdf_learning_topics(lines)
 
     ident = PROFILE_ID.search(text)
     code_match = ident or re.search(r"\(([A-Z]{4}\d{4})\)", text)
@@ -522,7 +646,9 @@ def parse_profile_pdf(data: bytes) -> ImportedCourse:
         block = lines[mode:end]
         if "Course grading" in block:  # the last task's block stops where the grading section starts
             block = block[:block.index("Course grading")]
-        name = " ".join(lines[starts[k]:mode])
+        name_lines = lines[starts[k]:mode]
+        cut = next((i for i, line in enumerate(name_lines) if i and _prose(line)), len(name_lines))
+        name = " ".join(name_lines[:cut])
         category = block[1].removeprefix("Category").strip()
         wm = WEIGHT.search(block[2])
         weight = float(wm.group(1)) if wm else 0.0
@@ -530,12 +656,7 @@ def parse_profile_pdf(data: bytes) -> ImportedCourse:
         is_hurdle = any(line == "Hurdle" or line.startswith("Hurdle requirements") for line in block)
         assessments.extend(_expand_row(name, category, weight, due_text, is_hurdle, sem_start))
 
-    if not assessments:
-        if "COURSE PROFILE" in text or code:
-            raise ImportFailed(
-                "This PDF doesn't include the assessments. Open the Assessment tab on the course profile, "
-                "then save it as a PDF again."
-            )
+    if not assessments and not has_activities and not ("COURSE PROFILE" in text or code):
         raise ImportFailed("This doesn't look like a UQ course profile.")
 
     return ImportedCourse(
@@ -545,20 +666,51 @@ def parse_profile_pdf(data: bytes) -> ImportedCourse:
         semester_start=sem_start.isoformat() if sem_start else None,
         semester_end=sem_end.isoformat() if sem_end else None,
         assessments=assessments,
+        topics=topics,
+        tab=tab,
+        has_activities=has_activities,
     )
 
 
-def parse_uploaded_profile(data: bytes, filename: str = "") -> ImportedCourse:
-    """Read a course profile the user downloaded: a PDF, or the page saved as HTML."""
+NO_WEEKLY_TOPICS = (
+    "This course profile's Learning activities don't list weekly topics, only classes that run over "
+    "several weeks. Type the topics in instead."
+)
+
+
+def parse_uploaded_profile(data: bytes, filename: str = "", want: str = "any") -> ImportedCourse:
+    """Read a course profile the user downloaded: a PDF, or the page saved as HTML.
+
+    UQ shows each part of a profile on its own tab and a printed PDF holds only the open one, so a
+    file may carry assessments (Assessment tab), topics (Learning activities tab) or both (a saved
+    page). `want="topics"` is for adding topics to a course; "any" takes whichever the file has.
+    Either way, a file with nothing usable is turned away with a sentence naming the tab to save.
+    """
     if data[:5] == b"%PDF-":
-        return parse_profile_pdf(data)
-    if filename.lower().endswith((".htm", ".html")) or b"<html" in data[:4096].lower():
+        course = parse_profile_pdf(data)
+    elif filename.lower().endswith((".htm", ".html")) or b"<html" in data[:4096].lower():
         html = data.decode("utf-8", errors="replace")
         ident = PROFILE_ID.search(html)
         url = PROFILE_BASE + ident.group(0) if ident else ""
-        course = parse_profile(html, url)
+        course = parse_profile(html, url, require_assessments=False)
         if not course.code:
             title_code = re.search(r"\(([A-Z]{4}\d{4})\)", course.title or "")
             course.code = title_code.group(1) if title_code else ""
+    else:
+        raise ImportFailed("Upload the course profile as a PDF or a saved web page (.html).")
+
+    this_tab = f"This is the {_tab_name(course.tab)} tab. " if course.tab else ""
+    if want == "topics":
+        if course.topics:
+            return course
+        if course.has_activities:
+            raise ImportFailed(NO_WEEKLY_TOPICS)
+        raise ImportFailed(f"{this_tab or 'This file has no Learning activities. '}Open the Learning activities tab on the course profile, then save that tab as a PDF or web page.")
+    if course.assessments or course.topics:
         return course
-    raise ImportFailed("Upload the course profile as a PDF or a saved web page (.html).")
+    if course.has_activities:
+        raise ImportFailed(f"{NO_WEEKLY_TOPICS} For this course's assessments, save the Assessment tab as a PDF.")
+    raise ImportFailed(
+        f"{this_tab or 'This file doesn’t include the assessments. '}Open the Assessment tab on the course profile, "
+        "then save it as a PDF again."
+    )

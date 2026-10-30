@@ -94,14 +94,11 @@ export function TopicList({ course }: { course: Course }) {
     setBusy('topics');
     try {
       const { year, semester } = parseSemester(profile?.semester ?? '2026 S2');
-      const imported = await importFromFile({ name: file.name, uri: file.uri, mimeType: file.mimeType, file: file.file }, year, semester);
+      // The backend explains a wrong tab or a profile with no weekly topics in its own words.
+      const imported = await importFromFile({ name: file.name, uri: file.uri, mimeType: file.mimeType, file: file.file }, year, semester, 'topics');
       if (imported.code !== course.code) throw new Error(`That profile is for ${imported.code}, not ${course.code}. Upload ${course.code}’s profile instead.`);
       const listed = imported.topics ?? [];
-      if (!listed.length) {
-        throw new Error(
-          'This profile doesn’t list weekly topics we can read. PDF profiles don’t include them yet: save the profile’s web page as .html and upload that, or type the topics in.',
-        );
-      }
+      if (!listed.length) throw new Error('This file has no weekly topics. Type the topics in instead.');
       const added = await importTopics(course.id, listed);
       setResult(
         added
@@ -282,7 +279,7 @@ export function TopicList({ course }: { course: Course }) {
           title="From course profile"
           body={
             online
-              ? 'Upload the profile page you saved from the UQ course profile site. Only topics are added; your assessments stay as they are.'
+              ? 'On the UQ course profile, open the Learning activities tab and save it as a PDF (or the page as .html), then upload it here. Only topics are added; your assessments stay as they are.'
               : 'Connect to the internet to read a profile.'
           }
           disabled={!online}

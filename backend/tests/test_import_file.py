@@ -124,3 +124,117 @@ def test_pdf_of_the_wrong_tab(monkeypatch):
     resp = upload(b"%PDF-1.7 ...", "MECH2100.pdf")
     assert resp.status_code == 422
     assert "Assessment tab" in resp.json()["detail"]
+
+
+# Trimmed from a real MATH2010 Assessment tab printed to PDF: the browser's header and footer
+# land mid-text, and a two-column layout puts the previous task's description between the
+# exam's name and its "Mode" line.
+HEADER = "10/30/26, 2:44 PM MATH2010-61978-7660 - Course profiles - The University of Queensland"
+FOOTER = "https://course-profiles.uq.edu.au/course-profiles/MATH2010-61978-7660#{tab} {page}/11"
+MATH2010_ASSESSMENT = [
+    "UQ home Course profiles MATH2010-61978-7660",
+    "COURSE PROFILE",
+    "Analysis of Ordinary Differential",
+    "Equations (MATH2010)",
+    "Study period:Sem 2 2026 Location:St Lucia Attendance mode:In Person",
+    HEADER, FOOTER.format(tab="assessment", page=1),
+    "Assessment details",
+    "2 Assignments",
+    "Mode Written",
+    "Category Tutorial/ Problem Set",
+    "Weight 40% equally weighted",
+    "Due date Assignment 1 21/08/2026 1:00 pm",
+    "Assignment 2 11/09/2026 1:00 pm",
+    "Task description",
+    "regardless of approved extensions.",
+    "End of semester Exam",
+    "The assignments will be comprised of problems derived from the lectures and applied class",
+    "equally weighted.",
+    HEADER, FOOTER.format(tab="assessment", page=3),
+    "Mode Written",
+    "Category Examination",
+    "Weight 60%",
+    "Due date End of Semester Exam Period",
+    "7/11/2026 - 21/11/2026",
+    "Other conditions Secure.",
+    "Course grading",
+]
+
+# Trimmed from the real MATH2010 Learning activities tab: only classes that run over several weeks.
+ACTIVITIES_HEAD = ["UQ home Course profiles MATH2010-61978-7660", "COURSE PROFILE", "Analysis of Ordinary Differential",
+                   "Equations (MATH2010)", HEADER, FOOTER.format(tab="learning-activities", page=1),
+                   "Learning", "period", "Activity", "type", "Topic"]
+MULTI_WEEK_ROWS = [
+    "Multiple", "weeks", "From", "Week 1 To", "Week 6",
+    "Lecture ODEs and Laplace transform", "3 Lectures a week. Lectures will be on campus.",
+    "Learning outcomes: L01, L02, L03, L04, L05",
+    "Multiple", "weeks", "From", "Week 2 To", "Week 7",
+    "Applied", "Class", "Problem Solving", "One Applied Class per week (from Week 2).",
+    "Learning outcomes: L01, L02, L03, L04, L05",
+]
+# Weekly rows in the same layout (a week with two activities, a wrapped activity type).
+WEEKLY_ROWS = [
+    "Week 1", "(27 Jul - 02 Aug)", "Lecture Systems of linear ODEs", "Eigenvalue method.", "Learning outcomes: L01",
+    "Applied", "Class", "Systems of linear ODEs", "Learning outcomes: L01",
+    "Week 2", "Lecture Phase plane analysis", "Learning outcomes: L01, L02",
+]
+
+
+def pdf_text(monkeypatch, lines):
+    monkeypatch.setattr(uq_import, "_pdf_lines", lambda data: lines)
+
+
+def test_pdf_print_marks_and_two_columns(monkeypatch):
+    pdf_text(monkeypatch, MATH2010_ASSESSMENT)
+    resp = upload(b"%PDF-1.7 ...", "Math2010 assessment.pdf")
+    assert resp.status_code == 200
+    got = [(a["name"], a["weight"], a["is_hurdle"]) for a in resp.json()["assessments"]]
+    assert got == [("2 Assignments (1)", 20.0, False), ("2 Assignments (2)", 20.0, False), ("End of semester Exam", 60.0, False)]
+    assert resp.json()["tab"] == "assessment"
+
+
+def test_topics_from_learning_activities_pdf(monkeypatch):
+    pdf_text(monkeypatch, ACTIVITIES_HEAD + MULTI_WEEK_ROWS + WEEKLY_ROWS)
+    resp = upload(b"%PDF-1.7 ...", "MATH2010.pdf", want="topics")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert [(t["name"], t["week"]) for t in data["topics"]] == [("Systems of linear ODEs", "Week 1"), ("Phase plane analysis", "Week 2")]
+    assert data["code"] == "MATH2010"
+    # From Add course, the same file brings topics and no assessments (the app keeps the course's own).
+    resp = upload(b"%PDF-1.7 ...", "MATH2010.pdf")
+    assert resp.status_code == 200 and resp.json()["assessments"] == []
+
+
+def test_profile_without_weekly_topics(monkeypatch):
+    pdf_text(monkeypatch, ACTIVITIES_HEAD + MULTI_WEEK_ROWS)
+    resp = upload(b"%PDF-1.7 ...", "MATH2010.pdf", want="topics")
+    assert resp.status_code == 422
+    assert "don't list weekly topics" in resp.json()["detail"]
+    resp = upload(b"%PDF-1.7 ...", "MATH2010.pdf")
+    assert resp.status_code == 422
+    assert "Assessment tab" in resp.json()["detail"]
+
+
+def test_topics_wanted_from_the_wrong_tab(monkeypatch):
+    pdf_text(monkeypatch, MATH2010_ASSESSMENT)
+    resp = upload(b"%PDF-1.7 ...", "Math2010 assessment.pdf", want="topics")
+    assert resp.status_code == 422
+    assert resp.json()["detail"].startswith("This is the Assessment tab. Open the Learning activities tab")
+    pdf_text(monkeypatch, ["UQ home Course profiles MATH2010-61978-7660", "COURSE PROFILE", "Learning outcomes",
+                           HEADER, FOOTER.format(tab="aim-and-outcomes", page=1)])
+    resp = upload(b"%PDF-1.7 ...", "aims.pdf")
+    assert resp.status_code == 422
+    assert resp.json()["detail"].startswith("This is the Aims and outcomes tab. Open the Assessment tab")
+
+
+def test_saved_page_of_learning_activities_only():
+    from tests.test_uq_import import LEARNING_ACTIVITIES
+
+    page = f"<html><nav>Course profiles STAT2201-99999-7660</nav><h1>STAT2201</h1>{LEARNING_ACTIVITIES}</html>"
+    resp = upload(page.encode(), "STAT2201.html", want="topics")
+    assert resp.status_code == 200
+    assert [t["name"] for t in resp.json()["topics"]] == ["Visualising and summarising data", "Random variables"]
+
+
+def test_want_must_be_known():
+    assert upload(b"%PDF-1.7", "x.pdf", want="everything").status_code == 422
